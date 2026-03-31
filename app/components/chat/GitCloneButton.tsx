@@ -260,7 +260,7 @@ ${escapeBoltTags(file.content)}
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-bolt-elements-textPrimary dark:text-bolt-elements-textPrimary">
-                    Import GitHub Repository
+                    Importă din GitHub
                   </h3>
                   <p className="text-sm text-bolt-elements-textSecondary dark:text-bolt-elements-textSecondary">
                     Clone a repository from GitHub to your workspace
@@ -296,7 +296,7 @@ ${escapeBoltTags(file.content)}
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-bolt-elements-textPrimary dark:text-bolt-elements-textPrimary">
-                    Import GitLab Repository
+                    Importă din GitLab
                   </h3>
                   <p className="text-sm text-bolt-elements-textSecondary dark:text-bolt-elements-textSecondary">
                     Clone a repository from GitLab to your workspace

@@ -340,7 +340,7 @@ export const Menu = () => {
         <div className="h-12 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800/50 bg-gray-50/50 dark:bg-gray-900/50 rounded-tr-2xl">
           <div className="text-gray-900 dark:text-white font-medium"></div>
           <div className="flex items-center gap-3">
-            <HelpButton onClick={() => window.open('https://stackblitz-labs.github.io/bolt.diy/', '_blank')} />
+            <HelpButton onClick={() => window.open('#', '_blank')} />
             <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
               {profile?.username || 'Guest User'}
             </span>
@@ -368,7 +368,7 @@ export const Menu = () => {
                 className="flex-1 flex gap-2 items-center bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-500/20 rounded-lg px-4 py-2 transition-colors"
               >
                 <span className="inline-block i-ph:plus-circle h-4 w-4" />
-                <span className="text-sm font-medium">Start new chat</span>
+                <span className="text-sm font-medium">Conversație nouă</span>
               </a>
               <button
                 onClick={toggleSelectionMode}
@@ -390,14 +390,14 @@ export const Menu = () => {
               <input
                 className="w-full bg-gray-50 dark:bg-gray-900 relative pl-9 pr-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500/50 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-500 border border-gray-200 dark:border-gray-800"
                 type="search"
-                placeholder="Search chats..."
+                placeholder="Caută conversații..."
                 onChange={handleSearchChange}
                 aria-label="Search chats"
               />
             </div>
           </div>
           <div className="flex items-center justify-between text-sm px-4 py-2">
-            <div className="font-medium text-gray-600 dark:text-gray-400">Your Chats</div>
+            <div className="font-medium text-gray-600 dark:text-gray-400">Conversațiile tale</div>
             {selectionMode && (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={selectAll}>
@@ -409,7 +409,7 @@ export const Menu = () => {
                   onClick={handleBulkDeleteClick}
                   disabled={selectedItems.length === 0}
                 >
-                  Delete selected
+                  Șterge selectate
                 </Button>
               </div>
             )}
@@ -417,7 +417,7 @@ export const Menu = () => {
           <div className="flex-1 overflow-auto px-3 pb-3">
             {filteredList.length === 0 && (
               <div className="px-4 text-gray-500 dark:text-gray-400 text-sm">
-                {list.length === 0 ? 'No previous conversations' : 'No matches found'}
+                {list.length === 0 ? 'Nicio conversație anterioară' : 'Niciun rezultat'}
               </div>
             )}
             <DialogRoot open={dialogContent !== null}>
@@ -451,7 +451,7 @@ export const Menu = () => {
                 {dialogContent?.type === 'delete' && (
                   <>
                     <div className="p-6 bg-white dark:bg-gray-950">
-                      <DialogTitle className="text-gray-900 dark:text-white">Delete Chat?</DialogTitle>
+                      <DialogTitle className="text-gray-900 dark:text-white">Ștergi conversația?</DialogTitle>
                       <DialogDescription className="mt-2 text-gray-600 dark:text-gray-400">
                         <p>
                           You are about to delete{' '}
@@ -464,7 +464,7 @@ export const Menu = () => {
                     </div>
                     <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
                       <DialogButton type="secondary" onClick={closeDialog}>
-                        Cancel
+                        Anulează
                       </DialogButton>
                       <DialogButton
                         type="danger"
@@ -474,7 +474,7 @@ export const Menu = () => {
                           closeDialog();
                         }}
                       >
-                        Delete
+                        Șterge
                       </DialogButton>
                     </div>
                   </>
@@ -482,7 +482,9 @@ export const Menu = () => {
                 {dialogContent?.type === 'bulkDelete' && (
                   <>
                     <div className="p-6 bg-white dark:bg-gray-950">
-                      <DialogTitle className="text-gray-900 dark:text-white">Delete Selected Chats?</DialogTitle>
+                      <DialogTitle className="text-gray-900 dark:text-white">
+                        Ștergi conversațiile selectate?
+                      </DialogTitle>
                       <DialogDescription className="mt-2 text-gray-600 dark:text-gray-400">
                         <p>
                           You are about to delete {dialogContent.items.length}{' '}
@@ -502,7 +504,7 @@ export const Menu = () => {
                     </div>
                     <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
                       <DialogButton type="secondary" onClick={closeDialog}>
-                        Cancel
+                        Anulează
                       </DialogButton>
                       <DialogButton
                         type="danger"
@@ -517,7 +519,7 @@ export const Menu = () => {
                           closeDialog();
                         }}
                       >
-                        Delete
+                        Șterge
                       </DialogButton>
                     </div>
                   </>

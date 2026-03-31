@@ -242,7 +242,7 @@ const ActionList = memo(({ actions }: ActionListProps) => {
                   </div>
                 ) : type === 'shell' ? (
                   <div className="flex items-center w-full min-h-[28px]">
-                    <span className="flex-1">Run command</span>
+                    <span className="flex-1">Rulează comanda</span>
                   </div>
                 ) : type === 'start' ? (
                   <a
@@ -252,7 +252,7 @@ const ActionList = memo(({ actions }: ActionListProps) => {
                     }}
                     className="flex items-center w-full min-h-[28px]"
                   >
-                    <span className="flex-1">Start Application</span>
+                    <span className="flex-1">Pornește Aplicația</span>
                   </a>
                 ) : null}
               </div>

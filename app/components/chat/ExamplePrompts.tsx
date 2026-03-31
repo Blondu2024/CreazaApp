@@ -1,12 +1,10 @@
 import React from 'react';
 
 const EXAMPLE_PROMPTS = [
-  { text: 'Create a mobile app about bolt.diy' },
-  { text: 'Build a todo app in React using Tailwind' },
-  { text: 'Build a simple blog using Astro' },
-  { text: 'Create a cookie consent form using Material UI' },
-  { text: 'Make a space invaders game' },
-  { text: 'Make a Tic Tac Toe game in html, css and js only' },
+  { text: 'Creează un site de restaurant cu meniu, rezervări și pagină de contact' },
+  { text: 'Fă-mi un landing page pentru un salon de înfrumusețare cu programări online' },
+  { text: 'Construiește un dashboard de vânzări cu grafice și tabel de produse' },
+  { text: 'Creează un portofoliu personal cu proiecte, blog și formular de contact' },
 ];
 
 export function ExamplePrompts(sendMessage?: { (event: React.UIEvent, messageInput?: string): void | undefined }) {

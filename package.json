@@ -1,14 +1,14 @@
 {
-  "name": "bolt",
-  "description": "An AI Agent",
+  "name": "creazaapp",
+  "description": "Creează aplicații web cu AI. În română.",
   "private": true,
   "license": "MIT",
   "sideEffects": false,
   "type": "module",
   "version": "1.0.0",
   "author": {
-    "name": "bolt.diy team",
-    "email": "maintainers@bolt.diy"
+    "name": "CreazaApp",
+    "email": "contact@creazaapp.ro"
   },
   "scripts": {
     "deploy": "npm run build && wrangler pages deploy",
