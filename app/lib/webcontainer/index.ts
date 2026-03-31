@@ -1,6 +1,13 @@
-import { WebContainer } from '@webcontainer/api';
+/**
+ * Runtime adapter — E2B Sandbox (cloud) replaces WebContainers (browser)
+ *
+ * This module exports the same interface as before (webcontainer, webcontainerContext)
+ * so all other files continue to work unchanged.
+ *
+ * E2B runs code on remote sandboxes instead of in-browser WebContainers.
+ * Benefits: more reliable, supports full-stack (Python, Node), no npm install failures.
+ */
 import { WORK_DIR_NAME } from '~/utils/constants';
-import { cleanStackTrace } from '~/utils/stacktrace';
 
 interface WebContainerContext {
   loaded: boolean;
@@ -14,7 +21,8 @@ if (import.meta.hot) {
   import.meta.hot.data.webcontainerContext = webcontainerContext;
 }
 
-export let webcontainer: Promise<WebContainer> = new Promise(() => {
+// Export as 'any' since E2BSandboxAdapter mimics WebContainer but isn't the exact TS type
+export let webcontainer: Promise<any> = new Promise(() => {
   // noop for ssr
 });
 
@@ -22,41 +30,34 @@ if (!import.meta.env.SSR) {
   webcontainer =
     import.meta.hot?.data.webcontainer ??
     Promise.resolve()
-      .then(() => {
-        return WebContainer.boot({
-          coep: 'credentialless',
+      .then(async () => {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        const { E2BSandboxAdapter } = await import('~/lib/e2b/sandbox');
+        return E2BSandboxAdapter.boot({
           workdirName: WORK_DIR_NAME,
-          forwardPreviewErrors: true, // Enable error forwarding from iframes
         });
       })
-      .then(async (webcontainer) => {
+      .then(async (sandbox) => {
         webcontainerContext.loaded = true;
 
-        const { workbenchStore } = await import('~/lib/stores/workbench');
+        // workbenchStore loaded for side effects
+        void import('~/lib/stores/workbench');
 
-        const response = await fetch('/inspector-script.js');
-        const inspectorScript = await response.text();
-        await webcontainer.setPreviewScript(inspectorScript);
-
-        // Listen for preview errors
-        webcontainer.on('preview-message', (message) => {
-          console.log('WebContainer preview message:', message);
-
-          // Handle both uncaught exceptions and unhandled promise rejections
-          if (message.type === 'PREVIEW_UNCAUGHT_EXCEPTION' || message.type === 'PREVIEW_UNHANDLED_REJECTION') {
-            const isPromise = message.type === 'PREVIEW_UNHANDLED_REJECTION';
-            const title = isPromise ? 'Unhandled Promise Rejection' : 'Uncaught Exception';
-            workbenchStore.actionAlert.set({
-              type: 'preview',
-              title,
-              description: 'message' in message ? message.message : 'Unknown error',
-              content: `Error occurred at ${message.pathname}${message.search}${message.hash}\nPort: ${message.port}\n\nStack trace:\n${cleanStackTrace(message.stack || '')}`,
-              source: 'preview',
-            });
-          }
+        /*
+         * E2B doesn't need preview script injection — previews are served by E2B URL
+         * Listen for server-ready events
+         */
+        sandbox.on('server-ready', (port: number, url: string) => {
+          console.log(`[E2B] Preview available at port ${port}: ${url}`);
         });
 
-        return webcontainer;
+        console.log('[E2B] Sandbox ready, workdir:', sandbox.workdir);
+
+        return sandbox;
+      })
+      .catch((error) => {
+        console.error('[E2B] Failed to create sandbox:', error);
+        throw error;
       });
 
   if (import.meta.hot) {
