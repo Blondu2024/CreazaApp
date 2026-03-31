@@ -4,7 +4,7 @@
  * E2B SDK needs Node.js, so all calls go through this Remix action.
  * The browser-side adapter (app/lib/e2b/sandbox.ts) calls this endpoint.
  */
-import { type ActionFunctionArgs, json } from '@remix-run/cloudflare';
+import { type ActionFunctionArgs, json } from '@remix-run/node';
 import { Sandbox } from '@e2b/sdk';
 
 const E2B_API_KEY = process.env.E2B_API_KEY;
