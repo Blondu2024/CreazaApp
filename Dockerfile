@@ -33,4 +33,5 @@ EXPOSE 8080
 ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Use shell form so Railway env vars are passed through at runtime
+CMD node server.js

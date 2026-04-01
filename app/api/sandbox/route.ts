@@ -4,6 +4,10 @@ import { createSandbox, getSandbox, writeFilesAndStart, type FileToWrite } from 
 // POST — create sandbox or write files
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.E2B_API_KEY) {
+      console.error("[sandbox] E2B_API_KEY is not set!");
+      return Response.json({ error: "E2B_API_KEY nu este configurată pe server" }, { status: 500 });
+    }
     const body = await req.json();
     const { action, sandboxId, files } = body as {
       action: "create" | "write";
