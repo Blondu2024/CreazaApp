@@ -6,16 +6,15 @@
  */
 import { type ActionFunctionArgs, json } from '@remix-run/node';
 import { Sandbox } from '@e2b/sdk';
+import { env as nodeEnv } from 'node:process';
 
 /**
- * Read API key at runtime using dynamic access.
- * Bracket notation prevents vite-plugin-node-polyfills from replacing
- * process.env with the browser shim at build time.
+ * Read API key at runtime from real Node.js process.env.
+ * vite-plugin-node-polyfills replaces global `process` with a browser shim
+ * that has an empty env. Importing from 'node:process' bypasses the polyfill.
  */
 function getE2BApiKey(): string | undefined {
-  const key = 'E2B_API' + '_KEY';
-
-  return process.env[key];
+  return nodeEnv.E2B_API_KEY;
 }
 
 // Keep track of active sandboxes
