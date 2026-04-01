@@ -15,7 +15,11 @@ import { Sandbox } from '@e2b/sdk';
  * This bypasses the vite-plugin-node-polyfills issue with process.env.
  */
 function getE2BApiKey(): string | undefined {
-  return import.meta.env.VITE_E2B_API_KEY;
+  const key = import.meta.env.VITE_E2B_API_KEY;
+
+  console.log('[E2B] API key available:', !!key, 'length:', key?.length ?? 0);
+
+  return key;
 }
 
 // Keep track of active sandboxes
