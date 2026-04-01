@@ -7,7 +7,10 @@
 import { type ActionFunctionArgs, json } from '@remix-run/node';
 import { Sandbox } from '@e2b/sdk';
 
-const E2B_API_KEY = process.env.E2B_API_KEY;
+// Read at runtime (not build time) so Railway env vars are available
+function getE2BApiKey(): string | undefined {
+  return process.env.E2B_API_KEY;
+}
 
 // Keep track of active sandboxes
 const activeSandboxes = new Map<string, Sandbox>();
@@ -17,7 +20,7 @@ async function getSandbox(sandboxId: string): Promise<Sandbox> {
 
   if (!sandbox) {
     // Reconnect to existing sandbox
-    sandbox = await Sandbox.connect(sandboxId, { apiKey: E2B_API_KEY });
+    sandbox = await Sandbox.connect(sandboxId, { apiKey: getE2BApiKey() });
     activeSandboxes.set(sandboxId, sandbox);
   }
 
@@ -25,7 +28,7 @@ async function getSandbox(sandboxId: string): Promise<Sandbox> {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  if (!E2B_API_KEY) {
+  if (!getE2BApiKey()) {
     return json({ error: 'E2B_API_KEY not configured' }, { status: 500 });
   }
 
@@ -36,7 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
     switch (act) {
       case 'create-sandbox': {
         const sandbox = await Sandbox.create({
-          apiKey: E2B_API_KEY,
+          apiKey: getE2BApiKey(),
           timeoutMs: 10 * 60 * 1000,
         });
 
