@@ -48,73 +48,75 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ===== BOLT.DIY INSPIRED DARK THEME ===== */
+
 :root {
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.55 0.2 264);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.95 0.02 264);
-  --accent-foreground: oklch(0.35 0.15 264);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.55 0.2 264);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.55 0.2 264);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.95 0.02 264);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.55 0.2 264);
+  --background: #ffffff;
+  --foreground: #0a0a0f;
+  --card: #ffffff;
+  --card-foreground: #0a0a0f;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0f;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #1e293b;
+  --destructive: #ef4444;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #6366f1;
+  --chart-1: #6366f1;
+  --chart-2: #8b5cf6;
+  --chart-3: #a855f7;
+  --chart-4: #ec4899;
+  --chart-5: #f43f5e;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0a0a0f;
+  --sidebar-primary: #6366f1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #1e293b;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #6366f1;
 }
 
 .dark {
-  --background: oklch(0.1 0.01 264);
-  --foreground: oklch(0.93 0 0);
-  --card: oklch(0.14 0.01 264);
-  --card-foreground: oklch(0.93 0 0);
-  --popover: oklch(0.14 0.01 264);
-  --popover-foreground: oklch(0.93 0 0);
-  --primary: oklch(0.6 0.2 264);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.2 0.01 264);
-  --secondary-foreground: oklch(0.9 0 0);
-  --muted: oklch(0.18 0.01 264);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.2 0.03 264);
-  --accent-foreground: oklch(0.85 0.05 264);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.22 0.02 264);
-  --input: oklch(0.22 0.02 264);
-  --ring: oklch(0.6 0.2 264);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.12 0.01 264);
-  --sidebar-foreground: oklch(0.93 0 0);
-  --sidebar-primary: oklch(0.6 0.2 264);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.2 0.03 264);
-  --sidebar-accent-foreground: oklch(0.93 0 0);
-  --sidebar-border: oklch(0.22 0.02 264);
-  --sidebar-ring: oklch(0.6 0.2 264);
+  --background: #0a0a0f;
+  --foreground: #e2e8f0;
+  --card: #111118;
+  --card-foreground: #e2e8f0;
+  --popover: #111118;
+  --popover-foreground: #e2e8f0;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #1e1e2a;
+  --secondary-foreground: #e2e8f0;
+  --muted: #16161f;
+  --muted-foreground: #64748b;
+  --accent: #1a1a28;
+  --accent-foreground: #e2e8f0;
+  --destructive: #dc2626;
+  --border: #1e1e2e;
+  --input: #1e1e2e;
+  --ring: #6366f1;
+  --chart-1: #6366f1;
+  --chart-2: #8b5cf6;
+  --chart-3: #a855f7;
+  --chart-4: #ec4899;
+  --chart-5: #f43f5e;
+  --sidebar: #0d0d14;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #6366f1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1a28;
+  --sidebar-accent-foreground: #e2e8f0;
+  --sidebar-border: #1e1e2e;
+  --sidebar-ring: #6366f1;
 }
 
 @layer base {
@@ -129,71 +131,80 @@
   }
 }
 
-/* Scrollbar styling */
-@layer base {
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: oklch(0.4 0 0 / 30%);
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.4 0 0 / 50%);
-  }
-}
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.4); }
 
-/* Code block styling in chat */
-.chat-message pre {
-  background: oklch(0.12 0.01 264);
-  border: 1px solid oklch(0.22 0.02 264);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 8px 0;
-  overflow-x: auto;
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.chat-message code:not(pre code) {
-  background: oklch(0.2 0.02 264);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.875em;
-  font-family: var(--font-geist-mono), monospace;
-}
-
-/* Typing dots animation */
-@keyframes typing-dot {
-  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-  30% { opacity: 1; transform: translateY(-4px); }
-}
-.typing-dot:nth-child(1) { animation: typing-dot 1.4s infinite 0s; }
-.typing-dot:nth-child(2) { animation: typing-dot 1.4s infinite 0.2s; }
-.typing-dot:nth-child(3) { animation: typing-dot 1.4s infinite 0.4s; }
-
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, oklch(0.65 0.2 264), oklch(0.7 0.15 300));
+/* ===== GRADIENT TEXT ===== */
+.text-gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Glow effect for primary buttons */
-.glow-blue {
-  box-shadow: 0 0 20px oklch(0.6 0.2 264 / 25%), 0 0 40px oklch(0.6 0.2 264 / 10%);
+/* ===== GLOW ===== */
+.glow-primary {
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3), 0 0 45px rgba(99, 102, 241, 0.1);
+}
+.glow-primary-sm {
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
 }
 
-/* Panel separator hover */
-.panel-border {
-  transition: border-color 0.2s ease;
+/* ===== BORDER GRADIENT ===== */
+.border-gradient {
+  position: relative;
 }
-.panel-border:hover {
-  border-color: oklch(0.6 0.2 264 / 30%);
+.border-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.1), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ===== TYPING ANIMATION ===== */
+@keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+.dot-pulse span:nth-child(1) { animation: blink 1.4s infinite 0s; }
+.dot-pulse span:nth-child(2) { animation: blink 1.4s infinite 0.2s; }
+.dot-pulse span:nth-child(3) { animation: blink 1.4s infinite 0.4s; }
+
+/* ===== PANEL HOVER ===== */
+.panel-resize-handle:hover {
+  background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.15), transparent);
+}
+
+/* ===== CODE BLOCKS IN CHAT ===== */
+.msg-code pre {
+  background: #0d0d14;
+  border: 1px solid #1e1e2e;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 8px 0;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.msg-code code:not(pre code) {
+  background: rgba(99, 102, 241, 0.1);
+  color: #a5b4fc;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+/* ===== FADE IN ===== */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out;
 }

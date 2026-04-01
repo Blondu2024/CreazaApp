@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { FileCode2, X } from "lucide-react";
 
 interface FileTabProps {
   files: { path: string; content: string }[];
@@ -16,21 +15,27 @@ const EXT_COLORS: Record<string, string> = {
   js: "text-yellow-400",
   css: "text-pink-400",
   html: "text-orange-400",
-  json: "text-green-400",
+  json: "text-emerald-400",
 };
 
-function getExtColor(filename: string) {
-  const ext = filename.split(".").pop() || "";
-  return EXT_COLORS[ext] || "text-muted-foreground";
-}
+const EXT_DOTS: Record<string, string> = {
+  tsx: "bg-blue-400",
+  ts: "bg-blue-400",
+  jsx: "bg-yellow-400",
+  js: "bg-yellow-400",
+  css: "bg-pink-400",
+  html: "bg-orange-400",
+  json: "bg-emerald-400",
+};
 
 export function FileTab({ files, activeFile, onSelect }: FileTabProps) {
   if (files.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
+    <div className="flex items-center overflow-x-auto">
       {files.map((file) => {
         const name = file.path.split("/").pop() || file.path;
+        const ext = name.split(".").pop() || "";
         const isActive = file.path === activeFile;
 
         return (
@@ -38,13 +43,13 @@ export function FileTab({ files, activeFile, onSelect }: FileTabProps) {
             key={file.path}
             onClick={() => onSelect(file.path)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 text-xs border-b-2 transition-all whitespace-nowrap",
+              "flex items-center gap-1.5 px-3 py-2 text-[12px] font-mono transition-all whitespace-nowrap border-r border-border/30",
               isActive
-                ? "border-primary bg-background text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                ? "bg-background text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
             )}
           >
-            <FileCode2 className={cn("w-3.5 h-3.5", isActive ? getExtColor(name) : "")} />
+            <span className={cn("w-2 h-2 rounded-full", isActive ? (EXT_DOTS[ext] || "bg-muted-foreground") : "bg-muted-foreground/30")} />
             {name}
           </button>
         );

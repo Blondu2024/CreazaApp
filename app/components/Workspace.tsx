@@ -7,7 +7,6 @@ import { FileTab } from "./editor/FileTab";
 import { Preview } from "./preview/Preview";
 import { Terminal } from "./terminal/Terminal";
 import { Header } from "./Header";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Play,
@@ -15,8 +14,9 @@ import {
   Code2,
   Eye,
   Loader2,
-  Maximize2,
-  Minimize2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Download,
 } from "lucide-react";
 
 interface GeneratedFile {
@@ -35,7 +35,7 @@ export function Workspace() {
   const [showTerminal, setShowTerminal] = useState(false);
   const [rightTab, setRightTab] = useState<RightTab>("code");
   const [selectedModel, setSelectedModel] = useState("google/gemini-2.0-flash-exp");
-  const [chatExpanded, setChatExpanded] = useState(false);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
 
   const addLog = useCallback((msg: string) => {
     setTerminalLogs((prev) => [...prev, msg]);
@@ -44,50 +44,41 @@ export function Workspace() {
   const handleCodeGenerated = useCallback(
     (_fullContent: string, newFiles: GeneratedFile[]) => {
       setFiles(newFiles);
-      if (newFiles.length > 0) {
-        setActiveFile(newFiles[0].path);
-      }
+      if (newFiles.length > 0) setActiveFile(newFiles[0].path);
       setRightTab("code");
-      addLog(`[AI] ${newFiles.length} fișier(e) generate`);
+      addLog(`[AI] ${newFiles.length} fisier(e) generate`);
     },
     [addLog]
   );
 
   const handleDeploy = useCallback(async () => {
     if (files.length === 0) return;
-
     setIsDeploying(true);
     setShowTerminal(true);
-    addLog("[E2B] Se creează sandbox-ul...");
-
+    addLog("[E2B] Se creeaza sandbox-ul...");
     try {
-      const createRes = await fetch("/api/sandbox", {
+      const res1 = await fetch("/api/sandbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create" }),
       });
-      const { sandboxId } = await createRes.json();
+      const { sandboxId } = await res1.json();
       addLog(`[E2B] Sandbox: ${sandboxId}`);
-
-      addLog("[E2B] Se scriu fișierele + npm install...");
-      const writeRes = await fetch("/api/sandbox", {
+      addLog("[E2B] Se scriu fisierele + npm install...");
+      const res2 = await fetch("/api/sandbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "write",
           sandboxId,
-          files: files.map((f) => ({
-            path: `/home/user/app/${f.path}`,
-            content: f.content,
-          })),
+          files: files.map((f) => ({ path: `/home/user/app/${f.path}`, content: f.content })),
         }),
       });
-      const { previewUrl: url, error } = await writeRes.json();
-
+      const { previewUrl: url, error } = await res2.json();
       if (error) {
         addLog(`[ERR] ${error}`);
       } else {
-        addLog(`[OK] Preview: ${url}`);
+        addLog(`[OK] ${url}`);
         setPreviewUrl(url);
         setRightTab("preview");
       }
@@ -100,11 +91,7 @@ export function Workspace() {
 
   const handleCodeChange = useCallback(
     (newCode: string) => {
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.path === activeFile ? { ...f, content: newCode } : f
-        )
-      );
+      setFiles((prev) => prev.map((f) => (f.path === activeFile ? { ...f, content: newCode } : f)));
     },
     [activeFile]
   );
@@ -117,113 +104,109 @@ export function Workspace() {
       <Header selectedModel={selectedModel} onModelChange={setSelectedModel} />
 
       <div className="flex flex-1 min-h-0">
-        {/* Left — Chat */}
-        <div
-          className={cn(
-            "border-r panel-border flex flex-col transition-all duration-300",
-            chatExpanded ? "w-[600px]" : "w-[380px] min-w-[340px]"
-          )}
-        >
+        {/* ===== LEFT: CHAT ===== */}
+        <div className={cn(
+          "flex flex-col border-r border-border/50 transition-all duration-300 shrink-0",
+          chatCollapsed ? "w-0 overflow-hidden border-r-0" : "w-[400px]"
+        )}>
           <ChatPanel selectedModel={selectedModel} onCodeGenerated={handleCodeGenerated} />
         </div>
 
-        {/* Right — Code/Preview + Terminal */}
+        {/* ===== RIGHT: CODE / PREVIEW ===== */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Tab bar */}
-          <div className="h-10 border-b bg-card/30 flex items-center justify-between px-1">
-            <div className="flex items-center">
-              <button
-                onClick={() => setRightTab("code")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 h-10 text-xs font-medium transition-colors border-b-2",
-                  rightTab === "code"
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Code2 className="w-3.5 h-3.5" />
-                Cod
-                {hasCode && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px]">
-                    {files.length}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setRightTab("preview")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 h-10 text-xs font-medium transition-colors border-b-2",
-                  rightTab === "preview"
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Eye className="w-3.5 h-3.5" />
-                Preview
-                {previewUrl && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                )}
-              </button>
-            </div>
+          {/* Toolbar */}
+          <div className="h-10 border-b border-border/50 bg-card/30 flex items-center px-1 shrink-0">
+            {/* Collapse chat */}
+            <button
+              onClick={() => setChatCollapsed(!chatCollapsed)}
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors ml-1"
+            >
+              {chatCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
 
-            <div className="flex items-center gap-1 pr-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setChatExpanded(!chatExpanded)}
-                className="h-7 w-7 p-0"
-              >
-                {chatExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
+            <div className="w-px h-5 bg-border/50 mx-1" />
+
+            {/* Tabs */}
+            <button
+              onClick={() => setRightTab("code")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 h-8 text-xs font-medium rounded-lg transition-all mx-0.5",
+                rightTab === "code"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+              )}
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              Cod
+              {hasCode && (
+                <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">{files.length}</span>
+              )}
+            </button>
+            <button
+              onClick={() => setRightTab("preview")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 h-8 text-xs font-medium rounded-lg transition-all mx-0.5",
+                rightTab === "preview"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+              )}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Preview
+              {previewUrl && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+            </button>
+
+            {/* Right side actions */}
+            <div className="ml-auto flex items-center gap-1 pr-2">
+              <button
                 onClick={() => setShowTerminal(!showTerminal)}
-                className={cn("h-7 text-xs gap-1.5", showTerminal && "bg-accent")}
+                className={cn(
+                  "flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs transition-all",
+                  showTerminal
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                )}
               >
                 <TerminalSquare className="w-3.5 h-3.5" />
-                Terminal
-              </Button>
-              <Button
-                size="sm"
+                <span className="hidden sm:inline">Terminal</span>
+              </button>
+
+              <button
                 onClick={handleDeploy}
                 disabled={!hasCode || isDeploying}
-                className="h-7 text-xs gap-1.5 glow-blue"
-              >
-                {isDeploying ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Play className="w-3.5 h-3.5" />
+                className={cn(
+                  "flex items-center gap-1.5 h-7 px-3 rounded-lg text-xs font-medium transition-all",
+                  hasCode && !isDeploying
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:shadow-indigo-500/20 glow-primary-sm"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
                 )}
-                {isDeploying ? "Se rulează..." : "Rulează"}
-              </Button>
+              >
+                {isDeploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                {isDeploying ? "Ruleaza..." : "Ruleaza"}
+              </button>
             </div>
           </div>
 
-          {/* Content area */}
+          {/* Content */}
           <div className="flex-1 min-h-0">
             {rightTab === "code" ? (
               <div className="flex flex-col h-full">
                 {hasCode && (
-                  <div className="border-b bg-muted/20">
+                  <div className="border-b border-border/50 bg-card/20">
                     <FileTab files={files} activeFile={activeFile} onSelect={setActiveFile} />
                   </div>
                 )}
                 {hasCode ? (
                   <div className="flex-1 min-h-0">
-                    <CodeEditor
-                      code={activeContent}
-                      filename={activeFile}
-                      onChange={handleCodeChange}
-                    />
+                    <CodeEditor code={activeContent} filename={activeFile} onChange={handleCodeChange} />
                   </div>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-                    <Code2 className="w-10 h-10 opacity-20 mb-3" />
-                    <p className="text-sm font-medium">Editor de cod</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">
-                      Codul generat de AI va apărea aici
-                    </p>
+                  <div className="flex-1 flex flex-col items-center justify-center animate-fade-in-up">
+                    <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4 border border-border/30">
+                      <Code2 className="w-7 h-7 text-muted-foreground/20" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Editor de cod</p>
+                    <p className="text-[12px] text-muted-foreground/40 mt-1">Codul generat de AI va aparea aici</p>
                   </div>
                 )}
               </div>
@@ -234,7 +217,7 @@ export function Workspace() {
 
           {/* Terminal */}
           {showTerminal && (
-            <div className="h-[180px] border-t">
+            <div className="h-[180px] border-t border-border/50 shrink-0">
               <Terminal logs={terminalLogs} />
             </div>
           )}

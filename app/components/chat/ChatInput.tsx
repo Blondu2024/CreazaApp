@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { ArrowUp, Square } from "lucide-react";
 import { type FormEvent, useRef, useEffect } from "react";
 
@@ -12,75 +11,60 @@ interface ChatInputProps {
   onStop: () => void;
 }
 
-export function ChatInput({
-  input,
-  isLoading,
-  onInputChange,
-  onSubmit,
-  onStop,
-}: ChatInputProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+export function ChatInput({ input, isLoading, onInputChange, onSubmit, onStop }: ChatInputProps) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => { ref.current?.focus(); }, []);
 
   useEffect(() => {
-    textareaRef.current?.focus();
-  }, []);
-
-  // Auto-resize textarea
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = Math.min(textarea.scrollHeight, 150) + "px";
-    }
+    const el = ref.current;
+    if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 140) + "px"; }
   }, [input]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (!isLoading && input.trim()) {
-        onSubmit(e as unknown as FormEvent);
-      }
+      if (!isLoading && input.trim()) onSubmit(e as unknown as FormEvent);
     }
   };
 
   return (
-    <form onSubmit={onSubmit} className="p-3 pt-0">
-      <div className="relative flex items-end rounded-xl border bg-card/50 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Descrie aplicația pe care vrei să o creez..."
-          className="flex-1 bg-transparent text-sm py-3 px-4 pr-12 resize-none outline-none placeholder:text-muted-foreground/50 max-h-[150px]"
-          rows={1}
-        />
-        <div className="absolute right-2 bottom-2">
-          {isLoading ? (
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              onClick={onStop}
-              className="h-7 w-7 rounded-lg hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Square className="w-3.5 h-3.5" fill="currentColor" />
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              size="icon"
-              disabled={!input.trim()}
-              className="h-7 w-7 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:bg-muted"
-            >
-              <ArrowUp className="w-4 h-4" />
-            </Button>
-          )}
+    <div className="p-3">
+      <form onSubmit={onSubmit} className="relative">
+        <div className="relative rounded-xl border border-border/50 bg-card/80 focus-within:border-primary/40 focus-within:shadow-[0_0_0_1px_rgba(99,102,241,0.15)] transition-all">
+          <textarea
+            ref={ref}
+            value={input}
+            onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={onKey}
+            placeholder="Descrie ce vrei sa construiesti..."
+            className="w-full bg-transparent text-sm py-3 pl-4 pr-12 resize-none outline-none placeholder:text-muted-foreground/40 max-h-[140px] leading-relaxed"
+            rows={1}
+          />
+          <div className="absolute right-2 bottom-2">
+            {isLoading ? (
+              <button
+                type="button"
+                onClick={onStop}
+                className="h-7 w-7 rounded-lg flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+              >
+                <Square className="w-3 h-3" fill="currentColor" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="h-7 w-7 rounded-lg flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white disabled:opacity-20 disabled:from-muted disabled:to-muted hover:shadow-lg hover:shadow-indigo-500/20 transition-all"
+              >
+                <ArrowUp className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-      <p className="text-[11px] text-muted-foreground/40 text-center mt-2">
-        Enter pentru a trimite &middot; Shift+Enter pentru linie nouă
+      </form>
+      <p className="text-[10px] text-muted-foreground/30 text-center mt-1.5 select-none">
+        Enter trimite &middot; Shift+Enter linie noua
       </p>
-    </form>
+    </div>
   );
 }

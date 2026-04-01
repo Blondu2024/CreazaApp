@@ -1,7 +1,6 @@
 "use client";
 
-import { RefreshCw, ExternalLink, Globe, Smartphone, Monitor } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { RefreshCw, ExternalLink, Globe, Smartphone, Monitor, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -16,22 +15,22 @@ export function Preview({ url, isLoading }: PreviewProps) {
 
   if (!url) {
     return (
-      <div className="h-full flex items-center justify-center text-muted-foreground">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto">
-            <Globe className="w-6 h-6 opacity-40" />
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center space-y-3 animate-fade-in-up">
+          <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto border border-border/30">
+            {isLoading
+              ? <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              : <Globe className="w-6 h-6 text-muted-foreground/30" />
+            }
           </div>
           <div>
-            <p className="text-sm font-medium">
-              {isLoading ? "Se pregătește preview-ul..." : "Live Preview"}
+            <p className="text-sm font-medium text-muted-foreground">
+              {isLoading ? "Se porneste sandbox-ul..." : "Live Preview"}
             </p>
-            <p className="text-xs text-muted-foreground/60 mt-1">
-              {isLoading ? "Sandbox E2B se inițializează" : "Apasă \"Rulează\" pentru a vedea rezultatul"}
+            <p className="text-[12px] text-muted-foreground/40 mt-1">
+              {isLoading ? "E2B se initializeaza" : "Apasa Ruleaza dupa ce AI genereaza codul"}
             </p>
           </div>
-          {isLoading && (
-            <RefreshCw className="w-5 h-5 mx-auto animate-spin text-primary/50" />
-          )}
         </div>
       </div>
     );
@@ -40,56 +39,49 @@ export function Preview({ url, isLoading }: PreviewProps) {
   return (
     <div className="h-full flex flex-col">
       {/* Browser chrome */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30">
-        <div className="flex gap-1.5 mr-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-          <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-          <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-card/50">
+        {/* Traffic lights */}
+        <div className="flex gap-1.5 mr-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
         </div>
-        <div className="flex-1 flex items-center gap-1.5 bg-background/50 rounded-md px-2.5 py-1 text-xs">
-          <Globe className="w-3 h-3 text-green-500 shrink-0" />
-          <span className="truncate text-muted-foreground">{url}</span>
+        {/* URL bar */}
+        <div className="flex-1 flex items-center gap-1.5 bg-muted/50 rounded-md px-2.5 py-1 text-[11px] border border-border/30">
+          <Globe className="w-3 h-3 text-emerald-500 shrink-0" />
+          <span className="truncate text-muted-foreground font-mono">{url}</span>
         </div>
+        {/* Controls */}
         <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", viewport === "desktop" && "bg-accent")}
+          <button
             onClick={() => setViewport("desktop")}
+            className={cn("h-6 w-6 rounded flex items-center justify-center transition-colors", viewport === "desktop" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground")}
           >
             <Monitor className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", viewport === "mobile" && "bg-accent")}
+          </button>
+          <button
             onClick={() => setViewport("mobile")}
+            className={cn("h-6 w-6 rounded flex items-center justify-center transition-colors", viewport === "mobile" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground")}
           >
             <Smartphone className="w-3.5 h-3.5" />
-          </Button>
-          <div className="w-px h-4 bg-border mx-1" />
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setKey((k) => k + 1)}>
+          </button>
+          <div className="w-px h-4 bg-border/50 mx-0.5" />
+          <button onClick={() => setKey((k) => k + 1)} className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <RefreshCw className="w-3.5 h-3.5" />
-          </Button>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-accent transition-colors"
-          >
+          </button>
+          <a href={url} target="_blank" rel="noopener noreferrer" className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>
-
       {/* iframe */}
-      <div className="flex-1 flex items-start justify-center bg-muted/10 overflow-hidden">
+      <div className="flex-1 flex items-start justify-center bg-[#1a1a24] overflow-hidden">
         <iframe
           key={key}
           src={url}
           className={cn(
             "h-full border-0 bg-white transition-all duration-300",
-            viewport === "mobile" ? "w-[375px] rounded-lg shadow-xl my-2 mx-auto" : "w-full"
+            viewport === "mobile" ? "w-[375px] rounded-xl shadow-2xl shadow-black/40 my-3" : "w-full"
           )}
           title="Preview"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
