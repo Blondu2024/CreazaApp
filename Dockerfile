@@ -57,8 +57,8 @@ FROM prod-deps AS bolt-ai-production
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=5173
 ENV HOST=0.0.0.0
+# PORT is set by Railway at runtime — don't hardcode it
 
 # Non-sensitive build arguments
 ARG VITE_LOG_LEVEL=debug
@@ -80,11 +80,11 @@ COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=prod-deps /app/package.json /app/package.json
 COPY --from=prod-deps /app/server.mjs /app/server.mjs
 
-EXPOSE 5173
+EXPOSE 8080
 
-# Healthcheck for deployment platforms
+# Healthcheck uses $PORT so it works regardless of which port Railway assigns
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=5 \
-  CMD curl -fsS http://localhost:5173/ || exit 1
+  CMD curl -fsS http://localhost:${PORT:-8080}/ || exit 1
 
 # Start with Node.js server (not Wrangler)
 CMD ["node", "server.mjs"]
