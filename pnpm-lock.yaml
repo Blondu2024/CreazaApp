@@ -107,6 +107,9 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.1
         version: 1.2.1
+      '@lifo-sh/core':
+        specifier: ^0.5.5
+        version: 0.5.5
       '@modelcontextprotocol/sdk':
         specifier: ^1.15.0
         version: 1.16.0
@@ -2199,6 +2202,14 @@ packages:
 
   '@lezer/sass@1.1.0':
     resolution: {integrity: sha512-3mMGdCTUZ/84ArHOuXWQr37pnf7f+Nw9ycPUeKX+wu19b7pSMcZGLbaXwvD2APMBDOGxPmpK/O6S1v1EvLoqgQ==}
+
+  '@lifo-sh/core@0.5.5':
+    resolution: {integrity: sha512-sZnDt/vr8ahh+QSgFjI4OAvKScdWA/9ER8sQTGJ8cxqyqY2s2dIx0NIEnfY+1a112sYFOhs5Wx/+/z83p9REbQ==}
+    peerDependencies:
+      '@lifo-sh/ui': 0.5.0
+    peerDependenciesMeta:
+      '@lifo-sh/ui':
+        optional: true
 
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
@@ -8345,6 +8356,18 @@ packages:
       utf-8-validate:
         optional: true
 
+  ws@8.20.0:
+    resolution: {integrity: sha512-sAt8BhgNbzCtgGbt2OxmpuryO63ZoDk/sqaB/znQm94T4fCEsy/yV+7CdC1kJhOU9lboAEU7R3kquuycDoibVA==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   xml-name-validator@5.0.0:
     resolution: {integrity: sha512-EvGK8EJ3DhaHfbRlETOWAS5pO9MZITeauHKJyb8wyajUfQUenkIg2MvLDTZ4T/TgIcm3HU0TFBgWWboAZ30UHg==}
     engines: {node: '>=18'}
@@ -10261,6 +10284,13 @@ snapshots:
       '@lezer/common': 1.2.3
       '@lezer/highlight': 1.2.1
       '@lezer/lr': 1.4.2
+
+  '@lifo-sh/core@0.5.5':
+    dependencies:
+      ws: 8.20.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:
@@ -14381,7 +14411,7 @@ snapshots:
   importx@0.4.4:
     dependencies:
       bundle-require: 5.1.0(esbuild@0.23.1)
-      debug: 4.4.1
+      debug: 4.4.3
       esbuild: 0.23.1
       jiti: 2.0.0-beta.3
       jiti-v1: jiti@1.21.7
@@ -15443,7 +15473,7 @@ snapshots:
   micromark@3.2.0:
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.4.1
+      debug: 4.4.3
       decode-named-character-reference: 1.2.0
       micromark-core-commonmark: 1.1.0
       micromark-factory-space: 1.1.0
@@ -17855,6 +17885,8 @@ snapshots:
   ws@8.18.0: {}
 
   ws@8.18.3: {}
+
+  ws@8.20.0: {}
 
   xml-name-validator@5.0.0: {}
 

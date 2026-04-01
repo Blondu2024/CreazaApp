@@ -78,6 +78,7 @@
     "@heroicons/react": "^2.2.0",
     "@iconify-json/svg-spinners": "^1.2.1",
     "@lezer/highlight": "^1.2.1",
+    "@lifo-sh/core": "^0.5.5",
     "@modelcontextprotocol/sdk": "^1.15.0",
     "@nanostores/react": "^0.7.3",
     "@octokit/rest": "^21.0.2",
