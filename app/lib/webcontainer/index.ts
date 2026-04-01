@@ -1,8 +1,5 @@
 /**
- * Runtime adapter — Lifo browser sandbox replaces E2B / WebContainers
- *
- * Lifo runs entirely in the browser: no server, no cloud sandbox, no license fees.
- * MIT licensed, free at any scale, sub-ms latency.
+ * Runtime adapter — E2B Sandbox (cloud) for code execution and preview
  *
  * This module exports the same interface as before (webcontainer, webcontainerContext)
  * so all other files continue to work unchanged.
@@ -21,7 +18,7 @@ if (import.meta.hot) {
   import.meta.hot.data.webcontainerContext = webcontainerContext;
 }
 
-// Export as 'any' since LifoSandboxAdapter mimics WebContainer but isn't the exact TS type
+// Export as 'any' since E2BSandboxAdapter mimics WebContainer but isn't the exact TS type
 export let webcontainer: Promise<any> = new Promise(() => {
   // noop for ssr
 });
@@ -32,9 +29,9 @@ if (!import.meta.env.SSR) {
     Promise.resolve()
       .then(async () => {
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        const { LifoSandboxAdapter } = await import('~/lib/lifo/sandbox');
+        const { E2BSandboxAdapter } = await import('~/lib/e2b/sandbox');
 
-        return LifoSandboxAdapter.boot({
+        return E2BSandboxAdapter.boot({
           workdirName: WORK_DIR_NAME,
         });
       })
@@ -45,15 +42,15 @@ if (!import.meta.env.SSR) {
         void import('~/lib/stores/workbench');
 
         sandbox.on('server-ready', (port: number, url: string) => {
-          console.log(`[Lifo] Preview available at port ${port}: ${url}`);
+          console.log(`[E2B] Preview available at port ${port}: ${url}`);
         });
 
-        console.log('[Lifo] Sandbox ready, workdir:', sandbox.workdir);
+        console.log('[E2B] Sandbox ready, workdir:', sandbox.workdir);
 
         return sandbox;
       })
       .catch((error) => {
-        console.error('[Lifo] Failed to create sandbox:', error);
+        console.error('[E2B] Failed to create sandbox:', error);
         throw error;
       });
 
