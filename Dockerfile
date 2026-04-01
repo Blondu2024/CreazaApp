@@ -52,12 +52,13 @@ RUN mkdir -p /app/run
 CMD ["pnpm", "run", "dev", "--host"]
 
 
+# Cache bust: 2026-04-01T15:30:00Z
 # ---- production stage (DEFAULT — must be last) ----
 FROM prod-deps AS bolt-ai-production
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=5173
+ENV PORT=8080
 ENV HOST=0.0.0.0
 
 # Non-sensitive build arguments
@@ -80,11 +81,11 @@ COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=prod-deps /app/package.json /app/package.json
 COPY --from=prod-deps /app/server.mjs /app/server.mjs
 
-EXPOSE 5173
+EXPOSE 8080
 
 # Healthcheck for deployment platforms
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=5 \
-  CMD curl -fsS http://localhost:5173/ || exit 1
+  CMD curl -fsS http://localhost:8080/ || exit 1
 
 # Start with Node.js server (not Wrangler)
 CMD ["node", "server.mjs"]
