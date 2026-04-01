@@ -5,15 +5,7 @@ export const openrouter = createOpenAI({
   baseURL: "https://openrouter.ai/api/v1",
 });
 
-export const DEFAULT_MODEL = "google/gemini-2.0-flash-exp";
-
-export const AVAILABLE_MODELS = [
-  { id: "google/gemini-2.0-flash-exp", name: "Gemini 2.0 Flash", tier: "free" },
-  { id: "qwen/qwen3-coder", name: "Qwen3 Coder", tier: "free" },
-  { id: "deepseek/deepseek-r1", name: "DeepSeek R1", tier: "free" },
-  { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4", tier: "pro" },
-  { id: "openai/gpt-4.1", name: "GPT-4.1", tier: "pro" },
-] as const;
+export const DEFAULT_MODEL = "qwen/qwen3.6-plus-preview:free";
 
 export const SYSTEM_PROMPT = `Ești un asistent AI expert în crearea aplicațiilor web.
 Răspunzi în limba română, dar scrii codul în engleză.

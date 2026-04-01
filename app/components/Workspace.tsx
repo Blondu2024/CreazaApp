@@ -34,7 +34,7 @@ export function Workspace() {
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const [showTerminal, setShowTerminal] = useState(false);
   const [rightTab, setRightTab] = useState<RightTab>("code");
-  const [selectedModel, setSelectedModel] = useState("google/gemini-2.0-flash-exp");
+  const [selectedModel, setSelectedModel] = useState("qwen/qwen3.6-plus-preview:free");
   const [chatCollapsed, setChatCollapsed] = useState(false);
 
   const addLog = useCallback((msg: string) => {
