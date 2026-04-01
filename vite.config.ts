@@ -22,11 +22,6 @@ export default defineConfig((config) => {
     build: {
       target: 'esnext',
     },
-    ssr: {
-      resolve: {
-        conditions: ['workerd', 'worker', 'browser'],
-      },
-    },
     plugins: [
       nodePolyfills({
         include: ['buffer', 'process', 'stream'],
