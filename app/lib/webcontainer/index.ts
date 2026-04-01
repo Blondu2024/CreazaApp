@@ -1,9 +1,10 @@
 /**
- * Runtime adapter — E2B Sandbox (cloud) for code execution and preview
+ * WebContainer runtime — runs Node.js directly in the browser.
  *
- * This module exports the same interface as before (webcontainer, webcontainerContext)
- * so all other files continue to work unchanged.
+ * No API keys, no cloud sandbox, no server dependency.
+ * This is the original bolt.diy approach that just works.
  */
+import { WebContainer } from '@webcontainer/api';
 import { WORK_DIR_NAME } from '~/utils/constants';
 
 interface WebContainerContext {
@@ -18,8 +19,7 @@ if (import.meta.hot) {
   import.meta.hot.data.webcontainerContext = webcontainerContext;
 }
 
-// Export as 'any' since E2BSandboxAdapter mimics WebContainer but isn't the exact TS type
-export let webcontainer: Promise<any> = new Promise(() => {
+export let webcontainer: Promise<WebContainer> = new Promise(() => {
   // noop for ssr
 });
 
@@ -27,30 +27,25 @@ if (!import.meta.env.SSR) {
   webcontainer =
     import.meta.hot?.data.webcontainer ??
     Promise.resolve()
-      .then(async () => {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        const { E2BSandboxAdapter } = await import('~/lib/e2b/sandbox');
-
-        return E2BSandboxAdapter.boot({
-          workdirName: WORK_DIR_NAME,
-        });
+      .then(() => {
+        return WebContainer.boot({ workdirName: WORK_DIR_NAME });
       })
-      .then(async (sandbox) => {
+      .then(async (wc) => {
         webcontainerContext.loaded = true;
 
         // workbenchStore loaded for side effects
         void import('~/lib/stores/workbench');
 
-        sandbox.on('server-ready', (port: number, url: string) => {
-          console.log(`[E2B] Preview available at port ${port}: ${url}`);
+        wc.on('server-ready', (port: number, url: string) => {
+          console.log(`[WebContainer] Preview at port ${port}: ${url}`);
         });
 
-        console.log('[E2B] Sandbox ready, workdir:', sandbox.workdir);
+        console.log('[WebContainer] Ready');
 
-        return sandbox;
+        return wc;
       })
       .catch((error) => {
-        console.error('[E2B] Failed to create sandbox:', error);
+        console.error('[WebContainer] Failed to boot:', error);
         throw error;
       });
 
