@@ -31,10 +31,6 @@ const build = await import('./build/server/index.js');
 const handler = createRequestHandler(build, process.env.NODE_ENV);
 
 const server = createServer(async (req, res) => {
-  // WebContainers require cross-origin isolation on ALL responses
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
   // Serve static files from build/client

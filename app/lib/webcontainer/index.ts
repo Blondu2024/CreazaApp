@@ -1,10 +1,9 @@
 /**
- * WebContainer runtime — runs Node.js directly in the browser.
+ * Runtime adapter — E2B Sandbox (cloud) for code execution and preview
  *
- * No API keys, no cloud sandbox, no server dependency.
- * This is the original bolt.diy approach that just works.
+ * E2B runs code on cloud sandboxes: fast npm install, real dev servers,
+ * instant preview. No browser limitations.
  */
-import { WebContainer } from '@webcontainer/api';
 import { WORK_DIR_NAME } from '~/utils/constants';
 
 interface WebContainerContext {
@@ -19,7 +18,7 @@ if (import.meta.hot) {
   import.meta.hot.data.webcontainerContext = webcontainerContext;
 }
 
-export let webcontainer: Promise<WebContainer> = new Promise(() => {
+export let webcontainer: Promise<any> = new Promise(() => {
   // noop for ssr
 });
 
@@ -27,25 +26,29 @@ if (!import.meta.env.SSR) {
   webcontainer =
     import.meta.hot?.data.webcontainer ??
     Promise.resolve()
-      .then(() => {
-        return WebContainer.boot({ workdirName: WORK_DIR_NAME });
+      .then(async () => {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        const { E2BSandboxAdapter } = await import('~/lib/e2b/sandbox');
+
+        return E2BSandboxAdapter.boot({
+          workdirName: WORK_DIR_NAME,
+        });
       })
-      .then(async (wc) => {
+      .then(async (sandbox) => {
         webcontainerContext.loaded = true;
 
-        // workbenchStore loaded for side effects
         void import('~/lib/stores/workbench');
 
-        wc.on('server-ready', (port: number, url: string) => {
-          console.log(`[WebContainer] Preview at port ${port}: ${url}`);
+        sandbox.on('server-ready', (port: number, url: string) => {
+          console.log(`[E2B] Preview available at port ${port}: ${url}`);
         });
 
-        console.log('[WebContainer] Ready');
+        console.log('[E2B] Sandbox ready, workdir:', sandbox.workdir);
 
-        return wc;
+        return sandbox;
       })
       .catch((error) => {
-        console.error('[WebContainer] Failed to boot:', error);
+        console.error('[E2B] Failed to create sandbox:', error);
         throw error;
       });
 

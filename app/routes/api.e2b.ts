@@ -8,19 +8,14 @@ import { type ActionFunctionArgs, json } from '@remix-run/node';
 import { Sandbox } from '@e2b/sdk';
 
 /*
- * Read API key at runtime from real Node.js process.env.
+ * E2B API key — baked at Docker build time via VITE_E2B_API_KEY env var.
  *
- * vite-plugin-node-polyfills replaces module-scope `process` with a browser
- * shim that has an empty env object. But `globalThis.process` in Node.js
- * still points to the real process. Bracket notation prevents Vite from
- * rewriting the access.
+ * Railway injects service variables as Docker build args.
+ * Vite bakes VITE_*-prefixed vars into import.meta.env at build time.
+ * This bypasses the vite-plugin-node-polyfills issue with process.env.
  */
-
 function getE2BApiKey(): string | undefined {
-  const g = globalThis as unknown as Record<string, any>;
-
-  // eslint-disable-next-line dot-notation
-  return g['process']?.['env']?.['E2B_API_KEY'] || import.meta.env.VITE_E2B_API_KEY;
+  return import.meta.env.VITE_E2B_API_KEY;
 }
 
 // Keep track of active sandboxes

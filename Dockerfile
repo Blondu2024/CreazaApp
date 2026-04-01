@@ -13,9 +13,15 @@ RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 RUN apt-get update && apt-get install -y --no-install-recommends git \
   && rm -rf /var/lib/apt/lists/*
 
-# Accept (optional) build-time public URL for Remix/Vite (Coolify can pass it)
+# Accept build-time variables from Railway (injected as Docker build args)
 ARG VITE_PUBLIC_APP_URL
+ARG E2B_API_KEY
+ARG VITE_E2B_API_KEY
+ARG OPEN_ROUTER_API_KEY
 ENV VITE_PUBLIC_APP_URL=${VITE_PUBLIC_APP_URL}
+ENV E2B_API_KEY=${E2B_API_KEY}
+ENV VITE_E2B_API_KEY=${VITE_E2B_API_KEY}
+ENV OPEN_ROUTER_API_KEY=${OPEN_ROUTER_API_KEY}
 
 # Install deps efficiently
 COPY package.json pnpm-lock.yaml* ./
