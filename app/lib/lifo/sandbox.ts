@@ -405,4 +405,38 @@ export class LifoSandboxAdapter {
   get sandboxId(): string {
     return 'lifo-browser';
   }
+
+  /**
+   * WebContainer internal API compatibility shim.
+   * Provides watchPaths and textSearch used by FilesStore and Search component.
+   */
+  get internal() {
+    const sandbox = this._sandbox;
+    const workdir = this.workdir;
+
+    return {
+      watchPaths(
+        _options: { include: string[]; exclude: string[]; includeContent?: boolean },
+        _callback: (events: any[]) => void,
+      ) {
+        /*
+         * Lifo VFS doesn't expose a watch API yet — no-op for now.
+         * File changes made through the adapter are already tracked by the stores.
+         */
+      },
+
+      async textSearch(query: string, _options: any, _progressCallback: (results: any) => void) {
+        // Basic text search via grep
+        try {
+          const result = await sandbox.commands.run(`grep -rn "${query}" ${workdir} --include='*.*' || true`, {
+            timeout: 10000,
+          });
+
+          return { results: result.stdout };
+        } catch {
+          return { results: '' };
+        }
+      },
+    };
+  }
 }
