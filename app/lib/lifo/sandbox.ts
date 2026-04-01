@@ -33,6 +33,7 @@ class LifoInteractiveShell {
   private _cwd: string;
   private _inputBuffer = '';
   private _executing = false;
+  private _currentAbort: AbortController | null = null;
 
   constructor(sandbox: Sandbox, cwd: string) {
     this._sandbox = sandbox;
@@ -44,8 +45,16 @@ class LifoInteractiveShell {
       },
     });
 
+    /*
+     * IMPORTANT: input handler must NOT return a Promise that blocks.
+     * If it did, WritableStream would block further writes (including Ctrl+C)
+     * while a long command (npm install) runs. We use synchronous returns
+     * and fire-and-forget for command execution.
+     */
     this.input = new WritableStream<string>({
-      write: (chunk) => this._handleInput(chunk),
+      write: (chunk) => {
+        this._handleInput(chunk);
+      },
     });
 
     // Shell never exits unless killed
@@ -63,16 +72,26 @@ class LifoInteractiveShell {
     this._outputController.enqueue('\x1b]654;prompt\x07');
   }
 
-  private async _handleInput(data: string) {
-    // Ctrl+C — interrupt
+  private _handleInput(data: string) {
+    // Ctrl+C — interrupt running command
     if (data.includes('\x03')) {
       this._inputBuffer = '';
+
+      if (this._currentAbort) {
+        this._currentAbort.abort();
+        this._currentAbort = null;
+      }
 
       if (!this._executing) {
         this._outputController.enqueue('^C\r\n');
         this._emitPrompt();
       }
 
+      return;
+    }
+
+    // Don't accept input while a command is executing
+    if (this._executing) {
       return;
     }
 
@@ -85,10 +104,11 @@ class LifoInteractiveShell {
       this._outputController.enqueue('\r\n');
 
       if (command) {
-        await this._executeCommand(command);
+        // Fire-and-forget — don't block the WritableStream
+        this._executeCommand(command);
+      } else {
+        this._emitPrompt();
       }
-
-      this._emitPrompt();
 
       return;
     }
@@ -99,10 +119,12 @@ class LifoInteractiveShell {
 
   private async _executeCommand(command: string) {
     this._executing = true;
+    this._currentAbort = new AbortController();
 
     try {
       const result = await this._sandbox.commands.run(command, {
         cwd: this._cwd,
+        signal: this._currentAbort.signal,
         onStdout: (d: string) => this._outputController.enqueue(d),
         onStderr: (d: string) => this._outputController.enqueue(d),
       });
@@ -117,6 +139,8 @@ class LifoInteractiveShell {
       this._outputController.enqueue('\x1b]654;exitCode=1\x07');
     } finally {
       this._executing = false;
+      this._currentAbort = null;
+      this._emitPrompt();
     }
   }
 
