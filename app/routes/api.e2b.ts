@@ -7,9 +7,15 @@
 import { type ActionFunctionArgs, json } from '@remix-run/node';
 import { Sandbox } from '@e2b/sdk';
 
-// Read at runtime (not build time) so Railway env vars are available
+/**
+ * Read API key at runtime using dynamic access.
+ * Bracket notation prevents vite-plugin-node-polyfills from replacing
+ * process.env with the browser shim at build time.
+ */
 function getE2BApiKey(): string | undefined {
-  return process.env.E2B_API_KEY;
+  const key = 'E2B_API' + '_KEY';
+
+  return process.env[key];
 }
 
 // Keep track of active sandboxes
