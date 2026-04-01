@@ -22,6 +22,9 @@ export default defineConfig((config) => {
     build: {
       target: 'esnext',
     },
+    ssr: {
+      noExternal: ['react-dom'],
+    },
     plugins: [
       nodePolyfills({
         include: ['buffer', 'process', 'stream'],
