@@ -20,7 +20,7 @@ function getE2BApiKey(): string | undefined {
   const g = globalThis as unknown as Record<string, any>;
 
   // eslint-disable-next-line dot-notation
-  return g['process']?.['env']?.['E2B_API_KEY'];
+  return g['process']?.['env']?.['E2B_API_KEY'] || import.meta.env.VITE_E2B_API_KEY;
 }
 
 // Keep track of active sandboxes
