@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   // Allow E2B sandbox preview URLs in iframes
   async headers() {
     return [
