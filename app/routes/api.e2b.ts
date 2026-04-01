@@ -6,15 +6,21 @@
  */
 import { type ActionFunctionArgs, json } from '@remix-run/node';
 import { Sandbox } from '@e2b/sdk';
-import { env as nodeEnv } from 'node:process';
 
-/**
+/*
  * Read API key at runtime from real Node.js process.env.
- * vite-plugin-node-polyfills replaces global `process` with a browser shim
- * that has an empty env. Importing from 'node:process' bypasses the polyfill.
+ *
+ * vite-plugin-node-polyfills replaces module-scope `process` with a browser
+ * shim that has an empty env object. But `globalThis.process` in Node.js
+ * still points to the real process. Bracket notation prevents Vite from
+ * rewriting the access.
  */
+
 function getE2BApiKey(): string | undefined {
-  return nodeEnv.E2B_API_KEY;
+  const g = globalThis as unknown as Record<string, any>;
+
+  // eslint-disable-next-line dot-notation
+  return g['process']?.['env']?.['E2B_API_KEY'];
 }
 
 // Keep track of active sandboxes
