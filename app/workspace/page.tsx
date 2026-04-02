@@ -110,7 +110,6 @@ export default function WorkspacePage() {
   const [files, setFiles] = useState<{ path: string; content: string }[]>([]);
   const [activeFile, setActiveFile] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const isRunning = false;
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [previewKey, setPreviewKey] = useState(0);
@@ -127,8 +126,16 @@ export default function WorkspacePage() {
         if (parsed.length > 0) {
           setFiles(parsed);
           setActiveFile(parsed[0].path);
-          setActiveTab("code");
           addLog(`[AI] ${parsed.length} fișier(e) generate`);
+
+          // Auto-preview
+          const html = buildPreviewHtml(parsed);
+          if (html) {
+            setPreviewHtml(html);
+            setPreviewUrl("preview.creazaapp.local");
+            setActiveTab("preview");
+            addLog("[OK] Preview generat automat");
+          }
         }
       }
     }, [addLog]),
@@ -208,9 +215,9 @@ export default function WorkspacePage() {
           <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] rounded-lg">
             <Download className="w-4 h-4" />
           </button>
-          <button onClick={handleRun} disabled={!hasCode || isRunning} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-4 py-1.5 rounded-lg text-sm font-medium btn-primary-glow disabled:opacity-40">
-            {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-            {isRunning ? "Se rulează..." : "Rulează"}
+          <button onClick={handleRun} disabled={!hasCode} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-4 py-1.5 rounded-lg text-sm font-medium btn-primary-glow disabled:opacity-40">
+            <RefreshCw className="w-4 h-4" />
+            Reîncarcă
           </button>
         </div>
       </header>
@@ -323,9 +330,9 @@ export default function WorkspacePage() {
               <button onClick={() => setIsTerminalOpen(!isTerminalOpen)} className={cn("p-1.5 rounded", isTerminalOpen ? "bg-[#111118] text-[#e2e8f0]" : "text-[#64748b]")}>
                 <TerminalIcon className="w-4 h-4" />
               </button>
-              <button onClick={handleRun} disabled={!hasCode || isRunning} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
-                {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                Rulează
+              <button onClick={handleRun} disabled={!hasCode} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
+                <RefreshCw className="w-3.5 h-3.5" />
+                Reîncarcă
               </button>
             </div>
           </div>
@@ -393,8 +400,8 @@ export default function WorkspacePage() {
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center">
                     <Globe className="w-12 h-12 text-[#64748b]/20 mb-3" />
-                    <p className="text-sm text-[#64748b]">{isRunning ? "Se pornește sandbox-ul..." : "Apasă Rulează pentru preview"}</p>
-                    {isRunning && <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin mt-2" />}
+                    <p className="text-sm text-[#64748b]">{isLoading ? "AI-ul generează codul..." : "Scrie un prompt și preview-ul apare automat"}</p>
+                    {isLoading && <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin mt-2" />}
                   </div>
                 )}
               </div>
