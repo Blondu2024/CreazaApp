@@ -177,18 +177,24 @@ export default function WorkspacePage() {
   const modelRef = useRef(selectedModel);
   modelRef.current = selectedModel;
 
+  // Track all chat messages locally (restored + new)
+  const [allChatMessages, setAllChatMessages] = useState<{ role: string; content: string }[]>([]);
+
   const { messages, sendMessage, stop, status, setMessages, error } = useChat({
     id: "workspace-chat",
     onFinish: useCallback(({ message }: { message: UIMessage }) => {
       if (message.role === "assistant") {
         const text = getTextFromMessage(message);
+
+        // Save to local display list
+        setAllChatMessages((prev) => [...prev, { role: "assistant", content: text }]);
+
         const parsed = parseCodeBlocks(text);
         if (parsed.length > 0) {
           setFiles(parsed);
           setActiveFile(parsed[0].path);
           setTerminalLogs((p) => [...p, `[AI] ${parsed.length} fișier(e) generate`]);
 
-          // Auto-preview
           const html = buildPreviewHtml(parsed);
           if (html) {
             setPreviewHtml(html);
@@ -196,16 +202,22 @@ export default function WorkspacePage() {
             setActiveTab("preview");
             setTerminalLogs((p) => [...p, "[OK] Preview generat automat"]);
           }
-
-          // Save AI response to Supabase
-          const proj = currentProjectRef.current;
-          if (proj) {
-            saveChatMessage(proj.id, "assistant", text);
-          }
         }
+
+        // Save to Supabase
+        const proj = currentProjectRef.current;
+        if (proj) saveChatMessage(proj.id, "assistant", text);
       }
     }, []),
   });
+
+  // Clear useChat messages after response is done so next request is clean
+  useEffect(() => {
+    if (status === "ready" && messages.length > 0) {
+      const timer = setTimeout(() => setMessages([]), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [status, messages.length, setMessages]);
 
   const isLoading = status === "streaming" || status === "submitted";
 
@@ -228,7 +240,7 @@ export default function WorkspacePage() {
     }
 
     const chatHistory = await loadChatHistory(proj.id);
-    setRestoredMessages(chatHistory.map((m) => ({ role: m.role, content: m.content })));
+    setAllChatMessages(chatHistory.map((m) => ({ role: m.role, content: m.content })));
     setMessages([]);
     setShowProjects(false);
     setProjects(await listProjects());
@@ -244,7 +256,7 @@ export default function WorkspacePage() {
     if (proj) {
       setCurrentProject(proj); setFiles([]); setActiveFile("");
       setPreviewHtml(null); setPreviewUrl(null); setTerminalLogs([]);
-      setMessages([]); setRestoredMessages([]);
+      setMessages([]); setAllChatMessages([]);
       localStorage.setItem("creazaapp_last_project", proj.id);
       setProjects(await listProjects());
       setShowProjects(false); setProjectName("");
@@ -265,12 +277,19 @@ export default function WorkspacePage() {
     if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }
   }, [input]);
 
+  const allChatRef = useRef(allChatMessages);
+  allChatRef.current = allChatMessages;
+
   const sendWithContext = useCallback((text: string) => {
     const proj = currentProjectRef.current;
     if (proj) saveChatMessage(proj.id, "user", text);
-    // Send only last file content to keep body small
+
+    // Add user message to local display
+    setAllChatMessages((prev) => [...prev, { role: "user", content: text }]);
+
+    // Send with full context via system prompt — useChat messages are always clean
     const currentFiles = filesRef.current.map(f => ({ path: f.path, content: f.content.slice(0, 3000) }));
-    const chatHistory = restoredRef.current.slice(-5).map(m => ({ role: m.role, content: m.content.slice(0, 200) }));
+    const chatHistory = allChatRef.current.slice(-10).map(m => ({ role: m.role, content: m.content.slice(0, 300) }));
     sendMessage({ text }, { body: { model: modelRef.current, currentFiles, chatHistory } });
   }, [sendMessage]);
 
@@ -316,7 +335,7 @@ export default function WorkspacePage() {
 
   const activeContent = files.find((f) => f.path === activeFile)?.content || "";
   const hasCode = files.length > 0;
-  const isEmpty = messages.length === 0 && restoredMessages.length === 0;
+  const isEmpty = messages.length === 0 && allChatMessages.length === 0;
   const currentModelLabel = models.find((m) => m.value === selectedModel)?.label || selectedModel;
 
   return (
@@ -417,41 +436,32 @@ export default function WorkspacePage() {
               </div>
             ) : (
               <div className="p-3 space-y-3">
-                {/* Restored messages from Supabase */}
-                {restoredMessages.map((msg, i) => {
+                {/* All chat messages (restored + completed) */}
+                {allChatMessages.map((msg, i) => {
                   const isUser = msg.role === "user";
-                  const text = msg.content;
                   return (
-                    <div key={`restored-${i}`} className={cn("rounded-lg p-3 border opacity-70", isUser ? "bg-[#111118] border-[rgba(30,30,46,0.8)]" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
+                    <div key={`chat-${i}`} className={cn("rounded-lg p-3 border", isUser ? "bg-[#111118] border-[rgba(30,30,46,0.8)]" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
                       {!isUser && (
                         <div className="flex items-center gap-2 mb-2">
                           <Sparkles className="w-4 h-4 text-[#6366f1]" />
                           <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                         </div>
                       )}
-                      <p className="text-sm text-[#e2e8f0] whitespace-pre-wrap break-words">{text.length > 500 ? text.slice(0, 500) + "..." : text}</p>
+                      <p className="text-sm text-[#e2e8f0] whitespace-pre-wrap break-words">{msg.content.length > 500 ? msg.content.slice(0, 500) + "..." : msg.content}</p>
                     </div>
                   );
                 })}
-                {restoredMessages.length > 0 && messages.length === 0 && (
-                  <div className="text-center py-2">
-                    <span className="text-[10px] text-[#64748b] bg-[#111118] px-2 py-1 rounded">— continuă conversația mai jos —</span>
-                  </div>
-                )}
-                {/* Live messages from useChat */}
-                {messages.map((msg) => {
+                {/* Live streaming message from useChat */}
+                {messages.filter(m => m.role === "assistant").map((msg) => {
                   const text = getTextFromMessage(msg);
                   if (!text) return null;
-                  const isUser = msg.role === "user";
                   return (
-                    <div key={msg.id} className={cn("rounded-lg p-3 border animate-fade-in-up", isUser ? "bg-[#111118] border-[rgba(30,30,46,0.8)]" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
-                      {!isUser && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                          <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
-                        </div>
-                      )}
-                      <p className="text-sm text-[#e2e8f0] whitespace-pre-wrap break-words">{text.length > 500 ? text.slice(0, 500) + "..." : text}</p>
+                    <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30 animate-fade-in-up">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-[#6366f1]" />
+                        <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
+                      </div>
+                      <p className="text-sm text-[#e2e8f0] whitespace-pre-wrap break-words">{text}</p>
                     </div>
                   );
                 })}
