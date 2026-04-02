@@ -70,6 +70,18 @@ export async function writeFilesAndStart(
   return `https://${sandbox.getHost(3000)}`;
 }
 
+const LANG_TO_FILE: Record<string, string> = {
+  html: "index.html",
+  css: "styles.css",
+  javascript: "script.js",
+  js: "script.js",
+  jsx: "App.jsx",
+  tsx: "App.tsx",
+  typescript: "App.ts",
+  ts: "App.ts",
+  json: "package.json",
+};
+
 export function parseCodeBlocks(
   content: string
 ): FileToWrite[] {
@@ -78,11 +90,11 @@ export function parseCodeBlocks(
   let match;
 
   while ((match = regex.exec(content)) !== null) {
-    const filename = match[1];
+    const tag = match[1];
     const code = match[2].trim();
+    const filename = tag.includes(".") || tag.includes("/") ? tag : LANG_TO_FILE[tag.toLowerCase()];
 
-    // Skip non-file code blocks (like "bash", "json" without path)
-    if (filename.includes(".") || filename.includes("/")) {
+    if (filename) {
       files.push({
         path: `/home/user/app/${filename}`,
         content: code,

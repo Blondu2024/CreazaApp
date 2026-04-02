@@ -26,14 +26,27 @@ function getTextFromMessage(message: UIMessage): string {
     .join("");
 }
 
+const LANG_TO_FILE: Record<string, string> = {
+  html: "index.html",
+  css: "styles.css",
+  javascript: "script.js",
+  js: "script.js",
+  jsx: "App.jsx",
+  tsx: "App.tsx",
+  typescript: "App.ts",
+  ts: "App.ts",
+  json: "package.json",
+};
+
 function parseCodeBlocks(content: string): { path: string; content: string }[] {
   const files: { path: string; content: string }[] = [];
   const regex = /```(\S+)\n([\s\S]*?)```/g;
   let match;
   while ((match = regex.exec(content)) !== null) {
-    const filename = match[1];
+    const tag = match[1];
     const code = match[2].trim();
-    if (filename.includes(".") || filename.includes("/")) {
+    const filename = tag.includes(".") || tag.includes("/") ? tag : LANG_TO_FILE[tag.toLowerCase()];
+    if (filename) {
       files.push({ path: filename, content: code });
     }
   }
