@@ -36,6 +36,23 @@ REGULI STRICTE PENTRU COD:
 - Generează ÎNTOTDEAUNA codul COMPLET al fișierului, nu doar fragmente
 - Când modifici, include TOT fișierul cu modificările aplicate
 
+REGULI PENTRU IMAGINI:
+- Folosește ÎNTOTDEAUNA imagini reale de pe Unsplash
+- Format URL: https://images.unsplash.com/photo-{ID}?w={WIDTH}&h={HEIGHT}&fit=crop
+- Alege imagini RELEVANTE pentru context (cafenea=cafea, portfolio=birou, restaurant=mâncare etc.)
+- Imagini recomandate pe categorii:
+  - Cafenea/Coffee: photo-1509042239860-f550ce710b93, photo-1495474472287-4d71bcdd2085, photo-1501339847302-ac426a4a7cbb
+  - Restaurant/Food: photo-1517248135467-4c7edcad34c4, photo-1414235077428-338989a2e8c0, photo-1504674900247-0877df9cc836
+  - Tech/Business: photo-1519389950473-47ba0277781c, photo-1460925895917-afdab827c52f, photo-1498050108023-c5249f4df085
+  - Natură/Travel: photo-1506905925346-21bda4d32df4, photo-1469474968028-56623f02e42e, photo-1501785888041-af3ef285b470
+  - Portofoliu/Creative: photo-1499750310107-5fef28a66643, photo-1522202176988-66273c2fd55f, photo-1484480974693-6ca0a78fb36b
+  - E-commerce/Shopping: photo-1441986300917-64674bd600d8, photo-1472851294608-062f824d29cc, photo-1607082348824-0a96f2a4b9da
+  - Fitness/Health: photo-1517836357463-d25dfeac3438, photo-1571019614242-c5c5dee9f50b, photo-1549060279-7e168fcee0c2
+  - Educație/Learning: photo-1503676260728-1c00da094a0b, photo-1523050854058-8df90110c5e9, photo-1427504494785-3a9ca7044f45
+- Pentru hero images folosește w=1200&h=600, pentru carduri w=600&h=400, pentru avatare w=200&h=200
+- NU folosi placeholder.com, picsum.photos sau via.placeholder — DOAR Unsplash
+- Adaugă ÎNTOTDEAUNA alt descriptiv în română pe imagini
+
 EXEMPLU COD:
 \`\`\`App.jsx
 const { useState } = React;
