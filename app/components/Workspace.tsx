@@ -74,12 +74,16 @@ export function Workspace() {
           files: files.map((f) => ({ path: `/home/user/app/${f.path}`, content: f.content })),
         }),
       });
-      const { previewUrl: url, error } = await res2.json();
-      if (error) {
-        addLog(`[ERR] ${error}`);
+      const data = await res2.json();
+      // Show sandbox logs in terminal
+      if (data.logs) {
+        for (const log of data.logs) addLog(log);
+      }
+      if (data.error) {
+        addLog(`[ERR] ${data.error}`);
       } else {
-        addLog(`[OK] ${url}`);
-        setPreviewUrl(url);
+        addLog(`[OK] ${data.previewUrl}`);
+        setPreviewUrl(data.previewUrl);
         setRightTab("preview");
       }
     } catch (err) {

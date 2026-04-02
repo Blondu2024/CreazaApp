@@ -1,6 +1,7 @@
 import { Sandbox } from "e2b";
 
 const SANDBOX_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const SERVER_STARTUP_MS = 3000;
 
 // Read env var dynamically to prevent Next.js bundler from inlining it at build time
 function getE2BKey(): string {
@@ -39,36 +40,64 @@ export interface FileToWrite {
   content: string;
 }
 
+export interface SandboxResult {
+  previewUrl: string;
+  logs: string[];
+  error?: string;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function writeFilesAndStart(
   sandbox: Sandbox,
   files: FileToWrite[]
-): Promise<string> {
+): Promise<SandboxResult> {
+  const logs: string[] = [];
+
   // Write all files
   for (const file of files) {
     await sandbox.files.write(file.path, file.content);
+    logs.push(`[write] ${file.path}`);
   }
 
   const hasPackageJson = files.some((f) => f.path.includes("package.json"));
 
   if (hasPackageJson) {
     // React/Node project — npm install + dev server
-    await sandbox.commands.run("cd /home/user/app && npm install", {
-      timeoutMs: 60000,
+    const install = await sandbox.commands.run("cd /home/user/app && npm install", {
+      timeoutMs: 120000,
     });
-    await sandbox.commands.run(
+    if (install.exitCode !== 0) {
+      const err = install.stderr || install.stdout;
+      logs.push(`[npm install] EROARE: ${err}`);
+      return { previewUrl: "", logs, error: `npm install a esuat: ${err}` };
+    }
+    logs.push(`[npm install] OK`);
+
+    // Start dev server in background (it never exits)
+    sandbox.commands.run(
       "cd /home/user/app && npm run dev -- --port 3000",
-      { timeoutMs: 5000, onStdout: () => {}, onStderr: () => {} }
+      { timeoutMs: SANDBOX_TIMEOUT, onStdout: () => {}, onStderr: () => {} }
     );
+    logs.push(`[server] npm run dev pornit pe port 3000`);
   } else {
-    // Static HTML — serve with simple HTTP server
-    await sandbox.commands.run(
+    // Static HTML — start serve in background
+    sandbox.commands.run(
       "cd /home/user/app && npx -y serve -l 3000 .",
-      { timeoutMs: 10000, onStdout: () => {}, onStderr: () => {} }
+      { timeoutMs: SANDBOX_TIMEOUT, onStdout: () => {}, onStderr: () => {} }
     );
+    logs.push(`[server] serve pornit pe port 3000`);
   }
 
-  // Return the preview URL
-  return `https://${sandbox.getHost(3000)}`;
+  // Wait for server to start
+  await sleep(SERVER_STARTUP_MS);
+
+  const previewUrl = `https://${sandbox.getHost(3000)}`;
+  logs.push(`[preview] ${previewUrl}`);
+
+  return { previewUrl, logs };
 }
 
 const LANG_TO_FILE: Record<string, string> = {

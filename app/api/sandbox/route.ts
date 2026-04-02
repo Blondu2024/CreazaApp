@@ -25,8 +25,11 @@ export async function POST(req: NextRequest) {
       if (!sandbox) {
         return Response.json({ error: "Sandbox not found" }, { status: 404 });
       }
-      const previewUrl = await writeFilesAndStart(sandbox, files);
-      return Response.json({ previewUrl });
+      const result = await writeFilesAndStart(sandbox, files);
+      if (result.error) {
+        return Response.json({ error: result.error, logs: result.logs }, { status: 500 });
+      }
+      return Response.json({ previewUrl: result.previewUrl, logs: result.logs });
     }
 
     return Response.json({ error: "Invalid action" }, { status: 400 });
