@@ -103,16 +103,39 @@ function CopyBtn({ text }: { text: string }) {
 
 // localStorage helpers
 const STORAGE_KEY = "creazaapp_session";
+const CHAT_KEY = "creazaapp_chat";
 
-function saveSession(data: { files: { path: string; content: string }[]; model: string }) {
+interface SessionData {
+  files: { path: string; content: string }[];
+  model: string;
+}
+
+function saveSession(data: SessionData) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
 }
 
-function loadSession(): { files: { path: string; content: string }[]; model: string } | null {
+function loadSession(): SessionData | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+
+function saveChatMessages(messages: UIMessage[]) {
+  try { localStorage.setItem(CHAT_KEY, JSON.stringify(messages)); } catch {}
+}
+
+function loadChatMessages(): UIMessage[] {
+  try {
+    const raw = localStorage.getItem(CHAT_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function openPreviewInNewTab(html: string) {
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
 }
 
 // Download ZIP
@@ -173,6 +196,7 @@ export default function WorkspacePage() {
   const addLog = useCallback((msg: string) => setTerminalLogs((p) => [...p, msg]), []);
 
   const { messages, sendMessage, stop, status } = useChat({
+    messages: loadChatMessages(),
     onFinish: useCallback(({ message }: { message: UIMessage }) => {
       if (message.role === "assistant") {
         const text = getTextFromMessage(message);
@@ -196,6 +220,11 @@ export default function WorkspacePage() {
   });
 
   const isLoading = status === "streaming" || status === "submitted";
+
+  // Save chat messages to localStorage
+  useEffect(() => {
+    if (messages.length > 0) saveChatMessages(messages);
+  }, [messages]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isLoading]);
 
@@ -444,9 +473,9 @@ export default function WorkspacePage() {
                       <button onClick={() => setPreviewKey((k) => k + 1)} className="p-1 rounded hover:bg-[#111118]">
                         <RefreshCw className="w-4 h-4 text-[#64748b]" />
                       </button>
-                      <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="p-1 rounded hover:bg-[#111118]">
+                      <button onClick={() => previewHtml && openPreviewInNewTab(previewHtml)} className="p-1 rounded hover:bg-[#111118]">
                         <ExternalLink className="w-4 h-4 text-[#64748b]" />
-                      </a>
+                      </button>
                     </div>
                     <div className="flex-1 flex items-start justify-center bg-[#111118] overflow-hidden">
                       <iframe key={previewKey} srcDoc={previewHtml || ""} className={cn("h-full border-0 bg-white transition-all", viewMode === "mobile" ? "w-[375px] rounded-xl shadow-2xl my-3" : "w-full")} title="Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
