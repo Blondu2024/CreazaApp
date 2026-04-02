@@ -16,6 +16,8 @@ import {
   Rocket, Copy, Check, Bot, ArrowUp, Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   createProject, listProjects, deleteProject, updateProjectTimestamp,
   saveFiles, loadFiles, saveChatMessage, loadChatHistory, clearChatHistory,
@@ -459,7 +461,12 @@ export default function WorkspacePage() {
                           <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                         </div>
                       )}
-                      <p className="text-[32px] text-[#e2e8f0] whitespace-pre-wrap break-words leading-relaxed">{stripCodeBlocks(msg.content)}</p>
+                      <div className="chat-markdown text-[#e2e8f0] break-words">
+                        {isUser
+                          ? <p className="text-[32px] leading-relaxed">{msg.content}</p>
+                          : <ReactMarkdown remarkPlugins={[remarkGfm]}>{stripCodeBlocks(msg.content)}</ReactMarkdown>
+                        }
+                      </div>
                     </div>
                   );
                 })}
@@ -473,7 +480,9 @@ export default function WorkspacePage() {
                         <Sparkles className="w-4 h-4 text-[#6366f1]" />
                         <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                       </div>
-                      <p className="text-[32px] text-[#e2e8f0] whitespace-pre-wrap break-words leading-relaxed">{stripCodeBlocks(text)}</p>
+                      <div className="chat-markdown text-[#e2e8f0] break-words">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{stripCodeBlocks(text)}</ReactMarkdown>
+                      </div>
                     </div>
                   );
                 })}
