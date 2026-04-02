@@ -13,7 +13,14 @@ export async function POST(req: Request) {
     const currentFiles = body.currentFiles || [];
     const chatHistory = body.chatHistory || [];
 
-    const modelMessages = await convertToModelMessages(messages);
+    let modelMessages = await convertToModelMessages(messages);
+
+    // Sanitize: remove empty messages and fix consecutive same-role messages
+    modelMessages = modelMessages.filter((m: { role: string; content: unknown }) => {
+      if (typeof m.content === "string") return m.content.trim().length > 0;
+      if (Array.isArray(m.content)) return m.content.length > 0;
+      return true;
+    });
 
     // Build context-aware system prompt
     const systemPrompt = (currentFiles.length > 0 || chatHistory.length > 0)
@@ -25,6 +32,8 @@ export async function POST(req: Request) {
     console.log("[chat] Files:", currentFiles.length);
     console.log("[chat] History:", chatHistory.length);
     console.log("[chat] System prompt length:", systemPrompt.length, "chars");
+    console.log("[chat] Message roles:", modelMessages.map((m: { role: string }) => m.role).join(", "));
+    console.log("[chat] Raw messages sample:", JSON.stringify(messages.slice(-2)).slice(0, 500));
 
     const result = streamText({
       model: openrouter(model),
