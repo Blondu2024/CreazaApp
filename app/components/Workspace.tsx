@@ -126,8 +126,8 @@ export function Workspace() {
       <div className="flex flex-1 min-h-0">
         {/* ===== LEFT: CHAT ===== */}
         <div className={cn(
-          "flex flex-col border-r border-border/50 transition-all duration-300 shrink-0",
-          chatCollapsed ? "w-0 overflow-hidden border-r-0" : "w-[400px]"
+          "flex flex-col border-r border-border/50 transition-all duration-300 min-w-0",
+          chatCollapsed ? "w-0 overflow-hidden border-r-0" : "flex-1"
         )}>
           <ChatPanel selectedModel={selectedModel} onCodeGenerated={handleCodeGenerated} />
         </div>
