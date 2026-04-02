@@ -53,6 +53,18 @@ function parseCodeBlocks(content: string): { path: string; content: string }[] {
   return files;
 }
 
+const LANG_LABELS: Record<string, string> = {
+  html: "HTML", css: "CSS", js: "JavaScript", jsx: "React JSX", tsx: "React TSX",
+  typescript: "TypeScript", json: "JSON", python: "Python",
+};
+
+function stripCodeBlocks(text: string): string {
+  return text.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang: string) => {
+    const label = LANG_LABELS[lang?.toLowerCase()] || lang || "Cod";
+    return `[${label} generat]`;
+  }).trim();
+}
+
 function stripModuleSyntax(code: string): string {
   return code
     .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, "")
@@ -270,7 +282,7 @@ export default function WorkspacePage() {
     if (lastId) openProjectRef.current?.(lastId);
   }, []);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isLoading]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "instant" }); }, [messages, isLoading, allChatMessages]);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -408,14 +420,14 @@ export default function WorkspacePage() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Chat Sidebar */}
-        <div className={cn("flex-shrink-0 bg-[#0a0a0f] border-r border-[rgba(30,30,46,0.8)] flex flex-col transition-all duration-200 overflow-hidden", isChatOpen ? "w-[320px]" : "w-0")}>
+        <div className={cn("bg-[#0a0a0f] border-r border-[rgba(30,30,46,0.8)] flex flex-col transition-all duration-200 overflow-hidden min-w-0", isChatOpen ? "flex-1" : "w-0")}>
           <div className="h-10 flex items-center px-3 border-b border-[rgba(30,30,46,0.8)]">
             <Sparkles className="w-4 h-4 text-[#6366f1] mr-2" />
             <span className="text-sm text-[#e2e8f0] font-medium">Chat AI</span>
             {isLoading && <span className="ml-auto text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
           </div>
 
-          <ScrollArea className="flex-1">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {isEmpty ? (
               <div className="p-4 flex flex-col items-center">
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#6366f1]/20 to-[#a855f7]/20 flex items-center justify-center mb-4 mt-8">
@@ -447,7 +459,7 @@ export default function WorkspacePage() {
                           <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                         </div>
                       )}
-                      <p className="text-sm text-[#e2e8f0] whitespace-pre-wrap break-words">{msg.content.length > 500 ? msg.content.slice(0, 500) + "..." : msg.content}</p>
+                      <p className="text-base text-[#e2e8f0] whitespace-pre-wrap break-words leading-relaxed">{stripCodeBlocks(msg.content)}</p>
                     </div>
                   );
                 })}
@@ -456,12 +468,12 @@ export default function WorkspacePage() {
                   const text = getTextFromMessage(msg);
                   if (!text) return null;
                   return (
-                    <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30 animate-fade-in-up">
+                    <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30">
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-4 h-4 text-[#6366f1]" />
                         <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                       </div>
-                      <p className="text-sm text-[#e2e8f0] whitespace-pre-wrap break-words">{text}</p>
+                      <p className="text-base text-[#e2e8f0] whitespace-pre-wrap break-words leading-relaxed">{stripCodeBlocks(text)}</p>
                     </div>
                   );
                 })}
@@ -482,7 +494,7 @@ export default function WorkspacePage() {
                 <div ref={bottomRef} />
               </div>
             )}
-          </ScrollArea>
+          </div>
 
           {/* Chat Input */}
           <div className="p-3 border-t border-[rgba(30,30,46,0.8)]">
