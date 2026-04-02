@@ -167,6 +167,10 @@ export default function WorkspacePage() {
 
   const addLog = useCallback((msg: string) => setTerminalLogs((p) => [...p, msg]), []);
 
+  // Use ref for currentProject in callbacks to avoid re-creating useChat
+  const currentProjectRef = useRef(currentProject);
+  currentProjectRef.current = currentProject;
+
   const { messages, sendMessage, stop, status, setMessages } = useChat({
     onFinish: useCallback(({ message }: { message: UIMessage }) => {
       if (message.role === "assistant") {
@@ -175,7 +179,7 @@ export default function WorkspacePage() {
         if (parsed.length > 0) {
           setFiles(parsed);
           setActiveFile(parsed[0].path);
-          addLog(`[AI] ${parsed.length} fișier(e) generate`);
+          setTerminalLogs((p) => [...p, `[AI] ${parsed.length} fișier(e) generate`]);
 
           // Auto-preview
           const html = buildPreviewHtml(parsed);
@@ -183,16 +187,17 @@ export default function WorkspacePage() {
             setPreviewHtml(html);
             setPreviewUrl("preview.creazaapp.local");
             setActiveTab("preview");
-            addLog("[OK] Preview generat automat");
+            setTerminalLogs((p) => [...p, "[OK] Preview generat automat"]);
           }
 
           // Save AI response to Supabase
-          if (currentProject) {
-            saveChatMessage(currentProject.id, "assistant", text);
+          const proj = currentProjectRef.current;
+          if (proj) {
+            saveChatMessage(proj.id, "assistant", text);
           }
         }
       }
-    }, [addLog, currentProject]),
+    }, []),
   });
 
   const isLoading = status === "streaming" || status === "submitted";
