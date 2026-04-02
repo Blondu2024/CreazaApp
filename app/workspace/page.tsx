@@ -284,11 +284,31 @@ export default function WorkspacePage() {
 
         const parsed = parseCodeBlocks(text);
         if (parsed.length > 0) {
-          setFiles(parsed);
+          // Merge: update existing files, add new ones, keep untouched files
+          setFiles((prev) => {
+            if (prev.length === 0) return parsed; // First generation — use all
+            const merged = [...prev];
+            for (const newFile of parsed) {
+              const idx = merged.findIndex((f) => f.path === newFile.path);
+              if (idx >= 0) {
+                merged[idx] = newFile; // Update existing file
+              } else {
+                merged.push(newFile); // Add new file
+              }
+            }
+            return merged;
+          });
           setActiveFile(parsed[0].path);
-          setTerminalLogs((p) => [...p, `[AI] ${parsed.length} fișier(e) generate`]);
+          setTerminalLogs((p) => [...p, `[AI] ${parsed.length} fișier(e) ${filesRef.current.length > 0 ? "modificate" : "generate"}`]);
 
-          const html = buildPreviewHtml(parsed);
+          // Build preview from ALL files (existing + new merged)
+          const allFiles = [...filesRef.current];
+          for (const newFile of parsed) {
+            const idx = allFiles.findIndex((f) => f.path === newFile.path);
+            if (idx >= 0) allFiles[idx] = newFile;
+            else allFiles.push(newFile);
+          }
+          const html = buildPreviewHtml(allFiles);
           if (html) {
             setPreviewHtml(html);
             setPreviewUrl("preview.creazaapp.local");

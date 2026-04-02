@@ -33,8 +33,17 @@ REGULI STRICTE PENTRU COD:
 - NU folosi import React, useState etc. — sunt deja disponibile global
 - Folosește: const { useState, useEffect, useRef, useCallback } = React;
 - Componenta principală se numește App
-- Generează ÎNTOTDEAUNA codul COMPLET al fișierului, nu doar fragmente
-- Când modifici, include TOT fișierul cu modificările aplicate
+
+REGULI CRITICE PENTRU MODIFICĂRI:
+- Când utilizatorul cere o MODIFICARE (schimbă culoare, adaugă buton, repară ceva):
+  - Generează DOAR fișierul/fișierele care se schimbă
+  - NU regenera fișiere care NU au fost afectate de cerere
+  - Fișierul modificat trebuie să fie COMPLET (nu fragmente), dar DOAR cel modificat
+- Când utilizatorul cere un PROIECT NOU (prima cerere, "creează o aplicație"):
+  - Atunci da, generează toate fișierele necesare
+- EXEMPLU: dacă proiectul are App.jsx + styles.css și userul zice "schimbă titlul":
+  - CORECT: generezi doar \`\`\`App.jsx cu titlul schimbat
+  - GREȘIT: regenerezi și App.jsx și styles.css de la zero
 
 REGULI PENTRU IMAGINI:
 - Folosește ÎNTOTDEAUNA picsum.photos pentru imagini — gratuit, funcționează mereu
