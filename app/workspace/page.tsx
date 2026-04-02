@@ -225,6 +225,7 @@ export default function WorkspacePage() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
+  const [mobileTab, setMobileTab] = useState<"chat" | "code" | "preview">("chat");
   const [selectedModel, setSelectedModel] = useState("qwen/qwen3.6-plus-preview:free");
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<{ path: string; content: string }[]>([]);
@@ -498,38 +499,29 @@ export default function WorkspacePage() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Chat Sidebar — full screen on mobile, 50% on desktop */}
-        <div className={cn("bg-[#0a0a0f] border-r border-[rgba(30,30,46,0.8)] flex flex-col transition-all duration-200 overflow-hidden min-w-0", isChatOpen ? "max-md:absolute max-md:inset-0 max-md:z-30 max-md:border-r-0 flex-1" : "w-0")}>
-          <div className="shrink-0 border-b border-[rgba(30,30,46,0.8)]">
-            <div className="h-10 flex items-center px-3">
-              <Sparkles className="w-4 h-4 text-[#6366f1] mr-2" />
-              <span className="text-sm text-[#e2e8f0] font-medium">Chat AI</span>
-              {isLoading && <span className="ml-auto text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
-              {hasCode && (
-                <button onClick={() => setIsChatOpen(false)} className="md:hidden ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-[#6366f1]/20 text-[#6366f1] rounded-lg text-xs font-medium">
-                  <Eye className="w-3.5 h-3.5" />
-                  Vezi codul
-                </button>
-              )}
-            </div>
-            {/* Model selector on mobile */}
-            <div className="md:hidden px-3 pb-2">
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full h-8 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-xs rounded-lg px-2 outline-none focus:border-[#6366f1]"
-              >
-                {MODEL_CATEGORIES.map((cat) => (
-                  <optgroup key={cat.key} label={cat.label}>
-                    {models.filter((m) => m.category === cat.key).map((m) => (
-                      <option key={m.value} value={m.value}>{m.label} — {m.price}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-          </div>
+      {/* ===== MOBILE LAYOUT ===== */}
+      <div className="flex-1 flex flex-col overflow-hidden md:hidden">
+        {/* Mobile content — one view at a time */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Chat view */}
+          {mobileTab === "chat" && (
+            <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0f]">
+              {/* Model selector */}
+              <div className="shrink-0 px-3 py-2 border-b border-[rgba(30,30,46,0.8)]">
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="w-full h-9 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1]"
+                >
+                  {MODEL_CATEGORIES.map((cat) => (
+                    <optgroup key={cat.key} label={cat.label}>
+                      {models.filter((m) => m.category === cat.key).map((m) => (
+                        <option key={m.value} value={m.value}>{m.label} — {m.price}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
             {isEmpty ? (
@@ -631,11 +623,202 @@ export default function WorkspacePage() {
             </form>
             <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie nouă</p>
           </div>
+            </div>
+          )}
+
+          {/* Mobile Code view */}
+          {mobileTab === "code" && (
+            <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0f]">
+              {hasCode && (
+                <div className="h-9 flex items-center gap-0.5 px-2 bg-[#0a0a0f] border-b border-[rgba(30,30,46,0.8)] overflow-x-auto">
+                  {files.map((f) => {
+                    const name = f.path.split("/").pop() || f.path;
+                    const ext = name.split(".").pop() || "";
+                    const isActive = f.path === activeFile;
+                    return (
+                      <button key={f.path} onClick={() => setActiveFile(f.path)} className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-t border border-b-0 whitespace-nowrap transition-colors", isActive ? "bg-[#111118] text-[#e2e8f0] border-[rgba(30,30,46,0.8)]" : "text-[#64748b] border-transparent")}>
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getFileColor(ext) }} />
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {hasCode ? (
+                <div className="flex-1 min-h-0">
+                  <CodeEditor code={activeContent} filename={activeFile} onChange={(c) => setFiles((p) => p.map((f) => f.path === activeFile ? { ...f, content: c } : f))} />
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <Code className="w-12 h-12 text-[#64748b]/20 mb-3" />
+                  <p className="text-sm text-[#64748b]">Codul generat de AI va apărea aici</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Mobile Preview view */}
+          {mobileTab === "preview" && (
+            <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0f]">
+              {previewUrl ? (
+                <>
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-[rgba(30,30,46,0.8)]">
+                    <div className="flex-1 flex items-center gap-1.5 bg-[#111118] rounded-md px-2.5 py-1 text-[11px] border border-[rgba(30,30,46,0.8)]">
+                      <Globe className="w-3 h-3 text-[#10b981] shrink-0" />
+                      <span className="truncate text-[#64748b] font-mono">{previewUrl}</span>
+                    </div>
+                    <button onClick={() => setPreviewKey((k) => k + 1)} className="p-1.5 rounded hover:bg-[#111118]">
+                      <RefreshCw className="w-4 h-4 text-[#64748b]" />
+                    </button>
+                    <button onClick={() => previewHtml && openPreviewInNewTab(previewHtml)} className="p-1.5 rounded hover:bg-[#111118]">
+                      <ExternalLink className="w-4 h-4 text-[#64748b]" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <iframe key={previewKey} srcDoc={previewHtml || ""} className="w-full h-full border-0 bg-white" title="Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <Globe className="w-12 h-12 text-[#64748b]/20 mb-3" />
+                  <p className="text-sm text-[#64748b]">{isLoading ? "AI-ul generează codul..." : "Scrie un prompt și preview-ul apare automat"}</p>
+                  {isLoading && <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin mt-2" />}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Main Panel — hidden on mobile when chat is open */}
-        <div className={cn("flex-1 flex flex-col overflow-hidden", isChatOpen && "max-md:hidden")}>
-          {/* Toolbar */}
+        {/* Mobile Bottom Nav */}
+        <div className="shrink-0 flex border-t border-[rgba(30,30,46,0.8)] bg-[#0a0a0f] safe-area-bottom">
+          <button onClick={() => setMobileTab("chat")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5", mobileTab === "chat" ? "text-[#6366f1]" : "text-[#64748b]")}>
+            <Sparkles className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Chat</span>
+          </button>
+          <button onClick={() => setMobileTab("code")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", mobileTab === "code" ? "text-[#6366f1]" : "text-[#64748b]")}>
+            <Code className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Cod</span>
+            {hasCode && <span className="absolute top-1.5 right-[calc(50%-2px)] translate-x-3 w-1.5 h-1.5 rounded-full bg-[#6366f1]" />}
+          </button>
+          <button onClick={() => setMobileTab("preview")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", mobileTab === "preview" ? "text-[#6366f1]" : "text-[#64748b]")}>
+            <Eye className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Preview</span>
+            {previewUrl && <span className="absolute top-1.5 right-[calc(50%-2px)] translate-x-3 w-1.5 h-1.5 rounded-full bg-[#10b981]" />}
+          </button>
+        </div>
+      </div>
+
+      {/* ===== DESKTOP LAYOUT (unchanged) ===== */}
+      <div className="flex-1 hidden md:flex overflow-hidden">
+        {/* Chat Sidebar */}
+        <div className={cn("bg-[#0a0a0f] border-r border-[rgba(30,30,46,0.8)] flex flex-col transition-all duration-200 overflow-hidden min-w-0", isChatOpen ? "flex-1" : "w-0")}>
+          <div className="h-10 flex items-center px-3 border-b border-[rgba(30,30,46,0.8)] shrink-0">
+            <Sparkles className="w-4 h-4 text-[#6366f1] mr-2" />
+            <span className="text-sm text-[#e2e8f0] font-medium">Chat AI</span>
+            {isLoading && <span className="ml-auto text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {isEmpty ? (
+              <div className="p-4 flex flex-col items-center">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#6366f1]/20 to-[#a855f7]/20 flex items-center justify-center mb-4 mt-8">
+                  <Sparkles className="w-7 h-7 text-[#6366f1]" />
+                </div>
+                <h3 className="text-base font-semibold text-[#e2e8f0] mb-1">Ce vrei să construiești?</h3>
+                <p className="text-xs text-[#64748b] mb-4 text-center">Descrie aplicația și o generez instant</p>
+                <div className="w-full space-y-2">
+                  {suggestions.map((s, i) => (
+                    <button key={i} onClick={() => handleSuggestion(s.text)} className="w-full bg-[#111118] hover:bg-[#1e1e2e] border border-[rgba(30,30,46,0.8)] rounded-lg p-3 flex items-center gap-2 text-left transition-colors">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${s.color}20` }}>
+                        <s.icon className="w-4 h-4" style={{ color: s.color }} />
+                      </div>
+                      <span className="text-xs text-[#e2e8f0]">{s.text}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 space-y-3">
+                {allChatMessages.map((msg, i) => {
+                  const isUser = msg.role === "user";
+                  return (
+                    <div key={`chat-${i}`} className={cn("rounded-lg p-3 border", isUser ? "bg-[#111118] border-[rgba(30,30,46,0.8)]" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
+                      {!isUser && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-4 h-4 text-[#6366f1]" />
+                          <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
+                        </div>
+                      )}
+                      <div className="chat-markdown text-[#e2e8f0] break-words">
+                        {isUser
+                          ? <p className="text-[25px] leading-relaxed">{msg.content}</p>
+                          : <ChatMarkdown text={stripCodeBlocks(msg.content)} />
+                        }
+                      </div>
+                    </div>
+                  );
+                })}
+                {messages.filter(m => m.role === "assistant").map((msg) => {
+                  const text = getTextFromMessage(msg);
+                  if (!text) return null;
+                  return (
+                    <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-[#6366f1]" />
+                        <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
+                      </div>
+                      <div className="chat-markdown text-[#e2e8f0] break-words">
+                        <ChatMarkdown text={stripCodeBlocks(text)} />
+                      </div>
+                    </div>
+                  );
+                })}
+                {isLoading && (
+                  <div className="rounded-lg p-3 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border border-[#6366f1]/30">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#6366f1]" />
+                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează... ({status})</span>
+                    </div>
+                  </div>
+                )}
+                {error && (
+                  <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
+                    <p className="text-xs text-red-400">Eroare: {error.message}</p>
+                    <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
+                  </div>
+                )}
+                <div ref={bottomRef} />
+              </div>
+            )}
+          </div>
+
+          <div className="p-3 border-t border-[rgba(30,30,46,0.8)] shrink-0">
+            <form onSubmit={handleSubmit} className="relative">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+                placeholder="Descrie ce vrei să construiești..."
+                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-10 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
+                rows={2}
+              />
+              {isLoading ? (
+                <button type="button" onClick={stop} className="absolute right-2 bottom-2 w-7 h-7 bg-red-500/20 hover:bg-red-500/30 rounded-lg flex items-center justify-center transition-colors">
+                  <Square className="w-3 h-3 text-red-400" fill="currentColor" />
+                </button>
+              ) : (
+                <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-2 w-7 h-7 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-lg flex items-center justify-center disabled:opacity-30">
+                  <Send className="w-3.5 h-3.5 text-white" />
+                </button>
+              )}
+            </form>
+            <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie nouă</p>
+          </div>
+        </div>
+
+        {/* Main Panel */}
+        <div className="flex-1 flex flex-col overflow-hidden">
           <div className="h-10 flex items-center justify-between px-3 border-b border-[rgba(30,30,46,0.8)] bg-[#0a0a0f]">
             <div className="flex items-center gap-2">
               <button onClick={() => setIsChatOpen(!isChatOpen)} className="p-1.5 rounded hover:bg-[#111118]">
@@ -663,11 +846,9 @@ export default function WorkspacePage() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {activeTab === "code" ? (
               <div className="flex-1 flex flex-col overflow-hidden">
-                {/* File tabs */}
                 {hasCode && (
                   <div className="h-9 flex items-center gap-0.5 px-2 bg-[#0a0a0f] border-b border-[rgba(30,30,46,0.8)]">
                     {files.map((f) => {
@@ -695,7 +876,6 @@ export default function WorkspacePage() {
                 )}
               </div>
             ) : (
-              /* Preview */
               <div className="flex-1 flex flex-col overflow-hidden">
                 {previewUrl ? (
                   <>
@@ -734,7 +914,6 @@ export default function WorkspacePage() {
             )}
           </div>
 
-          {/* Terminal */}
           {isTerminalOpen && (
             <div className="h-[180px] border-t border-[rgba(30,30,46,0.8)] flex-shrink-0">
               <Terminal logs={terminalLogs} />

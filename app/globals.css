@@ -139,6 +139,9 @@
 /* Workspace no-scroll */
 body:has([data-workspace]) { overflow: hidden; }
 
+/* Safe area for iPhone notch/home indicator */
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
+
 /* Chat markdown styling */
 .chat-markdown { font-size: 20px; line-height: 1.7; }
 .chat-markdown p { margin-bottom: 0.75em; }
