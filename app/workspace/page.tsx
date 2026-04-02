@@ -14,7 +14,7 @@ import {
   Terminal as TerminalIcon, Play, RefreshCw, ExternalLink,
   Monitor, Smartphone, Send, Coffee, CheckSquare, ShoppingBag,
   User, FolderTree, Plus, X, Loader2, Globe, Download,
-  Rocket, Copy, Check, Bot, ArrowUp, Square, Undo2, Trash2,
+  Rocket, Copy, Check, Bot, ArrowUp, Square, Undo2, Trash2, Paperclip, Image, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -259,6 +259,53 @@ export default function WorkspacePage() {
   const [fileHistory, setFileHistory] = useState<{ path: string; content: string }[][]>([]); // Undo stack
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Attachments (images + documents)
+  interface Attachment {
+    type: "image" | "document";
+    name: string;
+    base64: string; // data URL for images, text content for documents
+    mimeType: string;
+  }
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (const file of Array.from(files)) {
+      if (file.type.startsWith("image/")) {
+        // Images → base64 data URL
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result as string;
+          setAttachments((prev) => [...prev, {
+            type: "image",
+            name: file.name,
+            base64,
+            mimeType: file.type,
+          }]);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type === "application/pdf" || file.type === "text/plain" || file.name.endsWith(".md") || file.name.endsWith(".csv")) {
+        // Text documents → extract text
+        const text = await file.text();
+        setAttachments((prev) => [...prev, {
+          type: "document",
+          name: file.name,
+          base64: text,
+          mimeType: file.type,
+        }]);
+      }
+    }
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
+  const removeAttachment = useCallback((idx: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
 
   // Listen for preview iframe errors
   useEffect(() => {
@@ -465,16 +512,31 @@ export default function WorkspacePage() {
     const proj = currentProjectRef.current;
     if (proj) saveChatMessage(proj.id, "user", text);
 
-    // Add user message to local display
-    setAllChatMessages((prev) => [...prev, { role: "user", content: text }]);
+    // Build display text with attachment indicators
+    const displayText = attachments.length > 0
+      ? `${text}\n[${attachments.map(a => a.type === "image" ? `📷 ${a.name}` : `📄 ${a.name}`).join(", ")}]`
+      : text;
 
-    // Send ALL messages + full files + context summary + preview errors
+    // Add user message to local display
+    setAllChatMessages((prev) => [...prev, { role: "user", content: displayText }]);
+
+    // Send ALL messages + full files + context summary + preview errors + attachments
     const currentFiles = filesRef.current.map(f => ({ path: f.path, content: f.content }));
     const chatHistory = allChatRef.current.map(m => ({ role: m.role, content: m.content }));
     const summary = currentProjectRef.current?.context_summary || undefined;
     const errors = previewErrors.length > 0 ? previewErrors : undefined;
-    sendMessage({ text }, { body: { model: modelRef.current, currentFiles, chatHistory, summary, errors } });
-    if (previewErrors.length > 0) setPreviewErrors([]); // Clear after sending
+
+    // Build multimodal attachments for the API
+    const images = attachments.filter(a => a.type === "image").map(a => a.base64);
+    const documents = attachments.filter(a => a.type === "document").map(a => ({ name: a.name, content: a.base64 }));
+
+    sendMessage({ text }, { body: {
+      model: modelRef.current, currentFiles, chatHistory, summary, errors,
+      images: images.length > 0 ? images : undefined,
+      documents: documents.length > 0 ? documents : undefined,
+    }});
+    if (previewErrors.length > 0) setPreviewErrors([]);
+    setAttachments([]); // Clear attachments after sending
   }, [sendMessage]);
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
@@ -710,6 +772,24 @@ export default function WorkspacePage() {
 
           {/* Chat Input */}
           <div className="p-3 border-t border-[rgba(30,30,46,0.8)]">
+            {/* Attachment previews */}
+            {attachments.length > 0 && (
+              <div className="flex gap-2 mb-2 flex-wrap">
+                {attachments.map((att, i) => (
+                  <div key={i} className="relative flex items-center gap-1.5 bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-2 py-1.5">
+                    {att.type === "image" ? (
+                      <img src={att.base64} alt={att.name} className="w-8 h-8 rounded object-cover" />
+                    ) : (
+                      <FileText className="w-4 h-4 text-[#6366f1]" />
+                    )}
+                    <span className="text-[11px] text-[#e2e8f0] max-w-[100px] truncate">{att.name}</span>
+                    <button onClick={() => removeAttachment(i)} className="ml-1 text-[#64748b] hover:text-red-400">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="relative">
               <textarea
                 ref={textareaRef}
@@ -717,20 +797,26 @@ export default function WorkspacePage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
                 placeholder="Descrie ce vrei să construiești..."
-                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-10 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
+                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-20 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
                 rows={2}
               />
-              {isLoading ? (
-                <button type="button" onClick={stop} className="absolute right-2 bottom-2 w-7 h-7 bg-red-500/20 hover:bg-red-500/30 rounded-lg flex items-center justify-center transition-colors">
-                  <Square className="w-3 h-3 text-red-400" fill="currentColor" />
+              <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                <input ref={fileInputRef} type="file" accept="image/*,.pdf,.txt,.md,.csv" multiple onChange={handleFileUpload} className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] transition-colors">
+                  <Paperclip className="w-4 h-4" />
                 </button>
-              ) : (
-                <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-2 w-7 h-7 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-lg flex items-center justify-center disabled:opacity-30">
-                  <Send className="w-3.5 h-3.5 text-white" />
-                </button>
-              )}
+                {isLoading ? (
+                  <button type="button" onClick={stop} className="w-7 h-7 bg-red-500/20 hover:bg-red-500/30 rounded-lg flex items-center justify-center transition-colors">
+                    <Square className="w-3 h-3 text-red-400" fill="currentColor" />
+                  </button>
+                ) : (
+                  <button type="submit" disabled={!input.trim() && attachments.length === 0} className="w-7 h-7 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-lg flex items-center justify-center disabled:opacity-30">
+                    <Send className="w-3.5 h-3.5 text-white" />
+                  </button>
+                )}
+              </div>
             </form>
-            <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie nouă</p>
+            <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie nouă · 📎 atașează imagini/documente</p>
           </div>
             </div>
           )}
@@ -912,27 +998,48 @@ export default function WorkspacePage() {
           </div>
 
           <div className="p-3 border-t border-[rgba(30,30,46,0.8)] shrink-0">
+            {attachments.length > 0 && (
+              <div className="flex gap-2 mb-2 flex-wrap">
+                {attachments.map((att, i) => (
+                  <div key={i} className="relative flex items-center gap-1.5 bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-2 py-1.5">
+                    {att.type === "image" ? (
+                      <img src={att.base64} alt={att.name} className="w-8 h-8 rounded object-cover" />
+                    ) : (
+                      <FileText className="w-4 h-4 text-[#6366f1]" />
+                    )}
+                    <span className="text-[11px] text-[#e2e8f0] max-w-[100px] truncate">{att.name}</span>
+                    <button onClick={() => removeAttachment(i)} className="ml-1 text-[#64748b] hover:text-red-400">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="relative">
               <textarea
-                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
                 placeholder="Descrie ce vrei să construiești..."
-                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-10 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
+                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-20 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
                 rows={2}
               />
-              {isLoading ? (
-                <button type="button" onClick={stop} className="absolute right-2 bottom-2 w-7 h-7 bg-red-500/20 hover:bg-red-500/30 rounded-lg flex items-center justify-center transition-colors">
-                  <Square className="w-3 h-3 text-red-400" fill="currentColor" />
+              <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] transition-colors">
+                  <Paperclip className="w-4 h-4" />
                 </button>
-              ) : (
-                <button type="submit" disabled={!input.trim()} className="absolute right-2 bottom-2 w-7 h-7 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-lg flex items-center justify-center disabled:opacity-30">
-                  <Send className="w-3.5 h-3.5 text-white" />
-                </button>
-              )}
+                {isLoading ? (
+                  <button type="button" onClick={stop} className="w-7 h-7 bg-red-500/20 hover:bg-red-500/30 rounded-lg flex items-center justify-center transition-colors">
+                    <Square className="w-3 h-3 text-red-400" fill="currentColor" />
+                  </button>
+                ) : (
+                  <button type="submit" disabled={!input.trim() && attachments.length === 0} className="w-7 h-7 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-lg flex items-center justify-center disabled:opacity-30">
+                    <Send className="w-3.5 h-3.5 text-white" />
+                  </button>
+                )}
+              </div>
             </form>
-            <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie nouă</p>
+            <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie nouă · 📎 atașează imagini/documente</p>
           </div>
         </div>
 

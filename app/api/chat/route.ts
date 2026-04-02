@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages } from "ai";
+import { streamText, convertToModelMessages, type TextPart, type ImagePart } from "ai";
 import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext } from "@/lib/ai";
 
 // Vercel free tier: max 60s for streaming
@@ -15,6 +15,8 @@ export async function POST(req: Request) {
     const tier = body.tier || "free";
     const summary = body.summary || undefined;
     const errors = body.errors || undefined;
+    const images: string[] = body.images || [];
+    const documents: { name: string; content: string }[] = body.documents || [];
 
     let modelMessages = await convertToModelMessages(messages);
 
@@ -30,13 +32,38 @@ export async function POST(req: Request) {
       ? buildSystemPromptWithContext({ currentFiles, chatHistory, tier, summary, errors })
       : SYSTEM_PROMPT;
 
+    // Inject images/documents into the last user message as multimodal content
+    if (images.length > 0 || documents.length > 0) {
+      const lastUserIdx = modelMessages.findLastIndex((m: { role: string }) => m.role === "user");
+      if (lastUserIdx >= 0) {
+        const lastMsg = modelMessages[lastUserIdx];
+        const textContent = typeof lastMsg.content === "string" ? lastMsg.content : "";
+        const parts: (TextPart | ImagePart)[] = [];
+
+        // Add document text as context
+        if (documents.length > 0) {
+          const docText = documents.map((d: { name: string; content: string }) => `\n[Document: ${d.name}]\n${d.content}`).join("\n");
+          parts.push({ type: "text" as const, text: textContent + docText });
+        } else {
+          parts.push({ type: "text" as const, text: textContent });
+        }
+
+        // Add images as base64 data URLs
+        for (const img of images) {
+          parts.push({ type: "image" as const, image: new URL(img) });
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (modelMessages[lastUserIdx] as any).content = parts;
+      }
+    }
+
     console.log("[chat] Model:", model);
     console.log("[chat] Tier:", tier);
     console.log("[chat] Messages:", modelMessages.length);
-    console.log("[chat] Files:", currentFiles.length);
-    console.log("[chat] History:", chatHistory.length);
+    console.log("[chat] Images:", images.length);
+    console.log("[chat] Documents:", documents.length);
     console.log("[chat] System prompt length:", systemPrompt.length, "chars (~", Math.ceil(systemPrompt.length / 4), "tokens)");
-    console.log("[chat] Message roles:", modelMessages.map((m: { role: string }) => m.role).join(", "));
 
     const result = streamText({
       model: openrouter(model),
