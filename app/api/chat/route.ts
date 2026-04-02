@@ -1,27 +1,24 @@
 import { streamText, convertToModelMessages } from "ai";
-import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT } from "@/lib/ai";
+import { openrouter, DEFAULT_MODEL, buildSystemPromptWithCode, SYSTEM_PROMPT } from "@/lib/ai";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    console.log("[chat] Request keys:", Object.keys(body));
-    console.log("[chat] Model:", body.model);
-    console.log("[chat] Messages count:", body.messages?.length);
-
-    // SDK v6 sends UIMessages with `parts` array
     const messages = body.messages || [];
     const model = body.model || DEFAULT_MODEL;
+    const currentFiles = body.currentFiles || [];
 
-    // Convert UIMessage[] to ModelMessage[] for streamText
     const modelMessages = await convertToModelMessages(messages);
 
-    console.log("[chat] Using model:", model);
-    console.log("[chat] Converted messages:", modelMessages.length);
+    // Include current code in system prompt so AI can modify it
+    const systemPrompt = currentFiles.length > 0
+      ? buildSystemPromptWithCode(currentFiles)
+      : SYSTEM_PROMPT;
 
     const result = streamText({
       model: openrouter(model),
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: modelMessages,
     });
 

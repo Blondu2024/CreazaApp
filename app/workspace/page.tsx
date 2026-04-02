@@ -236,13 +236,13 @@ export default function WorkspacePage() {
   const handleSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
-    sendMessage({ text: input }, { body: { model: selectedModel } });
+    sendMessage({ text: input }, { body: { model: selectedModel, currentFiles: files } });
     setInput("");
-  }, [input, isLoading, sendMessage, selectedModel]);
+  }, [input, isLoading, sendMessage, selectedModel, files]);
 
   const handleSuggestion = useCallback((text: string) => {
     if (isLoading) return;
-    sendMessage({ text }, { body: { model: selectedModel } });
+    sendMessage({ text }, { body: { model: selectedModel, currentFiles: files } });
   }, [isLoading, sendMessage, selectedModel]);
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
