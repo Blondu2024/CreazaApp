@@ -463,7 +463,7 @@ export default function WorkspacePage() {
                       )}
                       <div className="chat-markdown text-[#e2e8f0] break-words">
                         {isUser
-                          ? <p className="text-[32px] leading-relaxed">{msg.content}</p>
+                          ? <p className="text-[25px] leading-relaxed">{msg.content}</p>
                           : <ReactMarkdown remarkPlugins={[remarkGfm]}>{stripCodeBlocks(msg.content)}</ReactMarkdown>
                         }
                       </div>
@@ -514,7 +514,7 @@ export default function WorkspacePage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
                 placeholder="Descrie ce vrei să construiești..."
-                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-10 text-sm text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
+                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-10 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
                 rows={2}
               />
               {isLoading ? (
