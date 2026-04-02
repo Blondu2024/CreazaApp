@@ -16,7 +16,6 @@ import {
   Loader2,
   PanelLeftClose,
   PanelLeftOpen,
-  Download,
 } from "lucide-react";
 
 interface GeneratedFile {
@@ -26,11 +25,50 @@ interface GeneratedFile {
 
 type RightTab = "code" | "preview";
 
+// Build a self-contained HTML page from generated files
+function buildPreviewHtml(files: GeneratedFile[]): string {
+  const htmlFile = files.find((f) => f.path.endsWith(".html"));
+  if (htmlFile) return htmlFile.content;
+
+  // If no HTML file, wrap JSX/CSS in a self-contained HTML page with React CDN
+  const cssFile = files.find((f) => f.path.endsWith(".css"));
+  const jsxFile = files.find((f) =>
+    f.path.endsWith(".jsx") || f.path.endsWith(".tsx") || f.path.endsWith(".js")
+  );
+
+  if (!jsxFile) return "";
+
+  return `<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  ${cssFile ? `<style>${cssFile.content}</style>` : ""}
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    ${jsxFile.content}
+
+    const rootEl = document.getElementById('root');
+    if (typeof App !== 'undefined') {
+      ReactDOM.createRoot(rootEl).render(React.createElement(App));
+    }
+  <\/script>
+</body>
+</html>`;
+}
+
 export function Workspace() {
   const [files, setFiles] = useState<GeneratedFile[]>([]);
   const [activeFile, setActiveFile] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isDeploying, setIsDeploying] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const [showTerminal, setShowTerminal] = useState(false);
   const [rightTab, setRightTab] = useState<RightTab>("code");
@@ -51,46 +89,24 @@ export function Workspace() {
     [addLog]
   );
 
-  const handleDeploy = useCallback(async () => {
+  const handleRun = useCallback(() => {
     if (files.length === 0) return;
-    setIsDeploying(true);
+    setIsRunning(true);
     setShowTerminal(true);
-    addLog("[E2B] Se creeaza sandbox-ul...");
-    try {
-      const res1 = await fetch("/api/sandbox", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create" }),
-      });
-      const { sandboxId } = await res1.json();
-      addLog(`[E2B] Sandbox: ${sandboxId}`);
-      addLog("[E2B] Se scriu fisierele + npm install...");
-      const res2 = await fetch("/api/sandbox", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "write",
-          sandboxId,
-          files: files.map((f) => ({ path: `/home/user/app/${f.path}`, content: f.content })),
-        }),
-      });
-      const data = await res2.json();
-      // Show sandbox logs in terminal
-      if (data.logs) {
-        for (const log of data.logs) addLog(log);
-      }
-      if (data.error) {
-        addLog(`[ERR] ${data.error}`);
-      } else {
-        addLog(`[OK] ${data.previewUrl}`);
-        setPreviewUrl(data.previewUrl);
-        setRightTab("preview");
-      }
-    } catch (err) {
-      addLog(`[ERR] ${err instanceof Error ? err.message : "Unknown"}`);
-    } finally {
-      setIsDeploying(false);
+    addLog("[preview] Se construieste preview-ul...");
+
+    const html = buildPreviewHtml(files);
+    if (!html) {
+      addLog("[ERR] Nu s-a gasit fisier HTML sau JSX pentru preview");
+      setIsRunning(false);
+      return;
     }
+
+    addLog(`[preview] ${files.length} fisier(e): ${files.map((f) => f.path).join(", ")}`);
+    addLog("[OK] Preview gata!");
+    setPreviewHtml(html);
+    setRightTab("preview");
+    setIsRunning(false);
   }, [files, addLog]);
 
   const handleCodeChange = useCallback(
@@ -120,7 +136,6 @@ export function Workspace() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Toolbar */}
           <div className="h-10 border-b border-border/50 bg-card/30 flex items-center px-1 shrink-0">
-            {/* Collapse chat */}
             <button
               onClick={() => setChatCollapsed(!chatCollapsed)}
               className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors ml-1"
@@ -130,7 +145,6 @@ export function Workspace() {
 
             <div className="w-px h-5 bg-border/50 mx-1" />
 
-            {/* Tabs */}
             <button
               onClick={() => setRightTab("code")}
               className={cn(
@@ -157,10 +171,9 @@ export function Workspace() {
             >
               <Eye className="w-3.5 h-3.5" />
               Preview
-              {previewUrl && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+              {previewHtml && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
             </button>
 
-            {/* Right side actions */}
             <div className="ml-auto flex items-center gap-1 pr-2">
               <button
                 onClick={() => setShowTerminal(!showTerminal)}
@@ -176,17 +189,17 @@ export function Workspace() {
               </button>
 
               <button
-                onClick={handleDeploy}
-                disabled={!hasCode || isDeploying}
+                onClick={handleRun}
+                disabled={!hasCode || isRunning}
                 className={cn(
                   "flex items-center gap-1.5 h-7 px-3 rounded-lg text-xs font-medium transition-all",
-                  hasCode && !isDeploying
+                  hasCode && !isRunning
                     ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:shadow-indigo-500/20 glow-primary-sm"
                     : "bg-muted text-muted-foreground cursor-not-allowed"
                 )}
               >
-                {isDeploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                {isDeploying ? "Ruleaza..." : "Ruleaza"}
+                {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                {isRunning ? "Ruleaza..." : "Ruleaza"}
               </button>
             </div>
           </div>
@@ -215,11 +228,10 @@ export function Workspace() {
                 )}
               </div>
             ) : (
-              <Preview url={previewUrl} isLoading={isDeploying} />
+              <Preview html={previewHtml} isLoading={isRunning} />
             )}
           </div>
 
-          {/* Terminal */}
           {showTerminal && (
             <div className="h-[180px] border-t border-border/50 shrink-0">
               <Terminal logs={terminalLogs} />

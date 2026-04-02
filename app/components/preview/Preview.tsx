@@ -1,23 +1,19 @@
 "use client";
 
-import { RefreshCw, ExternalLink, Globe, Smartphone, Monitor, Loader2 } from "lucide-react";
+import { RefreshCw, Smartphone, Monitor, Loader2, Globe } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface PreviewProps {
-  url: string | null;
+  html: string | null;
   isLoading: boolean;
 }
 
-function proxyUrl(url: string): string {
-  return `/api/preview?url=${encodeURIComponent(url)}`;
-}
-
-export function Preview({ url, isLoading }: PreviewProps) {
+export function Preview({ html, isLoading }: PreviewProps) {
   const [key, setKey] = useState(0);
   const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop");
 
-  if (!url) {
+  if (!html) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center space-y-3 animate-fade-in-up">
@@ -29,10 +25,10 @@ export function Preview({ url, isLoading }: PreviewProps) {
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">
-              {isLoading ? "Se porneste sandbox-ul..." : "Live Preview"}
+              {isLoading ? "Se genereaza..." : "Live Preview"}
             </p>
             <p className="text-[12px] text-muted-foreground/40 mt-1">
-              {isLoading ? "E2B se initializeaza" : "Apasa Ruleaza dupa ce AI genereaza codul"}
+              {isLoading ? "AI-ul scrie codul" : "Apasa Ruleaza dupa ce AI genereaza codul"}
             </p>
           </div>
         </div>
@@ -44,18 +40,15 @@ export function Preview({ url, isLoading }: PreviewProps) {
     <div className="h-full flex flex-col">
       {/* Browser chrome */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-card/50">
-        {/* Traffic lights */}
         <div className="flex gap-1.5 mr-1">
           <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
         </div>
-        {/* URL bar */}
         <div className="flex-1 flex items-center gap-1.5 bg-muted/50 rounded-md px-2.5 py-1 text-[11px] border border-border/30">
           <Globe className="w-3 h-3 text-emerald-500 shrink-0" />
-          <span className="truncate text-muted-foreground font-mono">{url}</span>
+          <span className="truncate text-muted-foreground font-mono">preview.creazaapp.local</span>
         </div>
-        {/* Controls */}
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => setViewport("desktop")}
@@ -73,16 +66,13 @@ export function Preview({ url, isLoading }: PreviewProps) {
           <button onClick={() => setKey((k) => k + 1)} className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
         </div>
       </div>
-      {/* iframe — proxy through our domain to avoid E2B CSP iframe block */}
+      {/* iframe with srcdoc — no external URL, no CSP issues */}
       <div className="flex-1 flex items-start justify-center bg-[#1a1a24] overflow-hidden">
         <iframe
           key={key}
-          src={proxyUrl(url)}
+          srcDoc={html}
           className={cn(
             "h-full border-0 bg-white transition-all duration-300",
             viewport === "mobile" ? "w-[375px] rounded-xl shadow-2xl shadow-black/40 my-3" : "w-full"
