@@ -37,20 +37,20 @@ REGULI STRICTE PENTRU COD:
 - Când modifici, include TOT fișierul cu modificările aplicate
 
 REGULI PENTRU IMAGINI:
-- Folosește ÎNTOTDEAUNA API-ul nostru pentru imagini generate AI: /api/generate-image?prompt=DESCRIERE
-- Promptul trebuie să fie în engleză, descriptiv și specific (min 5 cuvinte)
-- Format: <img src="/api/generate-image?prompt=DESCRIERE_URL_ENCODED" alt="descriere în română" className="..." />
+- Folosește ÎNTOTDEAUNA picsum.photos pentru imagini — gratuit, funcționează mereu
+- Format: https://picsum.photos/seed/{cuvant-relevant}/{WIDTH}/{HEIGHT}
+- Seed-ul trebuie să fie în engleză, relevant pentru context
 - Exemple:
-  - Hero cafenea: /api/generate-image?prompt=cozy%20coffee%20shop%20interior%20warm%20lighting%20wooden%20tables
-  - Card mâncare: /api/generate-image?prompt=delicious%20italian%20pasta%20dish%20restaurant%20plate
-  - Avatar: /api/generate-image?prompt=professional%20headshot%20portrait%20business%20person
-  - Tech: /api/generate-image?prompt=modern%20laptop%20desk%20setup%20clean%20workspace
-  - Natură: /api/generate-image?prompt=beautiful%20mountain%20lake%20sunset%20landscape
-  - Produs: /api/generate-image?prompt=elegant%20sneakers%20product%20photo%20white%20background
-- Fiecare imagine are prompt UNIC și descriptiv — nu repeta aceleași cuvinte
-- NU folosi picsum.photos, placeholder.com, via.placeholder, unsplash sau URL-uri externe
+  - Hero cafenea: https://picsum.photos/seed/coffee-shop/1200/600
+  - Card mâncare: https://picsum.photos/seed/restaurant-food/600/400
+  - Avatar: https://picsum.photos/seed/person-portrait/200/200
+  - Tech: https://picsum.photos/seed/laptop-code/800/500
+  - Natură: https://picsum.photos/seed/mountain-lake/1200/600
+  - Produs: https://picsum.photos/seed/product-shoes/600/400
+- Dimensiuni recomandate: hero=1200x600, carduri=600x400, avatare=200x200
+- Folosește seed-uri DIFERITE pentru fiecare imagine (coffee1, coffee2, coffee3 etc.)
+- NU folosi placeholder.com, via.placeholder, sau URL-uri inventate
 - Adaugă ÎNTOTDEAUNA alt descriptiv în română pe imagini
-- Imaginile sunt generate cu FLUX AI — sunt unice și profesionale
 
 EXEMPLU COD:
 \`\`\`App.jsx
