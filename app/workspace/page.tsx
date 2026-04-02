@@ -177,7 +177,7 @@ export default function WorkspacePage() {
   const modelRef = useRef(selectedModel);
   modelRef.current = selectedModel;
 
-  const { messages, sendMessage, stop, status, setMessages } = useChat({
+  const { messages, sendMessage, stop, status, setMessages, error } = useChat({
     id: "workspace-chat",
     onFinish: useCallback(({ message }: { message: UIMessage }) => {
       if (message.role === "assistant") {
@@ -459,8 +459,14 @@ export default function WorkspacePage() {
                   <div className="rounded-lg p-3 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border border-[#6366f1]/30">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează...</span>
+                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează... ({status})</span>
                     </div>
+                  </div>
+                )}
+                {error && (
+                  <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
+                    <p className="text-xs text-red-400">Eroare: {error.message}</p>
+                    <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
                   </div>
                 )}
                 <div ref={bottomRef} />
