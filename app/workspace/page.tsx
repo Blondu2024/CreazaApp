@@ -427,8 +427,10 @@ export default function WorkspacePage() {
             setPreviewHtml(html);
             setPreviewUrl("preview.creazaapp.local");
             setActiveTab("preview");
-            setMobileTab("preview"); // Auto-switch on mobile too
+            setMobileTab("preview");
             setTerminalLogs((p) => [...p, "[OK] Preview generat automat"]);
+          } else {
+            setTerminalLogs((p) => [...p, `[WARN] Preview gol — fișiere: ${allFiles.map(f => f.path).join(", ") || "niciun fișier"}`]);
           }
         }
 
@@ -464,7 +466,13 @@ export default function WorkspacePage() {
 
   // Open a project — load files and chat from Supabase
   const openProject = useCallback(async (projectId: string) => {
-    const proj = (await listProjects(userRef.current?.id)).find((p) => p.id === projectId);
+    const allProjects = await listProjects(userRef.current?.id);
+    // Also check projects without user_id (legacy)
+    let proj = allProjects.find((p) => p.id === projectId);
+    if (!proj) {
+      const legacyProjects = await listProjects();
+      proj = legacyProjects.find((p) => p.id === projectId);
+    }
     if (!proj) return;
     setCurrentProject(proj);
     setSelectedModel(proj.model);
@@ -504,12 +512,13 @@ export default function WorkspacePage() {
     }
   }, [projectName, selectedModel, setMessages]);
 
-  // Load projects list on mount
+  // Load projects list when user is available
   useEffect(() => {
-    listProjects(userRef.current?.id).then(setProjects);
+    if (!user) return;
+    listProjects(user.id).then(setProjects);
     const lastId = localStorage.getItem("creazaapp_last_project");
     if (lastId) openProjectRef.current?.(lastId);
-  }, []);
+  }, [user]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "instant" }); }, [messages, isLoading, allChatMessages]);
 
