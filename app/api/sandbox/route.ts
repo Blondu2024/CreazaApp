@@ -1,6 +1,17 @@
 import { NextRequest } from "next/server";
 import { createSandbox, getSandbox, writeFilesAndStart, type FileToWrite } from "@/lib/e2b";
 
+// GET — diagnostic (temporary, remove after fix)
+export async function GET() {
+  const key = process.env["E2B_API_KEY"];
+  return Response.json({
+    hasKey: !!key,
+    keyLength: key?.length ?? 0,
+    keyPrefix: key ? key.substring(0, 4) + "..." : "NOT SET",
+    nodeEnv: process.env["NODE_ENV"],
+  });
+}
+
 // POST — create sandbox or write files
 export async function POST(req: NextRequest) {
   try {
