@@ -498,13 +498,19 @@ export default function WorkspacePage() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Chat Sidebar */}
-        <div className={cn("bg-[#0a0a0f] border-r border-[rgba(30,30,46,0.8)] flex flex-col transition-all duration-200 overflow-hidden min-w-0", isChatOpen ? "flex-1" : "w-0")}>
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Chat Sidebar — full screen on mobile, 50% on desktop */}
+        <div className={cn("bg-[#0a0a0f] border-r border-[rgba(30,30,46,0.8)] flex flex-col transition-all duration-200 overflow-hidden min-w-0", isChatOpen ? "max-md:absolute max-md:inset-0 max-md:z-30 max-md:border-r-0 flex-1" : "w-0")}>
           <div className="h-10 flex items-center px-3 border-b border-[rgba(30,30,46,0.8)]">
             <Sparkles className="w-4 h-4 text-[#6366f1] mr-2" />
             <span className="text-sm text-[#e2e8f0] font-medium">Chat AI</span>
             {isLoading && <span className="ml-auto text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
+            {hasCode && (
+              <button onClick={() => setIsChatOpen(false)} className="md:hidden ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-[#6366f1]/20 text-[#6366f1] rounded-lg text-xs font-medium">
+                <Eye className="w-3.5 h-3.5" />
+                Vezi codul
+              </button>
+            )}
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
@@ -609,8 +615,8 @@ export default function WorkspacePage() {
           </div>
         </div>
 
-        {/* Main Panel */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Main Panel — hidden on mobile when chat is open */}
+        <div className={cn("flex-1 flex flex-col overflow-hidden", isChatOpen && "max-md:hidden")}>
           {/* Toolbar */}
           <div className="h-10 flex items-center justify-between px-3 border-b border-[rgba(30,30,46,0.8)] bg-[#0a0a0f]">
             <div className="flex items-center gap-2">
