@@ -48,23 +48,24 @@ export async function writeFilesAndStart(
     await sandbox.files.write(file.path, file.content);
   }
 
-  // Install dependencies if package.json exists
   const hasPackageJson = files.some((f) => f.path.includes("package.json"));
+
   if (hasPackageJson) {
+    // React/Node project — npm install + dev server
     await sandbox.commands.run("cd /home/user/app && npm install", {
       timeoutMs: 60000,
     });
+    await sandbox.commands.run(
+      "cd /home/user/app && npm run dev -- --port 3000",
+      { timeoutMs: 5000, onStdout: () => {}, onStderr: () => {} }
+    );
+  } else {
+    // Static HTML — serve with simple HTTP server
+    await sandbox.commands.run(
+      "cd /home/user/app && npx -y serve -l 3000 .",
+      { timeoutMs: 10000, onStdout: () => {}, onStderr: () => {} }
+    );
   }
-
-  // Start dev server
-  const process = await sandbox.commands.run(
-    "cd /home/user/app && npm run dev -- --port 3000",
-    {
-      timeoutMs: 5000,
-      onStdout: () => {},
-      onStderr: () => {},
-    }
-  );
 
   // Return the preview URL
   return `https://${sandbox.getHost(3000)}`;
