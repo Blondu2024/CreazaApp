@@ -2,12 +2,17 @@ import { Sandbox } from "e2b";
 
 const SANDBOX_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
+// Read env var dynamically to prevent Next.js bundler from inlining it at build time
+function getE2BKey(): string {
+  return process.env["E2B_API_KEY"] ?? "";
+}
+
 // Keep track of active sandboxes
 const sandboxes = new Map<string, Sandbox>();
 
 export async function createSandbox(): Promise<Sandbox> {
   const sandbox = await Sandbox.create("base", {
-    apiKey: process.env.E2B_API_KEY,
+    apiKey: getE2BKey(),
     timeoutMs: SANDBOX_TIMEOUT,
   });
   sandboxes.set(sandbox.sandboxId, sandbox);
@@ -20,7 +25,7 @@ export async function getSandbox(sandboxId: string): Promise<Sandbox | null> {
 
   try {
     const sandbox = await Sandbox.connect(sandboxId, {
-      apiKey: process.env.E2B_API_KEY,
+      apiKey: getE2BKey(),
     });
     sandboxes.set(sandboxId, sandbox);
     return sandbox;
