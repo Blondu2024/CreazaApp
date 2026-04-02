@@ -101,6 +101,37 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
+// localStorage helpers
+const STORAGE_KEY = "creazaapp_session";
+
+function saveSession(data: { files: { path: string; content: string }[]; model: string }) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+}
+
+function loadSession(): { files: { path: string; content: string }[]; model: string } | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+// Download ZIP
+async function downloadZip(files: { path: string; content: string }[]) {
+  // Dynamic import to avoid loading JSZip until needed
+  const JSZip = (await import("jszip")).default;
+  const zip = new JSZip();
+  for (const f of files) {
+    zip.file(f.path, f.content);
+  }
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "creazaapp-project.zip";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function WorkspacePage() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
@@ -115,6 +146,29 @@ export default function WorkspacePage() {
   const [previewKey, setPreviewKey] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const saved = loadSession();
+    if (saved && saved.files.length > 0) {
+      setFiles(saved.files);
+      setActiveFile(saved.files[0].path);
+      setSelectedModel(saved.model);
+      // Auto-preview restored files
+      const html = buildPreviewHtml(saved.files);
+      if (html) {
+        setPreviewHtml(html);
+        setPreviewUrl("preview.creazaapp.local");
+      }
+    }
+  }, []);
+
+  // Save session whenever files or model change
+  useEffect(() => {
+    if (files.length > 0) {
+      saveSession({ files, model: selectedModel });
+    }
+  }, [files, selectedModel]);
 
   const addLog = useCallback((msg: string) => setTerminalLogs((p) => [...p, msg]), []);
 
@@ -212,8 +266,9 @@ export default function WorkspacePage() {
         </select>
 
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] rounded-lg">
+          <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] rounded-lg disabled:opacity-30">
             <Download className="w-4 h-4" />
+            ZIP
           </button>
           <button onClick={handleRun} disabled={!hasCode} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-4 py-1.5 rounded-lg text-sm font-medium btn-primary-glow disabled:opacity-40">
             <RefreshCw className="w-4 h-4" />
