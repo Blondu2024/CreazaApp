@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     const chatHistory = body.chatHistory || [];
     const tier = body.tier || "free";
     const summary = body.summary || undefined;
+    const errors = body.errors || undefined;
 
     let modelMessages = await convertToModelMessages(messages);
 
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
 
     // Build context-aware system prompt with token budgeting
     const systemPrompt = (currentFiles.length > 0 || chatHistory.length > 0)
-      ? buildSystemPromptWithContext({ currentFiles, chatHistory, tier, summary })
+      ? buildSystemPromptWithContext({ currentFiles, chatHistory, tier, summary, errors })
       : SYSTEM_PROMPT;
 
     console.log("[chat] Model:", model);

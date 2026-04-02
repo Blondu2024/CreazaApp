@@ -14,7 +14,7 @@ import {
   Terminal as TerminalIcon, Play, RefreshCw, ExternalLink,
   Monitor, Smartphone, Send, Coffee, CheckSquare, ShoppingBag,
   User, FolderTree, Plus, X, Loader2, Globe, Download,
-  Rocket, Copy, Check, Bot, ArrowUp, Square,
+  Rocket, Copy, Check, Bot, ArrowUp, Square, Undo2, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +54,16 @@ function parseCodeBlocks(content: string): { path: string; content: string }[] {
     if (filename) files.push({ path: filename, content: code });
   }
   return files;
+}
+
+function parseDeleteCommands(content: string): string[] {
+  const deletes: string[] = [];
+  const regex = /\[DELETE:\s*(\S+)\]/g;
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    deletes.push(match[1]);
+  }
+  return deletes;
 }
 
 const LANG_LABELS: Record<string, string> = {
@@ -180,6 +190,15 @@ function buildPreviewHtml(files: { path: string; content: string }[]): string {
 </head>
 <body>
   <div id="root"></div>
+  <script>
+    // Capture errors and send to parent
+    window.onerror = function(msg, url, line, col, error) {
+      window.parent.postMessage({ type: 'preview-error', error: msg + ' (linia ' + line + ')' }, '*');
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+      window.parent.postMessage({ type: 'preview-error', error: 'Promise: ' + (e.reason?.message || e.reason) }, '*');
+    });
+  <\/script>
   <script type="text/babel" data-type="module">
     ${cleanCode}
     const rootEl = document.getElementById('root');
@@ -236,8 +255,26 @@ export default function WorkspacePage() {
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [previewKey, setPreviewKey] = useState(0);
+  const [previewErrors, setPreviewErrors] = useState<string[]>([]);
+  const [fileHistory, setFileHistory] = useState<{ path: string; content: string }[][]>([]); // Undo stack
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Listen for preview iframe errors
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "preview-error") {
+        setPreviewErrors((prev) => {
+          const err = e.data.error;
+          if (prev.includes(err)) return prev;
+          return [...prev, err].slice(-5); // Keep last 5 errors
+        });
+        setTerminalLogs((p) => [...p, `[ERR] Preview: ${e.data.error}`]);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
 
   // Project state
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -286,6 +323,11 @@ export default function WorkspacePage() {
 
         const parsed = parseCodeBlocks(text);
         if (parsed.length > 0) {
+          // Save snapshot for undo BEFORE modifying
+          if (filesRef.current.length > 0) {
+            setFileHistory((prev) => [...prev.slice(-9), filesRef.current]); // Keep last 10
+          }
+
           // Merge: update existing files, add new ones, keep untouched files
           setFiles((prev) => {
             if (prev.length === 0) return parsed; // First generation — use all
@@ -300,11 +342,21 @@ export default function WorkspacePage() {
             }
             return merged;
           });
-          setActiveFile(parsed[0].path);
+          if (parsed.length > 0) setActiveFile(parsed[0].path);
           setTerminalLogs((p) => [...p, `[AI] ${parsed.length} fișier(e) ${filesRef.current.length > 0 ? "modificate" : "generate"}`]);
 
-          // Build preview from ALL files (existing + new merged)
-          const allFiles = [...filesRef.current];
+          // Handle file deletions
+          const toDelete = parseDeleteCommands(text);
+          if (toDelete.length > 0) {
+            setFiles((prev) => prev.filter((f) => !toDelete.includes(f.path)));
+            setTerminalLogs((p) => [...p, `[AI] ${toDelete.length} fișier(e) șterse: ${toDelete.join(", ")}`]);
+          }
+
+          // Clear preview errors on new code
+          setPreviewErrors([]);
+
+          // Build preview from ALL files (existing + new merged - deleted)
+          const allFiles = [...filesRef.current].filter((f) => !toDelete.includes(f.path));
           for (const newFile of parsed) {
             const idx = allFiles.findIndex((f) => f.path === newFile.path);
             if (idx >= 0) allFiles[idx] = newFile;
@@ -315,6 +367,7 @@ export default function WorkspacePage() {
             setPreviewHtml(html);
             setPreviewUrl("preview.creazaapp.local");
             setActiveTab("preview");
+            setMobileTab("preview"); // Auto-switch on mobile too
             setTerminalLogs((p) => [...p, "[OK] Preview generat automat"]);
           }
         }
@@ -415,11 +468,13 @@ export default function WorkspacePage() {
     // Add user message to local display
     setAllChatMessages((prev) => [...prev, { role: "user", content: text }]);
 
-    // Send ALL messages + full files + context summary — token budgeting happens server-side
+    // Send ALL messages + full files + context summary + preview errors
     const currentFiles = filesRef.current.map(f => ({ path: f.path, content: f.content }));
     const chatHistory = allChatRef.current.map(m => ({ role: m.role, content: m.content }));
     const summary = currentProjectRef.current?.context_summary || undefined;
-    sendMessage({ text }, { body: { model: modelRef.current, currentFiles, chatHistory, summary } });
+    const errors = previewErrors.length > 0 ? previewErrors : undefined;
+    sendMessage({ text }, { body: { model: modelRef.current, currentFiles, chatHistory, summary, errors } });
+    if (previewErrors.length > 0) setPreviewErrors([]); // Clear after sending
   }, [sendMessage]);
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
@@ -443,6 +498,17 @@ export default function WorkspacePage() {
     if (isLoading) return;
     sendWithContext(text);
   }, [isLoading, sendWithContext]);
+
+  const handleUndo = useCallback(() => {
+    if (fileHistory.length === 0) return;
+    const previous = fileHistory[fileHistory.length - 1];
+    setFileHistory((prev) => prev.slice(0, -1));
+    setFiles(previous);
+    if (previous.length > 0) setActiveFile(previous[0].path);
+    const html = buildPreviewHtml(previous);
+    if (html) { setPreviewHtml(html); setPreviewUrl("preview.creazaapp.local"); }
+    addLog("[UNDO] Revenit la versiunea anterioară");
+  }, [fileHistory, addLog]);
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
@@ -891,6 +957,9 @@ export default function WorkspacePage() {
             <div className="flex items-center gap-2">
               <button onClick={() => setIsTerminalOpen(!isTerminalOpen)} className={cn("p-1.5 rounded", isTerminalOpen ? "bg-[#111118] text-[#e2e8f0]" : "text-[#64748b]")}>
                 <TerminalIcon className="w-4 h-4" />
+              </button>
+              <button onClick={handleUndo} disabled={fileHistory.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] disabled:opacity-30 transition-colors" title="Undo">
+                <Undo2 className="w-3.5 h-3.5" />
               </button>
               <button onClick={handleRun} disabled={!hasCode} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
                 <RefreshCw className="w-3.5 h-3.5" />

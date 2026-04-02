@@ -44,6 +44,8 @@ REGULI CRITICE PENTRU MODIFICĂRI:
 - EXEMPLU: dacă proiectul are App.jsx + styles.css și userul zice "schimbă titlul":
   - CORECT: generezi doar \`\`\`App.jsx cu titlul schimbat
   - GREȘIT: regenerezi și App.jsx și styles.css de la zero
+- Pentru a ȘTERGE un fișier, scrie: [DELETE: nume_fisier.ext]
+  - Exemplu: [DELETE: old-component.jsx]
 
 REGULI PENTRU IMAGINI:
 - Folosește ÎNTOTDEAUNA picsum.photos pentru imagini — gratuit, funcționează mereu
@@ -94,13 +96,21 @@ interface BuildPromptOptions {
   currentFiles: { path: string; content: string }[];
   chatHistory?: { role: string; content: string }[];
   tier?: UserTier;
-  summary?: string; // Summary from a previous fork
+  summary?: string;
+  errors?: string[];
 }
 
-export function buildSystemPromptWithContext({ currentFiles, chatHistory, tier = "free", summary }: BuildPromptOptions): string {
+export function buildSystemPromptWithContext({ currentFiles, chatHistory, tier = "free", summary, errors }: BuildPromptOptions): string {
   const budget = CONTEXT_BUDGETS[tier];
   let prompt = SYSTEM_PROMPT;
   let usedTokens = estimateTokens(prompt);
+
+  // Add preview errors — highest priority, agent should fix these
+  if (errors && errors.length > 0) {
+    const errBlock = `\n\n⚠️ ERORI ÎN PREVIEW (trebuie reparate URGENT):\n${errors.map(e => `- ${e}`).join("\n")}\nAnalizează codul, găsește cauza și generează fix-ul.`;
+    prompt += errBlock;
+    usedTokens += estimateTokens(errBlock);
+  }
 
   // Add fork summary if exists (from previous session sumarization)
   if (summary) {
