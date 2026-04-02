@@ -433,17 +433,17 @@ export default function WorkspacePage() {
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0f] overflow-hidden" data-workspace>
       {/* Header */}
-      <header className="h-12 flex-shrink-0 glass-header border-b border-[rgba(30,30,46,0.8)] flex items-center justify-between px-3">
-        <Link href="/" className="flex items-center gap-2">
+      <header className="h-12 flex-shrink-0 glass-header border-b border-[rgba(30,30,46,0.8)] flex items-center justify-between px-3 gap-2">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <Sparkles className="w-5 h-5 text-[#6366f1]" />
           <span className="text-base font-bold"><span className="gradient-text">Creaza</span><span className="text-[#e2e8f0]">App</span></span>
         </Link>
 
-        {/* Model Selector */}
+        {/* Model Selector — hidden on mobile, shown in chat header instead */}
         <select
           value={selectedModel}
           onChange={(e) => setSelectedModel(e.target.value)}
-          className="h-8 w-[280px] bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1] cursor-pointer"
+          className="hidden md:block h-8 w-[280px] bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1] cursor-pointer"
         >
           {MODEL_CATEGORIES.map((cat) => (
             <optgroup key={cat.key} label={cat.label}>
@@ -457,8 +457,8 @@ export default function WorkspacePage() {
         </select>
 
         <div className="flex items-center gap-2">
-          {/* Project selector */}
-          <div className="relative">
+          {/* Project selector — hidden on mobile */}
+          <div className="relative hidden md:block">
             <button onClick={() => setShowProjects(!showProjects)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#e2e8f0] bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg hover:border-[#6366f1] max-w-[200px]">
               <FolderTree className="w-4 h-4 text-[#6366f1] shrink-0" />
               <span className="truncate">{currentProject?.name || "Niciun proiect"}</span>
@@ -489,10 +489,10 @@ export default function WorkspacePage() {
               </div>
             )}
           </div>
-          <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] rounded-lg disabled:opacity-30">
+          <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] rounded-lg disabled:opacity-30">
             <Download className="w-4 h-4" />
           </button>
-          <button onClick={handleRun} disabled={!hasCode} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
+          <button onClick={handleRun} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -501,16 +501,34 @@ export default function WorkspacePage() {
       <div className="flex-1 flex overflow-hidden relative">
         {/* Chat Sidebar — full screen on mobile, 50% on desktop */}
         <div className={cn("bg-[#0a0a0f] border-r border-[rgba(30,30,46,0.8)] flex flex-col transition-all duration-200 overflow-hidden min-w-0", isChatOpen ? "max-md:absolute max-md:inset-0 max-md:z-30 max-md:border-r-0 flex-1" : "w-0")}>
-          <div className="h-10 flex items-center px-3 border-b border-[rgba(30,30,46,0.8)]">
-            <Sparkles className="w-4 h-4 text-[#6366f1] mr-2" />
-            <span className="text-sm text-[#e2e8f0] font-medium">Chat AI</span>
-            {isLoading && <span className="ml-auto text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
-            {hasCode && (
-              <button onClick={() => setIsChatOpen(false)} className="md:hidden ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-[#6366f1]/20 text-[#6366f1] rounded-lg text-xs font-medium">
-                <Eye className="w-3.5 h-3.5" />
-                Vezi codul
-              </button>
-            )}
+          <div className="shrink-0 border-b border-[rgba(30,30,46,0.8)]">
+            <div className="h-10 flex items-center px-3">
+              <Sparkles className="w-4 h-4 text-[#6366f1] mr-2" />
+              <span className="text-sm text-[#e2e8f0] font-medium">Chat AI</span>
+              {isLoading && <span className="ml-auto text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
+              {hasCode && (
+                <button onClick={() => setIsChatOpen(false)} className="md:hidden ml-auto flex items-center gap-1.5 px-2.5 py-1 bg-[#6366f1]/20 text-[#6366f1] rounded-lg text-xs font-medium">
+                  <Eye className="w-3.5 h-3.5" />
+                  Vezi codul
+                </button>
+              )}
+            </div>
+            {/* Model selector on mobile */}
+            <div className="md:hidden px-3 pb-2">
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full h-8 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-xs rounded-lg px-2 outline-none focus:border-[#6366f1]"
+              >
+                {MODEL_CATEGORIES.map((cat) => (
+                  <optgroup key={cat.key} label={cat.label}>
+                    {models.filter((m) => m.category === cat.key).map((m) => (
+                      <option key={m.value} value={m.value}>{m.label} — {m.price}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
