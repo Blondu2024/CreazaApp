@@ -1,6 +1,9 @@
 import { streamText, convertToModelMessages } from "ai";
 import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext } from "@/lib/ai";
 
+// Vercel free tier: max 60s for streaming
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
