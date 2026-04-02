@@ -7,27 +7,36 @@ export const openrouter = createOpenAI({
 
 export const DEFAULT_MODEL = "qwen/qwen3.6-plus-preview:free";
 
-export const SYSTEM_PROMPT = `Ești un agent AI expert în crearea și modificarea aplicațiilor web.
-Răspunzi în limba română, dar scrii codul în engleză.
+export const SYSTEM_PROMPT = `Ești un agent AI expert, CreazaApp Agent. Creezi și modifici aplicații web.
+Răspunzi ÎNTOTDEAUNA în limba română. Codul e în engleză.
 
-COMPORTAMENT:
-- Când utilizatorul cere o aplicație NOUĂ → generezi codul complet
-- Când utilizatorul cere MODIFICĂRI → primești codul curent și îl modifici/extinzi
-- Când utilizatorul raportează o EROARE → analizezi, explici cauza, și generezi codul corectat
-- Poți pune întrebări dacă cererea e neclară
-- Explică pe scurt ce ai creat/modificat după cod
+CAPABILITĂȚI:
+- Creezi aplicații web complete (landing pages, dashboards, todo apps, portofolii etc.)
+- Modifici și extinzi cod existent — adaugi funcționalități, schimbi design, corectezi erori
+- Analizezi codul curent și explici ce face
+- Integrezi servicii externe (API-uri, chei API, baze de date)
+- Pui întrebări dacă cererea e neclară sau ai nevoie de detalii
+- Oferi sfaturi tehnice și sugestii de îmbunătățire
+
+COMPORTAMENT AGENT:
+- ÎNTOTDEAUNA verifici codul curent înainte de a modifica (îl primești în context)
+- Dacă utilizatorul cere ceva vag ("fă-l mai frumos"), întreabă CE anume vrea schimbat
+- Dacă utilizatorul menționează o cheie API sau un serviciu, integrează-l în cod
+- Dacă utilizatorul raportează o eroare, analizează codul, explică cauza, și generează fix-ul
+- Când faci modificări, explică CE ai schimbat și DE CE
+- Dacă proiectul e complex, sugerează pași și întreabă dacă vrea să continui
 
 REGULI STRICTE PENTRU COD:
 - Pune NUMELE FIȘIERULUI după \`\`\`, NU limbajul. Corect: \`\`\`App.jsx  GREȘIT: \`\`\`jsx
 - Tailwind CSS pentru stilizare
 - NU folosi import/export — codul rulează direct în browser cu React UMD
-- NU folosi import React, useState, etc. — sunt deja disponibile global
+- NU folosi import React, useState etc. — sunt deja disponibile global
 - Folosește: const { useState, useEffect, useRef, useCallback } = React;
 - Componenta principală se numește App
 - Generează ÎNTOTDEAUNA codul COMPLET al fișierului, nu doar fragmente
 - Când modifici, include TOT fișierul cu modificările aplicate
 
-Exemplu:
+EXEMPLU COD:
 \`\`\`App.jsx
 const { useState } = React;
 
@@ -43,17 +52,35 @@ function App() {
 }
 \`\`\``;
 
-export function buildSystemPromptWithCode(currentFiles: { path: string; content: string }[]): string {
-  if (currentFiles.length === 0) return SYSTEM_PROMPT;
+interface BuildPromptOptions {
+  currentFiles: { path: string; content: string }[];
+  chatHistory?: { role: string; content: string }[];
+}
 
-  const codeContext = currentFiles
-    .map((f) => `--- ${f.path} ---\n${f.content}`)
-    .join("\n\n");
+export function buildSystemPromptWithContext({ currentFiles, chatHistory }: BuildPromptOptions): string {
+  let prompt = SYSTEM_PROMPT;
 
-  return `${SYSTEM_PROMPT}
+  // Add previous conversation context
+  if (chatHistory && chatHistory.length > 0) {
+    const historyText = chatHistory
+      .map((m) => `${m.role === "user" ? "UTILIZATOR" : "AGENT"}: ${m.content.slice(0, 500)}`)
+      .join("\n\n");
 
-CODUL CURENT AL PROIECTULUI:
+    prompt += `\n\nCONVERSAȚIA ANTERIOARĂ (context — continuă de aici):
+${historyText}`;
+  }
+
+  // Add current code
+  if (currentFiles.length > 0) {
+    const codeContext = currentFiles
+      .map((f) => `--- ${f.path} ---\n${f.content}`)
+      .join("\n\n");
+
+    prompt += `\n\nCODUL CURENT AL PROIECTULUI:
 ${codeContext}
 
-Când utilizatorul cere modificări, pornește de la codul de mai sus și generează versiunea completă actualizată.`;
+Pornește de la codul de mai sus. Când modifici, generează versiunea completă actualizată.`;
+  }
+
+  return prompt;
 }

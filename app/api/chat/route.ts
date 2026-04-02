@@ -1,5 +1,5 @@
 import { streamText, convertToModelMessages } from "ai";
-import { openrouter, DEFAULT_MODEL, buildSystemPromptWithCode, SYSTEM_PROMPT } from "@/lib/ai";
+import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext } from "@/lib/ai";
 
 export async function POST(req: Request) {
   try {
@@ -8,12 +8,13 @@ export async function POST(req: Request) {
     const messages = body.messages || [];
     const model = body.model || DEFAULT_MODEL;
     const currentFiles = body.currentFiles || [];
+    const chatHistory = body.chatHistory || [];
 
     const modelMessages = await convertToModelMessages(messages);
 
-    // Include current code in system prompt so AI can modify it
-    const systemPrompt = currentFiles.length > 0
-      ? buildSystemPromptWithCode(currentFiles)
+    // Build context-aware system prompt
+    const systemPrompt = (currentFiles.length > 0 || chatHistory.length > 0)
+      ? buildSystemPromptWithContext({ currentFiles, chatHistory })
       : SYSTEM_PROMPT;
 
     const result = streamText({

@@ -269,14 +269,14 @@ export default function WorkspacePage() {
       }
     }
     if (proj) saveChatMessage(proj.id, "user", input);
-    sendMessage({ text: input }, { body: { model: selectedModel, currentFiles: files } });
+    sendMessage({ text: input }, { body: { model: selectedModel, currentFiles: files, chatHistory: restoredMessages } });
     setInput("");
   }, [input, isLoading, sendMessage, selectedModel, files, currentProject]);
 
   const handleSuggestion = useCallback((text: string) => {
     if (isLoading) return;
     if (currentProject) saveChatMessage(currentProject.id, "user", text);
-    sendMessage({ text }, { body: { model: selectedModel, currentFiles: files } });
+    sendMessage({ text }, { body: { model: selectedModel, currentFiles: files, chatHistory: restoredMessages } });
   }, [isLoading, sendMessage, selectedModel]);
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
