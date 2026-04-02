@@ -1,23 +1,6 @@
 import { NextRequest } from "next/server";
 import { createSandbox, getSandbox, writeFilesAndStart, type FileToWrite } from "@/lib/e2b";
 
-// GET — diagnostic (temporary)
-export async function GET() {
-  const allKeys = Object.keys(process.env).sort();
-  const e2bRelated = allKeys.filter(k => k.toLowerCase().includes("e2b"));
-  const customKeys = allKeys.filter(k =>
-    !k.startsWith("npm_") && !k.startsWith("NODE") && !k.startsWith("PATH") &&
-    !k.startsWith("HOME") && !k.startsWith("HOSTNAME") && !k.startsWith("__")
-  );
-  return Response.json({
-    e2bKeys: e2bRelated,
-    hasE2B: !!process.env["E2B_API_KEY"],
-    hasOpenRouter: !!process.env["OPENROUTER_API_KEY"],
-    customKeys: customKeys.slice(0, 30),
-    totalEnvVars: allKeys.length,
-  });
-}
-
 // POST — create sandbox or write files
 export async function POST(req: NextRequest) {
   try {
