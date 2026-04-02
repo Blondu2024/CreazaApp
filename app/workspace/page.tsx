@@ -16,6 +16,11 @@ import {
   Rocket, Copy, Check, Bot, ArrowUp, Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  createProject, listProjects, deleteProject, updateProjectTimestamp,
+  saveFiles, loadFiles, saveChatMessage, loadChatHistory, clearChatHistory,
+  type Project,
+} from "@/lib/supabase";
 
 const suggestions = [
   { icon: Coffee, text: "Landing page pentru o cafenea", color: "#f59e0b" },
@@ -101,37 +106,6 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
-// localStorage helpers
-const STORAGE_KEY = "creazaapp_session";
-const CHAT_KEY = "creazaapp_chat";
-
-interface SessionData {
-  files: { path: string; content: string }[];
-  model: string;
-}
-
-function saveSession(data: SessionData) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
-}
-
-function loadSession(): SessionData | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-function saveChatMessages(messages: UIMessage[]) {
-  try { localStorage.setItem(CHAT_KEY, JSON.stringify(messages)); } catch {}
-}
-
-function loadChatMessages(): UIMessage[] {
-  try {
-    const raw = localStorage.getItem(CHAT_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
 function openPreviewInNewTab(html: string) {
   const blob = new Blob([html], { type: "text/html" });
   const url = URL.createObjectURL(blob);
@@ -170,33 +144,74 @@ export default function WorkspacePage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Restore session from localStorage on mount
+  // Project state
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [showProjects, setShowProjects] = useState(false);
+  const [projectName, setProjectName] = useState("");
+
+  // Load projects list on mount
   useEffect(() => {
-    const saved = loadSession();
-    if (saved && saved.files.length > 0) {
-      setFiles(saved.files);
-      setActiveFile(saved.files[0].path);
-      setSelectedModel(saved.model);
-      // Auto-preview restored files
-      const html = buildPreviewHtml(saved.files);
+    listProjects().then(setProjects);
+    // Restore last project from localStorage
+    const lastId = localStorage.getItem("creazaapp_last_project");
+    if (lastId) openProject(lastId);
+  }, []);
+
+  // Open a project — load files and chat from Supabase
+  const openProject = useCallback(async (projectId: string) => {
+    const proj = (await listProjects()).find((p) => p.id === projectId);
+    if (!proj) return;
+    setCurrentProject(proj);
+    setSelectedModel(proj.model);
+    localStorage.setItem("creazaapp_last_project", proj.id);
+
+    const savedFiles = await loadFiles(proj.id);
+    if (savedFiles.length > 0) {
+      setFiles(savedFiles);
+      setActiveFile(savedFiles[0].path);
+      const html = buildPreviewHtml(savedFiles);
       if (html) {
         setPreviewHtml(html);
         setPreviewUrl("preview.creazaapp.local");
       }
     }
+    setShowProjects(false);
+    setProjects(await listProjects());
   }, []);
 
-  // Save session whenever files or model change
-  useEffect(() => {
-    if (files.length > 0) {
-      saveSession({ files, model: selectedModel });
+  // Create new project
+  const handleNewProject = useCallback(async () => {
+    const name = projectName.trim() || "Proiect nou";
+    const proj = await createProject(name, selectedModel);
+    if (proj) {
+      setCurrentProject(proj);
+      setFiles([]);
+      setActiveFile("");
+      setPreviewHtml(null);
+      setPreviewUrl(null);
+      setTerminalLogs([]);
+      localStorage.setItem("creazaapp_last_project", proj.id);
+      setProjects(await listProjects());
+      setShowProjects(false);
+      setProjectName("");
     }
-  }, [files, selectedModel]);
+  }, [projectName, selectedModel]);
+
+  // Auto-save files to Supabase when they change
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!currentProject || files.length === 0) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveFiles(currentProject.id, files);
+      updateProjectTimestamp(currentProject.id);
+    }, 2000);
+  }, [files, currentProject]);
 
   const addLog = useCallback((msg: string) => setTerminalLogs((p) => [...p, msg]), []);
 
   const { messages, sendMessage, stop, status } = useChat({
-    messages: loadChatMessages(),
     onFinish: useCallback(({ message }: { message: UIMessage }) => {
       if (message.role === "assistant") {
         const text = getTextFromMessage(message);
@@ -214,17 +229,17 @@ export default function WorkspacePage() {
             setActiveTab("preview");
             addLog("[OK] Preview generat automat");
           }
+
+          // Save AI response to Supabase
+          if (currentProject) {
+            saveChatMessage(currentProject.id, "assistant", text);
+          }
         }
       }
-    }, [addLog]),
+    }, [addLog, currentProject]),
   });
 
   const isLoading = status === "streaming" || status === "submitted";
-
-  // Save chat messages to localStorage
-  useEffect(() => {
-    if (messages.length > 0) saveChatMessages(messages);
-  }, [messages]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isLoading]);
 
@@ -233,15 +248,29 @@ export default function WorkspacePage() {
     if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }
   }, [input]);
 
-  const handleSubmit = useCallback((e?: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
+
+    // Auto-create project on first message
+    let proj = currentProject;
+    if (!proj) {
+      const name = input.trim().slice(0, 50);
+      proj = await createProject(name, selectedModel);
+      if (proj) {
+        setCurrentProject(proj);
+        localStorage.setItem("creazaapp_last_project", proj.id);
+        setProjects(await listProjects());
+      }
+    }
+    if (proj) saveChatMessage(proj.id, "user", input);
     sendMessage({ text: input }, { body: { model: selectedModel, currentFiles: files } });
     setInput("");
-  }, [input, isLoading, sendMessage, selectedModel, files]);
+  }, [input, isLoading, sendMessage, selectedModel, files, currentProject]);
 
   const handleSuggestion = useCallback((text: string) => {
     if (isLoading) return;
+    if (currentProject) saveChatMessage(currentProject.id, "user", text);
     sendMessage({ text }, { body: { model: selectedModel, currentFiles: files } });
   }, [isLoading, sendMessage, selectedModel]);
 
@@ -295,13 +324,43 @@ export default function WorkspacePage() {
         </select>
 
         <div className="flex items-center gap-2">
+          {/* Project selector */}
+          <div className="relative">
+            <button onClick={() => setShowProjects(!showProjects)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#e2e8f0] bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg hover:border-[#6366f1] max-w-[200px]">
+              <FolderTree className="w-4 h-4 text-[#6366f1] shrink-0" />
+              <span className="truncate">{currentProject?.name || "Niciun proiect"}</span>
+            </button>
+            {showProjects && (
+              <div className="absolute right-0 top-full mt-1 w-[280px] bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg shadow-xl z-50 overflow-hidden">
+                <div className="p-2 border-b border-[rgba(30,30,46,0.8)]">
+                  <div className="flex gap-1">
+                    <input value={projectName} onChange={(e) => setProjectName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleNewProject()} placeholder="Nume proiect nou..." className="flex-1 bg-[#0a0a0f] border border-[rgba(30,30,46,0.8)] rounded px-2 py-1 text-xs text-[#e2e8f0] placeholder:text-[#64748b] outline-none focus:border-[#6366f1]" />
+                    <button onClick={handleNewProject} className="bg-[#6366f1] text-white px-2 py-1 rounded text-xs"><Plus className="w-3 h-3" /></button>
+                  </div>
+                </div>
+                <ScrollArea className="max-h-[200px]">
+                  {projects.length === 0 ? (
+                    <p className="text-xs text-[#64748b] p-3 text-center">Niciun proiect încă</p>
+                  ) : (
+                    projects.map((p) => (
+                      <button key={p.id} onClick={() => openProject(p.id)} className={cn("w-full flex items-center justify-between px-3 py-2 text-left hover:bg-[#1e1e2e] transition-colors", currentProject?.id === p.id && "bg-[#6366f1]/10")}>
+                        <div>
+                          <p className="text-xs text-[#e2e8f0] font-medium">{p.name}</p>
+                          <p className="text-[10px] text-[#64748b]">{new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); deleteProject(p.id).then(() => listProjects().then(setProjects)); }} className="p-1 hover:bg-red-500/20 rounded opacity-0 group-hover:opacity-100"><X className="w-3 h-3 text-[#64748b]" /></button>
+                      </button>
+                    ))
+                  )}
+                </ScrollArea>
+              </div>
+            )}
+          </div>
           <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] rounded-lg disabled:opacity-30">
             <Download className="w-4 h-4" />
-            ZIP
           </button>
-          <button onClick={handleRun} disabled={!hasCode} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-4 py-1.5 rounded-lg text-sm font-medium btn-primary-glow disabled:opacity-40">
-            <RefreshCw className="w-4 h-4" />
-            Reîncarcă
+          <button onClick={handleRun} disabled={!hasCode} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
       </header>
