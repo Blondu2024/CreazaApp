@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import {
   createProject, listProjects, deleteProject, updateProjectTimestamp,
   saveFiles, loadFiles, saveChatMessage, loadChatHistory, clearChatHistory,
+  saveContextSummary, buildContextSummary,
   type Project,
 } from "@/lib/supabase";
 
@@ -320,7 +321,20 @@ export default function WorkspacePage() {
 
         // Save to Supabase
         const proj = currentProjectRef.current;
-        if (proj) saveChatMessage(proj.id, "assistant", text);
+        if (proj) {
+          saveChatMessage(proj.id, "assistant", text);
+
+          // Auto-update context summary
+          const allMsgs = [...(allChatRef.current || []), { role: "assistant" as const, content: text }];
+          const allFiles = [...filesRef.current];
+          for (const newFile of parsed) {
+            const idx = allFiles.findIndex((f) => f.path === newFile.path);
+            if (idx >= 0) allFiles[idx] = newFile;
+            else allFiles.push(newFile);
+          }
+          const summary = buildContextSummary(proj.name, allFiles, allMsgs);
+          saveContextSummary(proj.id, summary);
+        }
       }
     }, []),
   });
@@ -401,10 +415,11 @@ export default function WorkspacePage() {
     // Add user message to local display
     setAllChatMessages((prev) => [...prev, { role: "user", content: text }]);
 
-    // Send ALL messages + full files — token budgeting happens server-side
+    // Send ALL messages + full files + context summary — token budgeting happens server-side
     const currentFiles = filesRef.current.map(f => ({ path: f.path, content: f.content }));
     const chatHistory = allChatRef.current.map(m => ({ role: m.role, content: m.content }));
-    sendMessage({ text }, { body: { model: modelRef.current, currentFiles, chatHistory } });
+    const summary = currentProjectRef.current?.context_summary || undefined;
+    sendMessage({ text }, { body: { model: modelRef.current, currentFiles, chatHistory, summary } });
   }, [sendMessage]);
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {

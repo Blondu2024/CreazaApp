@@ -11,6 +11,7 @@ export interface Project {
   name: string;
   description: string;
   model: string;
+  context_summary: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -99,4 +100,57 @@ export async function loadChatHistory(projectId: string): Promise<ChatMessage[]>
 
 export async function clearChatHistory(projectId: string) {
   await supabase.from("chat_messages").delete().eq("project_id", projectId);
+}
+
+// Context summary
+export async function saveContextSummary(projectId: string, summary: string) {
+  const { error } = await supabase
+    .from("projects")
+    .update({ context_summary: summary })
+    .eq("id", projectId);
+  if (error) console.error("saveContextSummary:", error);
+}
+
+// Auto-build context summary from current state (no AI needed, instant)
+export function buildContextSummary(
+  projectName: string,
+  files: { path: string; content: string }[],
+  recentMessages: { role: string; content: string }[]
+): string {
+  const fileList = files.map((f) => {
+    const lines = f.content.split("\n").length;
+    return `- ${f.path} (${lines} linii)`;
+  }).join("\n");
+
+  // Extract last 5 user requests as "history"
+  const userRequests = recentMessages
+    .filter((m) => m.role === "user")
+    .slice(-5)
+    .map((m) => `- ${m.content.slice(0, 150)}`)
+    .join("\n");
+
+  // Extract last AI action
+  const lastAiMsg = [...recentMessages].reverse().find((m) => m.role === "assistant");
+  const lastAction = lastAiMsg
+    ? lastAiMsg.content.replace(/```[\s\S]*?```/g, "[cod]").slice(0, 300)
+    : "Proiect nou";
+
+  return `PROIECT: ${projectName}
+FIȘIERE:
+${fileList || "- niciun fișier încă"}
+ULTIMELE CERERI:
+${userRequests || "- nicio cerere încă"}
+ULTIMA ACȚIUNE AI:
+${lastAction}
+TOTAL: ${files.length} fișiere, ${recentMessages.length} mesaje`;
+}
+
+export async function loadContextSummary(projectId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("context_summary")
+    .eq("id", projectId)
+    .single();
+  if (error) { console.error("loadContextSummary:", error); return null; }
+  return data?.context_summary || null;
 }
