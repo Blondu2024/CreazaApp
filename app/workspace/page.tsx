@@ -16,7 +16,7 @@ import {
   Rocket, Copy, Check, Bot, ArrowUp, Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
+
 import {
   createProject, listProjects, deleteProject, updateProjectTimestamp,
   saveFiles, loadFiles, saveChatMessage, loadChatHistory, clearChatHistory,
@@ -64,6 +64,85 @@ function stripCodeBlocks(text: string): string {
     const label = LANG_LABELS[lang?.toLowerCase()] || lang || "Cod";
     return `[${label} generat]`;
   }).trim();
+}
+
+function ChatMarkdown({ text }: { text: string }) {
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  let key = 0;
+  let inList = false;
+  let listItems: React.ReactNode[] = [];
+  let listType: "ul" | "ol" = "ul";
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      if (listType === "ol") {
+        elements.push(<ol key={key++} className="list-decimal pl-6 my-2 space-y-1">{listItems}</ol>);
+      } else {
+        elements.push(<ul key={key++} className="list-disc pl-6 my-2 space-y-1">{listItems}</ul>);
+      }
+      listItems = [];
+      inList = false;
+    }
+  };
+
+  const renderInline = (str: string): React.ReactNode[] => {
+    const parts: React.ReactNode[] = [];
+    // Bold, italic, inline code, links
+    const rx = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`([^`]+)`)|(\[([^\]]+)\]\(([^)]+)\))/g;
+    let last = 0;
+    let m;
+    let k = 0;
+    while ((m = rx.exec(str)) !== null) {
+      if (m.index > last) parts.push(<span key={k++}>{str.slice(last, m.index)}</span>);
+      if (m[2]) parts.push(<strong key={k++} className="text-white font-bold">{m[2]}</strong>);
+      else if (m[4]) parts.push(<em key={k++} className="text-[#a78bfa] italic">{m[4]}</em>);
+      else if (m[6]) parts.push(<code key={k++} className="bg-[#6366f1]/15 text-[#a78bfa] px-1.5 py-0.5 rounded text-[0.85em] font-mono">{m[6]}</code>);
+      else if (m[8]) parts.push(<a key={k++} href={m[9]} target="_blank" rel="noopener noreferrer" className="text-[#818cf8] underline underline-offset-2 hover:text-[#a78bfa]">{m[8]}</a>);
+      last = m.index + m[0].length;
+    }
+    if (last < str.length) parts.push(<span key={k++}>{str.slice(last)}</span>);
+    return parts;
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Headings
+    if (trimmed.startsWith("### ")) { flushList(); elements.push(<h3 key={key++} className="text-[1.15em] font-bold text-[#e2e8f0] mt-3 mb-1">{renderInline(trimmed.slice(4))}</h3>); continue; }
+    if (trimmed.startsWith("## ")) { flushList(); elements.push(<h2 key={key++} className="text-[1.35em] font-bold text-white mt-4 mb-2">{renderInline(trimmed.slice(3))}</h2>); continue; }
+    if (trimmed.startsWith("# ")) { flushList(); elements.push(<h1 key={key++} className="text-[1.6em] font-extrabold text-white mt-4 mb-2">{renderInline(trimmed.slice(2))}</h1>); continue; }
+
+    // Horizontal rule
+    if (/^[-*_]{3,}$/.test(trimmed)) { flushList(); elements.push(<hr key={key++} className="border-[#6366f1]/20 my-3" />); continue; }
+
+    // Blockquote
+    if (trimmed.startsWith("> ")) { flushList(); elements.push(<blockquote key={key++} className="border-l-3 border-[#6366f1] pl-3 text-[#94a3b8] italic my-2">{renderInline(trimmed.slice(2))}</blockquote>); continue; }
+
+    // Unordered list
+    if (/^[-*+]\s/.test(trimmed)) {
+      if (!inList) { flushList(); inList = true; listType = "ul"; }
+      listItems.push(<li key={key++}>{renderInline(trimmed.replace(/^[-*+]\s/, ""))}</li>);
+      continue;
+    }
+
+    // Ordered list
+    if (/^\d+\.\s/.test(trimmed)) {
+      if (!inList) { flushList(); inList = true; listType = "ol"; }
+      listItems.push(<li key={key++}>{renderInline(trimmed.replace(/^\d+\.\s/, ""))}</li>);
+      continue;
+    }
+
+    // Empty line
+    if (!trimmed) { flushList(); continue; }
+
+    // Regular paragraph
+    flushList();
+    elements.push(<p key={key++} className="mb-2 last:mb-0">{renderInline(trimmed)}</p>);
+  }
+  flushList();
+
+  return <>{elements}</>;
 }
 
 function stripModuleSyntax(code: string): string {
@@ -463,7 +542,7 @@ export default function WorkspacePage() {
                       <div className="chat-markdown text-[#e2e8f0] break-words">
                         {isUser
                           ? <p className="text-[25px] leading-relaxed">{msg.content}</p>
-                          : <ReactMarkdown >{stripCodeBlocks(msg.content)}</ReactMarkdown>
+                          : <ChatMarkdown text={stripCodeBlocks(msg.content)} />
                         }
                       </div>
                     </div>
@@ -480,7 +559,7 @@ export default function WorkspacePage() {
                         <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                       </div>
                       <div className="chat-markdown text-[#e2e8f0] break-words">
-                        <ReactMarkdown >{stripCodeBlocks(text)}</ReactMarkdown>
+                        <ChatMarkdown text={stripCodeBlocks(text)} />
                       </div>
                     </div>
                   );
