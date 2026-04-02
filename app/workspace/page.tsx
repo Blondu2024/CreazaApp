@@ -30,16 +30,33 @@ function getTextFromMessage(message: UIMessage): string {
   return message.parts.filter((p): p is { type: "text"; text: string } => p.type === "text").map((p) => p.text).join("");
 }
 
+const LANG_TO_FILE: Record<string, string> = {
+  html: "index.html", css: "styles.css", javascript: "script.js", js: "script.js",
+  jsx: "App.jsx", tsx: "App.tsx", typescript: "App.ts", ts: "App.ts", json: "package.json",
+};
+
 function parseCodeBlocks(content: string): { path: string; content: string }[] {
   const files: { path: string; content: string }[] = [];
   const regex = /```(\S+)\n([\s\S]*?)```/g;
   let match;
   while ((match = regex.exec(content)) !== null) {
-    const filename = match[1];
+    const tag = match[1];
     const code = match[2].trim();
-    if (filename.includes(".") || filename.includes("/")) files.push({ path: filename, content: code });
+    const filename = tag.includes(".") || tag.includes("/") ? tag : LANG_TO_FILE[tag.toLowerCase()];
+    if (filename) files.push({ path: filename, content: code });
   }
   return files;
+}
+
+function buildPreviewHtml(files: { path: string; content: string }[]): string {
+  const htmlFile = files.find((f) => f.path.endsWith(".html"));
+  if (htmlFile) return htmlFile.content;
+
+  const cssFile = files.find((f) => f.path.endsWith(".css"));
+  const jsxFile = files.find((f) => f.path.endsWith(".jsx") || f.path.endsWith(".tsx") || f.path.endsWith(".js"));
+  if (!jsxFile) return "";
+
+  return `<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Preview</title><script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script><script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script><script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script><link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">${cssFile ? `<style>${cssFile.content}</style>` : ""}</head><body><div id="root"></div><script type="text/babel">${jsxFile.content}\nconst rootEl=document.getElementById('root');if(typeof App!=='undefined')ReactDOM.createRoot(rootEl).render(React.createElement(App));<\/script></body></html>`;
 }
 
 function CopyBtn({ text }: { text: string }) {
@@ -60,7 +77,7 @@ export default function WorkspacePage() {
   const [files, setFiles] = useState<{ path: string; content: string }[]>([]);
   const [activeFile, setActiveFile] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isDeploying, setIsDeploying] = useState(false);
+  const isRunning = false;
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [previewKey, setPreviewKey] = useState(0);
@@ -105,21 +122,22 @@ export default function WorkspacePage() {
     sendMessage({ text }, { body: { model: selectedModel } });
   }, [isLoading, sendMessage, selectedModel]);
 
-  const handleDeploy = useCallback(async () => {
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+
+  const handleRun = useCallback(() => {
     if (files.length === 0) return;
-    setIsDeploying(true); setIsTerminalOpen(true);
-    addLog("[E2B] Se creează sandbox-ul...");
-    try {
-      const r1 = await fetch("/api/sandbox", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create" }) });
-      const { sandboxId } = await r1.json();
-      addLog(`[E2B] Sandbox: ${sandboxId}`);
-      addLog("[E2B] Se scriu fișierele + npm install...");
-      const r2 = await fetch("/api/sandbox", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "write", sandboxId, files: files.map((f) => ({ path: `/home/user/app/${f.path}`, content: f.content })) }) });
-      const { previewUrl: url, error } = await r2.json();
-      if (error) addLog(`[ERR] ${error}`);
-      else { addLog(`[OK] ${url}`); setPreviewUrl(url); setActiveTab("preview"); }
-    } catch (err) { addLog(`[ERR] ${err instanceof Error ? err.message : "Unknown"}`); }
-    finally { setIsDeploying(false); }
+    setIsTerminalOpen(true);
+    addLog("[preview] Se construiește preview-ul...");
+    const html = buildPreviewHtml(files);
+    if (!html) {
+      addLog("[ERR] Nu s-a găsit fișier HTML sau JSX pentru preview");
+      return;
+    }
+    addLog(`[preview] ${files.length} fișier(e): ${files.map((f) => f.path).join(", ")}`);
+    addLog("[OK] Preview gata!");
+    setPreviewHtml(html);
+    setPreviewUrl("preview.creazaapp.local");
+    setActiveTab("preview");
   }, [files, addLog]);
 
   const activeContent = files.find((f) => f.path === activeFile)?.content || "";
@@ -157,9 +175,9 @@ export default function WorkspacePage() {
           <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] rounded-lg">
             <Download className="w-4 h-4" />
           </button>
-          <button onClick={handleDeploy} disabled={!hasCode || isDeploying} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-4 py-1.5 rounded-lg text-sm font-medium btn-primary-glow disabled:opacity-40">
-            {isDeploying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-            {isDeploying ? "Se rulează..." : "Rulează"}
+          <button onClick={handleRun} disabled={!hasCode || isRunning} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-4 py-1.5 rounded-lg text-sm font-medium btn-primary-glow disabled:opacity-40">
+            {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+            {isRunning ? "Se rulează..." : "Rulează"}
           </button>
         </div>
       </header>
@@ -272,8 +290,8 @@ export default function WorkspacePage() {
               <button onClick={() => setIsTerminalOpen(!isTerminalOpen)} className={cn("p-1.5 rounded", isTerminalOpen ? "bg-[#111118] text-[#e2e8f0]" : "text-[#64748b]")}>
                 <TerminalIcon className="w-4 h-4" />
               </button>
-              <button onClick={handleDeploy} disabled={!hasCode || isDeploying} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
-                {isDeploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              <button onClick={handleRun} disabled={!hasCode || isRunning} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
+                {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
                 Rulează
               </button>
             </div>
@@ -336,14 +354,14 @@ export default function WorkspacePage() {
                       </a>
                     </div>
                     <div className="flex-1 flex items-start justify-center bg-[#111118] overflow-hidden">
-                      <iframe key={previewKey} src={previewUrl} className={cn("h-full border-0 bg-white transition-all", viewMode === "mobile" ? "w-[375px] rounded-xl shadow-2xl my-3" : "w-full")} title="Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+                      <iframe key={previewKey} srcDoc={previewHtml || ""} className={cn("h-full border-0 bg-white transition-all", viewMode === "mobile" ? "w-[375px] rounded-xl shadow-2xl my-3" : "w-full")} title="Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
                     </div>
                   </>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center">
                     <Globe className="w-12 h-12 text-[#64748b]/20 mb-3" />
-                    <p className="text-sm text-[#64748b]">{isDeploying ? "Se pornește sandbox-ul..." : "Apasă Rulează pentru preview"}</p>
-                    {isDeploying && <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin mt-2" />}
+                    <p className="text-sm text-[#64748b]">{isRunning ? "Se pornește sandbox-ul..." : "Apasă Rulează pentru preview"}</p>
+                    {isRunning && <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin mt-2" />}
                   </div>
                 )}
               </div>
