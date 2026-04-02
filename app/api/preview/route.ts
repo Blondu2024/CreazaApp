@@ -10,8 +10,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const targetHost = new URL(targetUrl).host;
     const response = await fetch(targetUrl, {
-      headers: { "Accept": "text/html,*/*" },
+      headers: {
+        "Accept": "text/html,*/*",
+        "Host": targetHost,
+      },
     });
 
     const contentType = response.headers.get("content-type") || "text/html";
