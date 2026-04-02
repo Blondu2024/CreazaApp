@@ -60,10 +60,11 @@ interface BuildPromptOptions {
 export function buildSystemPromptWithContext({ currentFiles, chatHistory }: BuildPromptOptions): string {
   let prompt = SYSTEM_PROMPT;
 
-  // Add previous conversation context
+  // Add previous conversation context (last 10 messages, truncated)
   if (chatHistory && chatHistory.length > 0) {
-    const historyText = chatHistory
-      .map((m) => `${m.role === "user" ? "UTILIZATOR" : "AGENT"}: ${m.content.slice(0, 500)}`)
+    const recent = chatHistory.slice(-10);
+    const historyText = recent
+      .map((m) => `${m.role === "user" ? "UTILIZATOR" : "AGENT"}: ${m.content.slice(0, 300)}`)
       .join("\n\n");
 
     prompt += `\n\nCONVERSAȚIA ANTERIOARĂ (context — continuă de aici):

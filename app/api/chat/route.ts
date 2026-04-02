@@ -17,6 +17,12 @@ export async function POST(req: Request) {
       ? buildSystemPromptWithContext({ currentFiles, chatHistory })
       : SYSTEM_PROMPT;
 
+    console.log("[chat] Model:", model);
+    console.log("[chat] Messages:", modelMessages.length);
+    console.log("[chat] Files:", currentFiles.length);
+    console.log("[chat] History:", chatHistory.length);
+    console.log("[chat] System prompt length:", systemPrompt.length, "chars");
+
     const result = streamText({
       model: openrouter(model),
       system: systemPrompt,
