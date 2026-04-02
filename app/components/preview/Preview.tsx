@@ -9,6 +9,10 @@ interface PreviewProps {
   isLoading: boolean;
 }
 
+function proxyUrl(url: string): string {
+  return `/api/preview?url=${encodeURIComponent(url)}`;
+}
+
 export function Preview({ url, isLoading }: PreviewProps) {
   const [key, setKey] = useState(0);
   const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop");
@@ -74,11 +78,11 @@ export function Preview({ url, isLoading }: PreviewProps) {
           </a>
         </div>
       </div>
-      {/* iframe */}
+      {/* iframe — proxy through our domain to avoid E2B CSP iframe block */}
       <div className="flex-1 flex items-start justify-center bg-[#1a1a24] overflow-hidden">
         <iframe
           key={key}
-          src={url}
+          src={proxyUrl(url)}
           className={cn(
             "h-full border-0 bg-white transition-all duration-300",
             viewport === "mobile" ? "w-[375px] rounded-xl shadow-2xl shadow-black/40 my-3" : "w-full"
