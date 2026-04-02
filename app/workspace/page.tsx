@@ -459,7 +459,7 @@ export default function WorkspacePage() {
                           <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                         </div>
                       )}
-                      <p className="text-lg text-[#e2e8f0] whitespace-pre-wrap break-words leading-relaxed">{stripCodeBlocks(msg.content)}</p>
+                      <p className="text-[32px] text-[#e2e8f0] whitespace-pre-wrap break-words leading-relaxed">{stripCodeBlocks(msg.content)}</p>
                     </div>
                   );
                 })}
@@ -473,7 +473,7 @@ export default function WorkspacePage() {
                         <Sparkles className="w-4 h-4 text-[#6366f1]" />
                         <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                       </div>
-                      <p className="text-lg text-[#e2e8f0] whitespace-pre-wrap break-words leading-relaxed">{stripCodeBlocks(text)}</p>
+                      <p className="text-[32px] text-[#e2e8f0] whitespace-pre-wrap break-words leading-relaxed">{stripCodeBlocks(text)}</p>
                     </div>
                   );
                 })}
