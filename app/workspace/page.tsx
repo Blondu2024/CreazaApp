@@ -167,11 +167,18 @@ export default function WorkspacePage() {
 
   const addLog = useCallback((msg: string) => setTerminalLogs((p) => [...p, msg]), []);
 
-  // Use ref for currentProject in callbacks to avoid re-creating useChat
+  // Use refs in callbacks to avoid re-creating useChat on state changes
   const currentProjectRef = useRef(currentProject);
   currentProjectRef.current = currentProject;
+  const filesRef = useRef(files);
+  filesRef.current = files;
+  const restoredRef = useRef(restoredMessages);
+  restoredRef.current = restoredMessages;
+  const modelRef = useRef(selectedModel);
+  modelRef.current = selectedModel;
 
   const { messages, sendMessage, stop, status, setMessages } = useChat({
+    id: "workspace-chat",
     onFinish: useCallback(({ message }: { message: UIMessage }) => {
       if (message.role === "assistant") {
         const text = getTextFromMessage(message);
@@ -258,31 +265,36 @@ export default function WorkspacePage() {
     if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }
   }, [input]);
 
+  const sendWithContext = useCallback((text: string) => {
+    const proj = currentProjectRef.current;
+    if (proj) saveChatMessage(proj.id, "user", text);
+    // Send only last file content to keep body small
+    const currentFiles = filesRef.current.map(f => ({ path: f.path, content: f.content.slice(0, 3000) }));
+    const chatHistory = restoredRef.current.slice(-5).map(m => ({ role: m.role, content: m.content.slice(0, 200) }));
+    sendMessage({ text }, { body: { model: modelRef.current, currentFiles, chatHistory } });
+  }, [sendMessage]);
+
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
 
     // Auto-create project on first message
-    let proj = currentProject;
-    if (!proj) {
-      const name = input.trim().slice(0, 50);
-      proj = await createProject(name, selectedModel);
+    if (!currentProjectRef.current) {
+      const proj = await createProject(input.trim().slice(0, 50), modelRef.current);
       if (proj) {
         setCurrentProject(proj);
         localStorage.setItem("creazaapp_last_project", proj.id);
         setProjects(await listProjects());
       }
     }
-    if (proj) saveChatMessage(proj.id, "user", input);
-    sendMessage({ text: input }, { body: { model: selectedModel, currentFiles: files, chatHistory: restoredMessages } });
+    sendWithContext(input);
     setInput("");
-  }, [input, isLoading, sendMessage, selectedModel, files, currentProject]);
+  }, [input, isLoading, sendWithContext]);
 
   const handleSuggestion = useCallback((text: string) => {
     if (isLoading) return;
-    if (currentProject) saveChatMessage(currentProject.id, "user", text);
-    sendMessage({ text }, { body: { model: selectedModel, currentFiles: files, chatHistory: restoredMessages } });
-  }, [isLoading, sendMessage, selectedModel]);
+    sendWithContext(text);
+  }, [isLoading, sendWithContext]);
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
