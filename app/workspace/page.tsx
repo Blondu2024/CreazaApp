@@ -48,6 +48,15 @@ function parseCodeBlocks(content: string): { path: string; content: string }[] {
   return files;
 }
 
+function stripModuleSyntax(code: string): string {
+  return code
+    .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, "")
+    .replace(/^import\s+['"].*?['"];?\s*$/gm, "")
+    .replace(/^export\s+default\s+/gm, "")
+    .replace(/^export\s+/gm, "")
+    .replace(/module\.exports\s*=\s*/g, "");
+}
+
 function buildPreviewHtml(files: { path: string; content: string }[]): string {
   const htmlFile = files.find((f) => f.path.endsWith(".html"));
   if (htmlFile) return htmlFile.content;
@@ -56,7 +65,32 @@ function buildPreviewHtml(files: { path: string; content: string }[]): string {
   const jsxFile = files.find((f) => f.path.endsWith(".jsx") || f.path.endsWith(".tsx") || f.path.endsWith(".js"));
   if (!jsxFile) return "";
 
-  return `<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Preview</title><script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script><script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script><script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script><link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">${cssFile ? `<style>${cssFile.content}</style>` : ""}</head><body><div id="root"></div><script type="text/babel">${jsxFile.content}\nconst rootEl=document.getElementById('root');if(typeof App!=='undefined')ReactDOM.createRoot(rootEl).render(React.createElement(App));<\/script></body></html>`;
+  const cleanCode = stripModuleSyntax(jsxFile.content);
+
+  return `<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Preview</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  ${cssFile ? `<style>${cssFile.content}</style>` : ""}
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect, useRef, useCallback } = React;
+    ${cleanCode}
+    const rootEl = document.getElementById('root');
+    if (typeof App !== 'undefined') {
+      ReactDOM.createRoot(rootEl).render(React.createElement(App));
+    }
+  <\/script>
+</body>
+</html>`;
 }
 
 function CopyBtn({ text }: { text: string }) {
