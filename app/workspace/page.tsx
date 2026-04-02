@@ -82,7 +82,6 @@ function buildPreviewHtml(files: { path: string; content: string }[]): string {
 <body>
   <div id="root"></div>
   <script type="text/babel" data-type="module">
-    const { useState, useEffect, useRef, useCallback } = React;
     ${cleanCode}
     const rootEl = document.getElementById('root');
     if (typeof App !== 'undefined') {
