@@ -2,7 +2,10 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
+import { useAuth } from "../components/AuthProvider";
+import { signOut } from "@/lib/supabase";
 import type { UIMessage } from "ai";
 import { CodeEditor } from "../components/editor/CodeEditor";
 import { Terminal } from "../components/terminal/Terminal";
@@ -243,6 +246,14 @@ async function downloadZip(files: { path: string; content: string }[]) {
 }
 
 export default function WorkspacePage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) router.push("/login");
+  }, [authLoading, user, router]);
+
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
@@ -355,6 +366,8 @@ export default function WorkspacePage() {
   restoredRef.current = restoredMessages;
   const modelRef = useRef(selectedModel);
   modelRef.current = selectedModel;
+  const userRef = useRef(user);
+  userRef.current = user;
 
   // Track all chat messages locally (restored + new)
   const [allChatMessages, setAllChatMessages] = useState<{ role: string; content: string }[]>([]);
@@ -451,7 +464,7 @@ export default function WorkspacePage() {
 
   // Open a project — load files and chat from Supabase
   const openProject = useCallback(async (projectId: string) => {
-    const proj = (await listProjects()).find((p) => p.id === projectId);
+    const proj = (await listProjects(userRef.current?.id)).find((p) => p.id === projectId);
     if (!proj) return;
     setCurrentProject(proj);
     setSelectedModel(proj.model);
@@ -471,7 +484,7 @@ export default function WorkspacePage() {
     setAllChatMessages(chatHistory.map((m) => ({ role: m.role, content: m.content })));
     setMessages([]);
     setShowProjects(false);
-    setProjects(await listProjects());
+    setProjects(await listProjects(userRef.current?.id));
   }, [setMessages]);
 
   // Store ref for use in mount effect
@@ -480,20 +493,20 @@ export default function WorkspacePage() {
   // Create new project
   const handleNewProject = useCallback(async () => {
     const name = projectName.trim() || "Proiect nou";
-    const proj = await createProject(name, selectedModel);
+    const proj = await createProject(name, selectedModel, userRef.current?.id);
     if (proj) {
       setCurrentProject(proj); setFiles([]); setActiveFile("");
       setPreviewHtml(null); setPreviewUrl(null); setTerminalLogs([]);
       setMessages([]); setAllChatMessages([]);
       localStorage.setItem("creazaapp_last_project", proj.id);
-      setProjects(await listProjects());
+      setProjects(await listProjects(userRef.current?.id));
       setShowProjects(false); setProjectName("");
     }
   }, [projectName, selectedModel, setMessages]);
 
   // Load projects list on mount
   useEffect(() => {
-    listProjects().then(setProjects);
+    listProjects(userRef.current?.id).then(setProjects);
     const lastId = localStorage.getItem("creazaapp_last_project");
     if (lastId) openProjectRef.current?.(lastId);
   }, []);
@@ -545,11 +558,11 @@ export default function WorkspacePage() {
 
     // Auto-create project on first message
     if (!currentProjectRef.current) {
-      const proj = await createProject(input.trim().slice(0, 50), modelRef.current);
+      const proj = await createProject(input.trim().slice(0, 50), modelRef.current, userRef.current?.id);
       if (proj) {
         setCurrentProject(proj);
         localStorage.setItem("creazaapp_last_project", proj.id);
-        setProjects(await listProjects());
+        setProjects(await listProjects(userRef.current?.id));
       }
     }
     sendWithContext(input);
@@ -602,6 +615,15 @@ export default function WorkspacePage() {
   const contextPercent = Math.min(100, Math.round((contextTokens / contextBudget) * 100));
   const contextNearLimit = contextPercent > 80;
 
+  // Auth loading / redirect
+  if (authLoading || !user) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <Loader2 className="w-6 h-6 text-[#6366f1] animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0f] overflow-hidden" data-workspace>
       {/* Header */}
@@ -653,7 +675,7 @@ export default function WorkspacePage() {
                           <p className="text-xs text-[#e2e8f0] font-medium">{p.name}</p>
                           <p className="text-[10px] text-[#64748b]">{new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); deleteProject(p.id).then(() => listProjects().then(setProjects)); }} className="p-1 hover:bg-red-500/20 rounded opacity-0 group-hover:opacity-100"><X className="w-3 h-3 text-[#64748b]" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteProject(p.id).then(() => listProjects(userRef.current?.id).then(setProjects)); }} className="p-1 hover:bg-red-500/20 rounded opacity-0 group-hover:opacity-100"><X className="w-3 h-3 text-[#64748b]" /></button>
                       </button>
                     ))
                   )}
@@ -667,6 +689,10 @@ export default function WorkspacePage() {
           <button onClick={handleRun} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
+          <div className="hidden md:flex items-center gap-2 ml-2 pl-2 border-l border-[rgba(30,30,46,0.8)]">
+            <span className="text-[10px] text-[#64748b] truncate max-w-[120px]">{user.email}</span>
+            <button onClick={() => signOut().then(() => router.push("/login"))} className="text-[10px] text-[#64748b] hover:text-red-400 transition-colors">Ieși</button>
+          </div>
         </div>
       </header>
 

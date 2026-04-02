@@ -31,22 +31,60 @@ export interface ChatMessage {
   created_at: string;
 }
 
+// Auth
+export async function signUp(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) return { user: null, error: error.message };
+  return { user: data.user, error: null };
+}
+
+export async function signIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return { user: null, error: error.message };
+  return { user: data.user, error: null };
+}
+
+export async function signInWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/workspace` },
+  });
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+export async function signOut() {
+  await supabase.auth.signOut();
+}
+
+export async function getUser() {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+
+export function onAuthChange(callback: (user: unknown) => void) {
+  return supabase.auth.onAuthStateChange((_event, session) => {
+    callback(session?.user || null);
+  });
+}
+
 // Project CRUD
-export async function createProject(name: string, model: string): Promise<Project | null> {
+export async function createProject(name: string, model: string, userId?: string): Promise<Project | null> {
+  const row: Record<string, string> = { name, model };
+  if (userId) row.user_id = userId;
   const { data, error } = await supabase
     .from("projects")
-    .insert({ name, model })
+    .insert(row)
     .select()
     .single();
   if (error) { console.error("createProject:", error); return null; }
   return data;
 }
 
-export async function listProjects(): Promise<Project[]> {
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("updated_at", { ascending: false });
+export async function listProjects(userId?: string): Promise<Project[]> {
+  let query = supabase.from("projects").select("*").order("updated_at", { ascending: false });
+  if (userId) query = query.eq("user_id", userId);
+  const { data, error } = await query;
   if (error) { console.error("listProjects:", error); return []; }
   return data || [];
 }
