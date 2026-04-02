@@ -150,53 +150,8 @@ export default function WorkspacePage() {
   const [showProjects, setShowProjects] = useState(false);
   const [projectName, setProjectName] = useState("");
 
-  // Load projects list on mount
-  useEffect(() => {
-    listProjects().then(setProjects);
-    // Restore last project from localStorage
-    const lastId = localStorage.getItem("creazaapp_last_project");
-    if (lastId) openProject(lastId);
-  }, []);
-
-  // Open a project — load files and chat from Supabase
-  const openProject = useCallback(async (projectId: string) => {
-    const proj = (await listProjects()).find((p) => p.id === projectId);
-    if (!proj) return;
-    setCurrentProject(proj);
-    setSelectedModel(proj.model);
-    localStorage.setItem("creazaapp_last_project", proj.id);
-
-    const savedFiles = await loadFiles(proj.id);
-    if (savedFiles.length > 0) {
-      setFiles(savedFiles);
-      setActiveFile(savedFiles[0].path);
-      const html = buildPreviewHtml(savedFiles);
-      if (html) {
-        setPreviewHtml(html);
-        setPreviewUrl("preview.creazaapp.local");
-      }
-    }
-    setShowProjects(false);
-    setProjects(await listProjects());
-  }, []);
-
-  // Create new project
-  const handleNewProject = useCallback(async () => {
-    const name = projectName.trim() || "Proiect nou";
-    const proj = await createProject(name, selectedModel);
-    if (proj) {
-      setCurrentProject(proj);
-      setFiles([]);
-      setActiveFile("");
-      setPreviewHtml(null);
-      setPreviewUrl(null);
-      setTerminalLogs([]);
-      localStorage.setItem("creazaapp_last_project", proj.id);
-      setProjects(await listProjects());
-      setShowProjects(false);
-      setProjectName("");
-    }
-  }, [projectName, selectedModel]);
+  // Placeholder — defined after useChat
+  const openProjectRef = useRef<((id: string) => Promise<void>) | undefined>(undefined);
 
   // Auto-save files to Supabase when they change
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -211,7 +166,7 @@ export default function WorkspacePage() {
 
   const addLog = useCallback((msg: string) => setTerminalLogs((p) => [...p, msg]), []);
 
-  const { messages, sendMessage, stop, status } = useChat({
+  const { messages, sendMessage, stop, status, setMessages } = useChat({
     onFinish: useCallback(({ message }: { message: UIMessage }) => {
       if (message.role === "assistant") {
         const text = getTextFromMessage(message);
@@ -240,6 +195,63 @@ export default function WorkspacePage() {
   });
 
   const isLoading = status === "streaming" || status === "submitted";
+
+  // Open a project — load files and chat from Supabase
+  const openProject = useCallback(async (projectId: string) => {
+    const proj = (await listProjects()).find((p) => p.id === projectId);
+    if (!proj) return;
+    setCurrentProject(proj);
+    setSelectedModel(proj.model);
+    localStorage.setItem("creazaapp_last_project", proj.id);
+
+    const savedFiles = await loadFiles(proj.id);
+    if (savedFiles.length > 0) {
+      setFiles(savedFiles);
+      setActiveFile(savedFiles[0].path);
+      const html = buildPreviewHtml(savedFiles);
+      if (html) { setPreviewHtml(html); setPreviewUrl("preview.creazaapp.local"); }
+    } else {
+      setFiles([]); setActiveFile(""); setPreviewHtml(null); setPreviewUrl(null);
+    }
+
+    const chatHistory = await loadChatHistory(proj.id);
+    if (chatHistory.length > 0) {
+      const restored: UIMessage[] = chatHistory.map((msg, i) => ({
+        id: msg.id || `restored-${i}`,
+        role: msg.role as "user" | "assistant",
+        parts: [{ type: "text" as const, text: msg.content }],
+      }));
+      setMessages(restored);
+    } else {
+      setMessages([]);
+    }
+    setShowProjects(false);
+    setProjects(await listProjects());
+  }, [setMessages]);
+
+  // Store ref for use in mount effect
+  openProjectRef.current = openProject;
+
+  // Create new project
+  const handleNewProject = useCallback(async () => {
+    const name = projectName.trim() || "Proiect nou";
+    const proj = await createProject(name, selectedModel);
+    if (proj) {
+      setCurrentProject(proj); setFiles([]); setActiveFile("");
+      setPreviewHtml(null); setPreviewUrl(null); setTerminalLogs([]);
+      setMessages([]);
+      localStorage.setItem("creazaapp_last_project", proj.id);
+      setProjects(await listProjects());
+      setShowProjects(false); setProjectName("");
+    }
+  }, [projectName, selectedModel, setMessages]);
+
+  // Load projects list on mount
+  useEffect(() => {
+    listProjects().then(setProjects);
+    const lastId = localStorage.getItem("creazaapp_last_project");
+    if (lastId) openProjectRef.current?.(lastId);
+  }, []);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isLoading]);
 
