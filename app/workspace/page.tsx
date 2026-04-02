@@ -7,6 +7,7 @@ import type { UIMessage } from "ai";
 import { CodeEditor } from "../components/editor/CodeEditor";
 import { Terminal } from "../components/terminal/Terminal";
 import { models, MODEL_CATEGORIES } from "../components/models";
+import { estimateTokens, CONTEXT_BUDGETS } from "@/lib/ai";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, PanelLeftClose, PanelLeftOpen, Code, Eye,
@@ -400,9 +401,9 @@ export default function WorkspacePage() {
     // Add user message to local display
     setAllChatMessages((prev) => [...prev, { role: "user", content: text }]);
 
-    // Send with full context via system prompt — useChat messages are always clean
-    const currentFiles = filesRef.current.map(f => ({ path: f.path, content: f.content.slice(0, 3000) }));
-    const chatHistory = allChatRef.current.slice(-10).map(m => ({ role: m.role, content: m.content.slice(0, 300) }));
+    // Send ALL messages + full files — token budgeting happens server-side
+    const currentFiles = filesRef.current.map(f => ({ path: f.path, content: f.content }));
+    const chatHistory = allChatRef.current.map(m => ({ role: m.role, content: m.content }));
     sendMessage({ text }, { body: { model: modelRef.current, currentFiles, chatHistory } });
   }, [sendMessage]);
 
@@ -450,6 +451,13 @@ export default function WorkspacePage() {
   const hasCode = files.length > 0;
   const isEmpty = messages.length === 0 && allChatMessages.length === 0;
   const currentModelLabel = models.find((m) => m.value === selectedModel)?.label || selectedModel;
+
+  // Token usage tracking
+  const contextTokens = allChatMessages.reduce((sum, m) => sum + estimateTokens(m.content), 0)
+    + files.reduce((sum, f) => sum + estimateTokens(f.content), 0);
+  const contextBudget = CONTEXT_BUDGETS.free; // TODO: use user tier
+  const contextPercent = Math.min(100, Math.round((contextTokens / contextBudget) * 100));
+  const contextNearLimit = contextPercent > 80;
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0f] overflow-hidden" data-workspace>
@@ -735,7 +743,17 @@ export default function WorkspacePage() {
           <div className="h-10 flex items-center px-3 border-b border-[rgba(30,30,46,0.8)] shrink-0">
             <Sparkles className="w-4 h-4 text-[#6366f1] mr-2" />
             <span className="text-sm text-[#e2e8f0] font-medium">Chat AI</span>
-            {isLoading && <span className="ml-auto text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
+            <div className="ml-auto flex items-center gap-2">
+              {isLoading && <span className="text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
+              {!isEmpty && (
+                <div className="flex items-center gap-1.5" title={`${contextTokens.toLocaleString()} / ${(contextBudget / 1000).toFixed(0)}K tokeni`}>
+                  <div className="w-16 h-1.5 bg-[#111118] rounded-full overflow-hidden">
+                    <div className={cn("h-full rounded-full transition-all", contextNearLimit ? "bg-amber-500" : "bg-[#6366f1]")} style={{ width: `${contextPercent}%` }} />
+                  </div>
+                  <span className={cn("text-[9px]", contextNearLimit ? "text-amber-500" : "text-[#64748b]")}>{contextPercent}%</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">

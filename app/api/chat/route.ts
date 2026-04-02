@@ -12,6 +12,8 @@ export async function POST(req: Request) {
     const model = body.model || DEFAULT_MODEL;
     const currentFiles = body.currentFiles || [];
     const chatHistory = body.chatHistory || [];
+    const tier = body.tier || "free";
+    const summary = body.summary || undefined;
 
     let modelMessages = await convertToModelMessages(messages);
 
@@ -22,18 +24,18 @@ export async function POST(req: Request) {
       return true;
     });
 
-    // Build context-aware system prompt
+    // Build context-aware system prompt with token budgeting
     const systemPrompt = (currentFiles.length > 0 || chatHistory.length > 0)
-      ? buildSystemPromptWithContext({ currentFiles, chatHistory })
+      ? buildSystemPromptWithContext({ currentFiles, chatHistory, tier, summary })
       : SYSTEM_PROMPT;
 
     console.log("[chat] Model:", model);
+    console.log("[chat] Tier:", tier);
     console.log("[chat] Messages:", modelMessages.length);
     console.log("[chat] Files:", currentFiles.length);
     console.log("[chat] History:", chatHistory.length);
-    console.log("[chat] System prompt length:", systemPrompt.length, "chars");
+    console.log("[chat] System prompt length:", systemPrompt.length, "chars (~", Math.ceil(systemPrompt.length / 4), "tokens)");
     console.log("[chat] Message roles:", modelMessages.map((m: { role: string }) => m.role).join(", "));
-    console.log("[chat] Raw messages sample:", JSON.stringify(messages.slice(-2)).slice(0, 500));
 
     const result = streamText({
       model: openrouter(model),

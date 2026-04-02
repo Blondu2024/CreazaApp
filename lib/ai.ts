@@ -77,36 +77,104 @@ function App() {
 }
 \`\`\``;
 
+// Token estimation: ~4 chars per token (conservative)
+export function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+// Context budgets per tier
+export const CONTEXT_BUDGETS = {
+  free: 200_000,  // 200K tokens
+  pro: 1_000_000, // 1M tokens
+} as const;
+
+export type UserTier = keyof typeof CONTEXT_BUDGETS;
+
 interface BuildPromptOptions {
   currentFiles: { path: string; content: string }[];
   chatHistory?: { role: string; content: string }[];
+  tier?: UserTier;
+  summary?: string; // Summary from a previous fork
 }
 
-export function buildSystemPromptWithContext({ currentFiles, chatHistory }: BuildPromptOptions): string {
+export function buildSystemPromptWithContext({ currentFiles, chatHistory, tier = "free", summary }: BuildPromptOptions): string {
+  const budget = CONTEXT_BUDGETS[tier];
   let prompt = SYSTEM_PROMPT;
+  let usedTokens = estimateTokens(prompt);
 
-  // Add previous conversation context (last 10 messages, truncated)
-  if (chatHistory && chatHistory.length > 0) {
-    const recent = chatHistory.slice(-10);
-    const historyText = recent
-      .map((m) => `${m.role === "user" ? "UTILIZATOR" : "AGENT"}: ${m.content.slice(0, 300)}`)
-      .join("\n\n");
-
-    prompt += `\n\nCONVERSAȚIA ANTERIOARĂ (context — continuă de aici):
-${historyText}`;
+  // Add fork summary if exists (from previous session sumarization)
+  if (summary) {
+    const summaryBlock = `\n\nREZUMAT CONVERSAȚIE ANTERIOARĂ:\n${summary}`;
+    usedTokens += estimateTokens(summaryBlock);
+    prompt += summaryBlock;
   }
 
-  // Add current code
-  if (currentFiles.length > 0) {
-    const codeContext = currentFiles
-      .map((f) => `--- ${f.path} ---\n${f.content}`)
-      .join("\n\n");
+  // Reserve space for code (up to 40% of remaining budget)
+  const codeReserve = Math.floor((budget - usedTokens) * 0.4);
+  const chatReserve = budget - usedTokens - codeReserve;
 
-    prompt += `\n\nCODUL CURENT AL PROIECTULUI:
-${codeContext}
+  // Add chat history — full messages, newest first, until budget
+  if (chatHistory && chatHistory.length > 0) {
+    const messages: string[] = [];
+    let chatTokens = 0;
+
+    // Work backwards from most recent — include as many full messages as fit
+    for (let i = chatHistory.length - 1; i >= 0; i--) {
+      const msg = chatHistory[i];
+      const label = msg.role === "user" ? "UTILIZATOR" : "AGENT";
+      const line = `${label}: ${msg.content}`;
+      const lineTokens = estimateTokens(line);
+
+      if (chatTokens + lineTokens > chatReserve) break;
+      messages.unshift(line);
+      chatTokens += lineTokens;
+    }
+
+    if (messages.length > 0) {
+      prompt += `\n\nCONVERSAȚIA (${messages.length} din ${chatHistory.length} mesaje, ${chatTokens} tokeni):
+${messages.join("\n\n")}`;
+      usedTokens += chatTokens;
+    }
+  }
+
+  // Add current code — full files until budget
+  if (currentFiles.length > 0) {
+    const fileBlocks: string[] = [];
+    let codeTokens = 0;
+
+    for (const f of currentFiles) {
+      const block = `--- ${f.path} ---\n${f.content}`;
+      const blockTokens = estimateTokens(block);
+
+      if (codeTokens + blockTokens > codeReserve) {
+        // Truncate large files to fit
+        const remainingChars = (codeReserve - codeTokens) * 4;
+        if (remainingChars > 200) {
+          fileBlocks.push(`--- ${f.path} (trunchiat) ---\n${f.content.slice(0, remainingChars)}`);
+        }
+        break;
+      }
+      fileBlocks.push(block);
+      codeTokens += blockTokens;
+    }
+
+    if (fileBlocks.length > 0) {
+      prompt += `\n\nCODUL CURENT AL PROIECTULUI:
+${fileBlocks.join("\n\n")}
 
 Pornește de la codul de mai sus. Când modifici, generează versiunea completă actualizată.`;
+    }
   }
 
   return prompt;
 }
+
+// Generate a conversation summary for forking
+export const FORK_SUMMARY_PROMPT = `Ești un agent de sumarizare. Creează un REZUMAT CONCIS al conversației de mai jos.
+Include:
+1. Ce proiect s-a construit (tip, funcționalități)
+2. Ce modificări s-au făcut (în ordine cronologică)
+3. Probleme rezolvate
+4. Ultima stare a proiectului
+
+Rezumatul trebuie să fie sub 2000 de cuvinte și în română. NU include cod — doar descrieri.`;
