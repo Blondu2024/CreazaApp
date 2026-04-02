@@ -149,6 +149,7 @@ export default function WorkspacePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showProjects, setShowProjects] = useState(false);
   const [projectName, setProjectName] = useState("");
+  const [restoredMessages, setRestoredMessages] = useState<{ role: string; content: string }[]>([]);
 
   // Placeholder — defined after useChat
   const openProjectRef = useRef<((id: string) => Promise<void>) | undefined>(undefined);
@@ -215,16 +216,8 @@ export default function WorkspacePage() {
     }
 
     const chatHistory = await loadChatHistory(proj.id);
-    if (chatHistory.length > 0) {
-      const restored: UIMessage[] = chatHistory.map((msg, i) => ({
-        id: msg.id || `restored-${i}`,
-        role: msg.role as "user" | "assistant",
-        parts: [{ type: "text" as const, text: msg.content }],
-      }));
-      setMessages(restored);
-    } else {
-      setMessages([]);
-    }
+    setRestoredMessages(chatHistory.map((m) => ({ role: m.role, content: m.content })));
+    setMessages([]);
     setShowProjects(false);
     setProjects(await listProjects());
   }, [setMessages]);
@@ -239,7 +232,7 @@ export default function WorkspacePage() {
     if (proj) {
       setCurrentProject(proj); setFiles([]); setActiveFile("");
       setPreviewHtml(null); setPreviewUrl(null); setTerminalLogs([]);
-      setMessages([]);
+      setMessages([]); setRestoredMessages([]);
       localStorage.setItem("creazaapp_last_project", proj.id);
       setProjects(await listProjects());
       setShowProjects(false); setProjectName("");
@@ -306,7 +299,7 @@ export default function WorkspacePage() {
 
   const activeContent = files.find((f) => f.path === activeFile)?.content || "";
   const hasCode = files.length > 0;
-  const isEmpty = messages.length === 0;
+  const isEmpty = messages.length === 0 && restoredMessages.length === 0;
   const currentModelLabel = models.find((m) => m.value === selectedModel)?.label || selectedModel;
 
   return (
@@ -407,6 +400,28 @@ export default function WorkspacePage() {
               </div>
             ) : (
               <div className="p-3 space-y-3">
+                {/* Restored messages from Supabase */}
+                {restoredMessages.map((msg, i) => {
+                  const isUser = msg.role === "user";
+                  const text = msg.content;
+                  return (
+                    <div key={`restored-${i}`} className={cn("rounded-lg p-3 border opacity-70", isUser ? "bg-[#111118] border-[rgba(30,30,46,0.8)]" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
+                      {!isUser && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-4 h-4 text-[#6366f1]" />
+                          <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
+                        </div>
+                      )}
+                      <p className="text-sm text-[#e2e8f0] whitespace-pre-wrap break-words">{text.length > 500 ? text.slice(0, 500) + "..." : text}</p>
+                    </div>
+                  );
+                })}
+                {restoredMessages.length > 0 && messages.length === 0 && (
+                  <div className="text-center py-2">
+                    <span className="text-[10px] text-[#64748b] bg-[#111118] px-2 py-1 rounded">— continuă conversația mai jos —</span>
+                  </div>
+                )}
+                {/* Live messages from useChat */}
                 {messages.map((msg) => {
                   const text = getTextFromMessage(msg);
                   if (!text) return null;
