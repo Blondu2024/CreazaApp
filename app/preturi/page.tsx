@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
+import { useAuth } from "../components/AuthProvider";
+import { getAccessToken } from "@/lib/supabase";
 
 // Icon aliases (reuse existing icons for categories)
 const Cpu = Sparkles;
@@ -193,10 +195,26 @@ function CellDisplay({ value }: { value: CellValue }) {
 // Page
 // ============================================
 
+async function handleCheckout(type: "subscription" | "topup", id: string, token: string | null) {
+  if (!token) {
+    window.location.href = "/login";
+    return;
+  }
+  const res = await fetch("/api/stripe/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ type, id }),
+  });
+  const data = await res.json();
+  if (data.url) window.location.href = data.url;
+  else alert(data.error || "Eroare la checkout");
+}
+
 export default function PricingPage() {
   const [openFaqs, setOpenFaqs] = useState<Set<number>>(new Set());
   const [expandedApi, setExpandedApi] = useState<string | null>(null);
   const [showAllFeatures, setShowAllFeatures] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   const toggleFaq = (i: number) => {
     setOpenFaqs((prev) => {
@@ -302,16 +320,27 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <Link
-                href="/workspace"
-                className={`w-full py-3 rounded-xl text-center font-semibold block transition-all duration-200 ${
-                  plan.price > 0
-                    ? "bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white btn-primary-glow"
-                    : "bg-transparent border border-border text-foreground hover:bg-card"
-                }`}
-              >
-                {plan.cta}
-              </Link>
+              {plan.price > 0 ? (
+                <button
+                  onClick={async () => {
+                    setCheckoutLoading(plan.id);
+                    const token = await getAccessToken();
+                    await handleCheckout("subscription", plan.id, token);
+                    setCheckoutLoading(null);
+                  }}
+                  disabled={checkoutLoading === plan.id}
+                  className="w-full py-3 rounded-xl text-center font-semibold transition-all duration-200 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white btn-primary-glow disabled:opacity-50"
+                >
+                  {checkoutLoading === plan.id ? "Se încarcă..." : plan.cta}
+                </button>
+              ) : (
+                <Link
+                  href="/workspace"
+                  className="w-full py-3 rounded-xl text-center font-semibold block transition-all duration-200 bg-transparent border border-border text-foreground hover:bg-card"
+                >
+                  {plan.cta}
+                </Link>
+              )}
             </div>
           ))}
         </div>
@@ -553,6 +582,18 @@ export default function PricingPage() {
                 {t.savings > 0 && (
                   <p className="text-[10px] text-[#10b981] font-medium mt-1.5">Economisești {t.savings}%</p>
                 )}
+                <button
+                  onClick={async () => {
+                    setCheckoutLoading(`topup-${t.name.toLowerCase()}`);
+                    const token = await getAccessToken();
+                    await handleCheckout("topup", t.name.toLowerCase(), token);
+                    setCheckoutLoading(null);
+                  }}
+                  disabled={checkoutLoading === `topup-${t.name.toLowerCase()}`}
+                  className="mt-3 w-full py-2 rounded-lg text-xs font-semibold transition-all bg-[#f59e0b]/10 text-[#f59e0b] hover:bg-[#f59e0b]/20 border border-[#f59e0b]/30 disabled:opacity-50"
+                >
+                  {checkoutLoading === `topup-${t.name.toLowerCase()}` ? "..." : "Cumpără"}
+                </button>
               </div>
             ))}
           </div>

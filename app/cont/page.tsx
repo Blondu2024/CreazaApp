@@ -122,11 +122,29 @@ export default function AccountPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 mb-8">
+        <div className="flex flex-wrap gap-3 mb-8">
           <Link href="/preturi" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-[#a855f7] text-white rounded-lg text-sm font-medium btn-primary-glow">
             <ArrowUpRight className="w-4 h-4" />
             {plan.priceRON === 0 ? "Upgrade plan" : "Cumpără credite"}
           </Link>
+          {plan.priceRON > 0 && (
+            <button
+              onClick={async () => {
+                const token = await getAccessToken();
+                if (!token) return;
+                const res = await fetch("/api/stripe/portal", {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              }}
+              className="flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg text-sm font-medium hover:bg-card transition-colors"
+            >
+              <CreditCard className="w-4 h-4" />
+              Gestionează abonament
+            </button>
+          )}
           <Link href="/projects" className="flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg text-sm font-medium hover:bg-card transition-colors">
             Proiectele mele
           </Link>
