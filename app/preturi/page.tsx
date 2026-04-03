@@ -22,13 +22,13 @@ const plans = [
   {
     id: "pro", name: "Pro", description: "Creatori serioși",
     price: 149, period: "/lună", credits: 400, badge: "Avansat",
-    features: ["400 credite/lună", "Alegi modelul AI", "Sonnet 4, GPT-4.1, Gemini 2.5", "Context 200K tokeni", "Deploy + Hosting inclus", "Top-up credite disponibil"],
+    features: ["400 credite/lună", "Alegi modelul AI", "Modele puternice disponibile", "Context 200K tokeni", "Deploy + Hosting inclus", "Top-up credite disponibil"],
     cta: "Începe Pro →", ctaStyle: "gradient" as const, highlighted: false,
   },
   {
     id: "ultra", name: "Ultra", description: "Performanță maximă",
     price: 299, period: "/lună", credits: 500,
-    features: ["500 credite/lună", "Alegi modelul AI premium", "Opus 4.6, Sonnet 4, GPT-4.1", "Context 1M tokeni", "Deploy + Hosting prioritar", "Top-up credite disponibil"],
+    features: ["500 credite/lună", "Alegi modelul AI premium", "Cele mai puternice modele", "Context 1M tokeni", "Deploy + Hosting prioritar", "Top-up credite disponibil"],
     cta: "Începe Ultra →", ctaStyle: "gradient" as const, highlighted: false,
   },
 ];

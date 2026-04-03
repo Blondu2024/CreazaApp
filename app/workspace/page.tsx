@@ -686,7 +686,7 @@ export default function WorkspacePage() {
           >
             {(profile.plan === "ultra"
               ? models.filter((m) => ["anthropic/claude-opus-4-6","anthropic/claude-sonnet-4","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
-              : models.filter((m) => ["anthropic/claude-sonnet-4","anthropic/claude-haiku-4.5","openai/gpt-4.1","google/gemini-2.5-pro-preview","google/gemini-2.5-flash","deepseek/deepseek-r1"].includes(m.value))
+              : models.filter((m) => ["anthropic/claude-sonnet-4","anthropic/claude-3.5-sonnet","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
             ).map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}

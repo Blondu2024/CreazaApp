@@ -21,13 +21,12 @@ export const PLANS: Record<string, PlanDefinition> = {
   ultra:   { id: "ultra",   name: "Ultra",   priceRON: 299, creditsPerMonth: 500, model: "anthropic/claude-opus-4-6",  canChooseModel: true,  contextBudget: 1_000_000 },
 };
 
-// Models available for Pro/Ultra selection
+// Models available for Pro/Ultra selection — only powerful models
 export const PRO_MODELS = [
   "anthropic/claude-sonnet-4",
-  "anthropic/claude-haiku-4.5",
+  "anthropic/claude-3.5-sonnet",
   "openai/gpt-4.1",
   "google/gemini-2.5-pro-preview",
-  "google/gemini-2.5-flash",
   "deepseek/deepseek-r1",
 ];
 
