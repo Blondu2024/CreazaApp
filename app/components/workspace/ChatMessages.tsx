@@ -51,7 +51,7 @@ function ChatMarkdown({ text }: { text: string }) {
     let k = 0;
     while ((m = rx.exec(str)) !== null) {
       if (m.index > last) parts.push(<span key={k++}>{str.slice(last, m.index)}</span>);
-      if (m[2]) parts.push(<strong key={k++} className="text-white font-bold">{m[2]}</strong>);
+      if (m[2]) parts.push(<strong key={k++} className="text-foreground font-bold">{m[2]}</strong>);
       else if (m[4]) parts.push(<em key={k++} className="text-[#a78bfa] italic">{m[4]}</em>);
       else if (m[6]) parts.push(<code key={k++} className="bg-[#6366f1]/15 text-[#a78bfa] px-1.5 py-0.5 rounded text-[0.85em] font-mono">{m[6]}</code>);
       else if (m[8]) parts.push(<a key={k++} href={m[9]} target="_blank" rel="noopener noreferrer" className="text-[#818cf8] underline underline-offset-2 hover:text-[#a78bfa]">{m[8]}</a>);
@@ -63,20 +63,20 @@ function ChatMarkdown({ text }: { text: string }) {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.startsWith("### ")) { flushList(); elements.push(<h3 key={key++} className="text-[1.15em] font-bold text-[#e2e8f0] mt-3 mb-1">{renderInline(trimmed.slice(4))}</h3>); continue; }
-    if (trimmed.startsWith("## ")) { flushList(); elements.push(<h2 key={key++} className="text-[1.35em] font-bold text-white mt-4 mb-2">{renderInline(trimmed.slice(3))}</h2>); continue; }
-    if (trimmed.startsWith("# ")) { flushList(); elements.push(<h1 key={key++} className="text-[1.6em] font-extrabold text-white mt-4 mb-2">{renderInline(trimmed.slice(2))}</h1>); continue; }
+    if (trimmed.startsWith("### ")) { flushList(); elements.push(<h3 key={key++} className="text-[1.15em] font-bold text-foreground mt-3 mb-1">{renderInline(trimmed.slice(4))}</h3>); continue; }
+    if (trimmed.startsWith("## ")) { flushList(); elements.push(<h2 key={key++} className="text-[1.35em] font-bold text-foreground mt-4 mb-2">{renderInline(trimmed.slice(3))}</h2>); continue; }
+    if (trimmed.startsWith("# ")) { flushList(); elements.push(<h1 key={key++} className="text-[1.6em] font-extrabold text-foreground mt-4 mb-2">{renderInline(trimmed.slice(2))}</h1>); continue; }
     if (/^[-*_]{3,}$/.test(trimmed)) { flushList(); elements.push(<hr key={key++} className="border-[#6366f1]/20 my-3" />); continue; }
-    if (trimmed.startsWith("> ")) { flushList(); elements.push(<blockquote key={key++} className="border-l-3 border-[#6366f1] pl-3 text-[#94a3b8] italic my-2">{renderInline(trimmed.slice(2))}</blockquote>); continue; }
+    if (trimmed.startsWith("> ")) { flushList(); elements.push(<blockquote key={key++} className="border-l-3 border-[#6366f1] pl-3 text-muted-foreground italic my-2">{renderInline(trimmed.slice(2))}</blockquote>); continue; }
 
     const ulMatch = trimmed.match(/^[-*]\s+(.*)/);
     const olMatch = trimmed.match(/^\d+\.\s+(.*)/);
-    if (ulMatch) { if (!inList || listType !== "ul") { flushList(); inList = true; listType = "ul"; } listItems.push(<li key={key++} className="text-[#e2e8f0]">{renderInline(ulMatch[1])}</li>); continue; }
-    if (olMatch) { if (!inList || listType !== "ol") { flushList(); inList = true; listType = "ol"; } listItems.push(<li key={key++} className="text-[#e2e8f0]">{renderInline(olMatch[1])}</li>); continue; }
+    if (ulMatch) { if (!inList || listType !== "ul") { flushList(); inList = true; listType = "ul"; } listItems.push(<li key={key++} className="text-foreground">{renderInline(ulMatch[1])}</li>); continue; }
+    if (olMatch) { if (!inList || listType !== "ol") { flushList(); inList = true; listType = "ol"; } listItems.push(<li key={key++} className="text-foreground">{renderInline(olMatch[1])}</li>); continue; }
 
     flushList();
     if (!trimmed) { elements.push(<div key={key++} className="h-2" />); continue; }
-    elements.push(<p key={key++} className="text-[32px] leading-relaxed text-[#e2e8f0]">{renderInline(trimmed)}</p>);
+    elements.push(<p key={key++} className="text-[32px] leading-relaxed text-foreground">{renderInline(trimmed)}</p>);
   }
   flushList();
   return <>{elements}</>;
@@ -102,14 +102,14 @@ export function ChatMessages({
       {allChatMessages.map((msg, i) => {
         const isUser = msg.role === "user";
         return (
-          <div key={`chat-${i}`} className={cn("rounded-lg p-3 border", isUser ? "bg-[#111118] border-[rgba(30,30,46,0.8)]" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
+          <div key={`chat-${i}`} className={cn("rounded-lg p-3 border", isUser ? "bg-card border-border" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
             {!isUser && (
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
+                <span className="text-xs font-medium text-foreground">CreazaApp AI</span>
               </div>
             )}
-            <div className="chat-markdown text-[#e2e8f0] break-words">
+            <div className="chat-markdown text-foreground break-words">
               {isUser
                 ? <p className="text-[25px] leading-relaxed">{msg.content}</p>
                 : <ChatMarkdown text={stripCodeBlocks(msg.content)} />
@@ -127,10 +127,10 @@ export function ChatMessages({
           <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-[#6366f1]" />
-              <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
+              <span className="text-xs font-medium text-foreground">CreazaApp AI</span>
             </div>
             {cleaned && (
-              <div className="chat-markdown text-[#e2e8f0] break-words">
+              <div className="chat-markdown text-foreground break-words">
                 <ChatMarkdown text={cleaned} />
               </div>
             )}
@@ -151,7 +151,7 @@ export function ChatMessages({
         <div className="rounded-lg p-4 bg-gradient-to-r from-[#6366f1]/15 to-[#a855f7]/15 border border-[#6366f1]/30">
           <div className="flex items-center gap-3">
             <Sparkles className="w-5 h-5 text-[#6366f1] animate-pulse" />
-            <span className="text-sm text-[#e2e8f0] font-medium animate-pulse">Se pregătește...</span>
+            <span className="text-sm text-foreground font-medium animate-pulse">Se pregătește...</span>
           </div>
         </div>
       )}

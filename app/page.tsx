@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Sparkles, Layers, Code, Terminal, Download, ArrowRight, Zap,
   Globe, Shield, Clock, MousePointerClick, Bot, Eye,
+  Volume2, Mic, ImagePlus, Eraser, Languages, ScanText, FileText, Video, Star,
 } from "lucide-react";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
@@ -13,6 +14,17 @@ const features = [
   { icon: Code, title: "Editor profesional", description: "CodeMirror cu evidentierea sintaxei. Editezi manual sau lasi AI-ul sa scrie.", color: "#f59e0b" },
   { icon: Terminal, title: "Terminal integrat", description: "Loguri, erori, si status in timp real. Agentul le vede si le repara.", color: "#ef4444" },
   { icon: Download, title: "Download ZIP", description: "Descarci proiectul complet si il folosesti oriunde.", color: "#3b82f6" },
+];
+
+const apiCapabilities = [
+  { icon: Volume2, title: "Text-in-Voce", desc: "Voce naturala in 130+ limbi", cost: "0.14", color: "#6366f1" },
+  { icon: Mic, title: "Voce-in-Text", desc: "Transcrie audio in text", cost: "0.10", color: "#a855f7" },
+  { icon: ImagePlus, title: "Generare Imagini", desc: "Creaza imagini din text", cost: "0.14", color: "#10b981" },
+  { icon: Eraser, title: "Stergere Fundal", desc: "Elimina fundalul din poze", cost: "0.10", color: "#3b82f6" },
+  { icon: Languages, title: "Traducere", desc: "Traducere in 130+ limbi", cost: "0.17", color: "#f59e0b" },
+  { icon: ScanText, title: "OCR", desc: "Text din imagini si scanari", cost: "0.10", color: "#ef4444" },
+  { icon: FileText, title: "Parsare Documente", desc: "PDF, DOCX, XLSX, PPTX", cost: "0.10", color: "#6366f1" },
+  { icon: Video, title: "Generare Video", desc: "Video din text cu AI", cost: "1.72", color: "#a855f7" },
 ];
 
 const steps = [
@@ -133,12 +145,12 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mt-1">Modele AI</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-foreground">50</p>
-            <p className="text-sm text-muted-foreground mt-1">Credite gratuite</p>
+            <p className="text-3xl font-bold text-foreground">8</p>
+            <p className="text-sm text-muted-foreground mt-1">API-uri integrate</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-foreground">&lt;30s</p>
-            <p className="text-sm text-muted-foreground mt-1">Prima generare</p>
+            <p className="text-3xl font-bold text-foreground">50</p>
+            <p className="text-sm text-muted-foreground mt-1">Credite gratuite</p>
           </div>
           <div>
             <p className="text-3xl font-bold gradient-text">100%</p>
@@ -186,6 +198,44 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* API-uri AI integrate */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-1.5 bg-[#10b981]/10 text-[#10b981] text-xs font-bold px-3 py-1 rounded-full mb-4">
+              <Star className="w-3 h-3" /> NOU
+            </span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-foreground mb-4">
+              API-uri AI <span className="gradient-text">integrate</span>
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Aplicatiile tale au acces la cele mai puternice API-uri AI. Fara conturi externe, fara chei — totul din creditele tale CreazaApp.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {apiCapabilities.map((api) => (
+              <div key={api.title} className="bg-card rounded-xl border border-border p-5 hover:border-[#6366f1]/30 transition-all duration-200 text-center group">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: `${api.color}15` }}>
+                  <api.icon className="w-5 h-5" style={{ color: api.color }} />
+                </div>
+                <h3 className="text-sm font-semibold text-foreground mb-1">{api.title}</h3>
+                <p className="text-[11px] text-muted-foreground mb-2">{api.desc}</p>
+                <span className="text-xs font-bold text-[#10b981]">de la {api.cost} cr</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            Provideri premium disponibili pe planurile Pro si Ultra — ElevenLabs, DALL-E 3, DeepL si altele
+          </p>
+          <div className="text-center mt-4">
+            <Link href="/preturi" className="inline-flex items-center gap-1 text-sm text-[#6366f1] hover:text-[#a855f7] font-medium transition-colors">
+              Vezi toate API-urile si preturile
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </section>

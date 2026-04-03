@@ -135,7 +135,7 @@ function ChatMarkdown({ text }: { text: string }) {
     const trimmed = line.trim();
 
     // Headings
-    if (trimmed.startsWith("### ")) { flushList(); elements.push(<h3 key={key++} className="text-[1.15em] font-bold text-[#e2e8f0] mt-3 mb-1">{renderInline(trimmed.slice(4))}</h3>); continue; }
+    if (trimmed.startsWith("### ")) { flushList(); elements.push(<h3 key={key++} className="text-[1.15em] font-bold text-foreground mt-3 mb-1">{renderInline(trimmed.slice(4))}</h3>); continue; }
     if (trimmed.startsWith("## ")) { flushList(); elements.push(<h2 key={key++} className="text-[1.35em] font-bold text-white mt-4 mb-2">{renderInline(trimmed.slice(3))}</h2>); continue; }
     if (trimmed.startsWith("# ")) { flushList(); elements.push(<h1 key={key++} className="text-[1.6em] font-extrabold text-white mt-4 mb-2">{renderInline(trimmed.slice(2))}</h1>); continue; }
 
@@ -143,7 +143,7 @@ function ChatMarkdown({ text }: { text: string }) {
     if (/^[-*_]{3,}$/.test(trimmed)) { flushList(); elements.push(<hr key={key++} className="border-[#6366f1]/20 my-3" />); continue; }
 
     // Blockquote
-    if (trimmed.startsWith("> ")) { flushList(); elements.push(<blockquote key={key++} className="border-l-3 border-[#6366f1] pl-3 text-[#94a3b8] italic my-2">{renderInline(trimmed.slice(2))}</blockquote>); continue; }
+    if (trimmed.startsWith("> ")) { flushList(); elements.push(<blockquote key={key++} className="border-l-3 border-[#6366f1] pl-3 text-muted-foreground italic my-2">{renderInline(trimmed.slice(2))}</blockquote>); continue; }
 
     // Unordered list
     if (/^[-*+]\s/.test(trimmed)) {
@@ -245,7 +245,7 @@ function CopyBtn({ text }: { text: string }) {
   const [ok, setOk] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 2000); }} className="absolute top-2 right-2 p-1 rounded bg-white/5 hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-      {ok ? <Check className="w-3.5 h-3.5 text-[#10b981]" /> : <Copy className="w-3.5 h-3.5 text-[#64748b]" />}
+      {ok ? <Check className="w-3.5 h-3.5 text-[#10b981]" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
     </button>
   );
 }
@@ -731,19 +731,19 @@ export default function WorkspacePage() {
   // Auth loading / redirect
   if (authLoading || !user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#0a0a0f]">
+      <div className="h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 text-[#6366f1] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="dark h-screen flex flex-col bg-[#0a0a0f] overflow-hidden" data-workspace>
+    <div className="h-screen flex flex-col bg-background overflow-hidden" data-workspace>
       {/* Header */}
-      <header className="h-12 flex-shrink-0 glass-header border-b border-[rgba(30,30,46,0.8)] flex items-center justify-between px-3 gap-2">
+      <header className="h-12 flex-shrink-0 glass-header border-b border-border flex items-center justify-between px-3 gap-2">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <Sparkles className="w-5 h-5 text-[#6366f1]" />
-          <span className="text-base font-bold"><span className="gradient-text">Creaza</span><span className="text-[#e2e8f0]">App</span></span>
+          <span className="text-base font-bold"><span className="gradient-text">Creaza</span><span className="text-foreground">App</span></span>
         </Link>
 
         {/* Model indicator or selector based on plan */}
@@ -751,7 +751,7 @@ export default function WorkspacePage() {
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
-            className="hidden md:block h-8 w-[240px] bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1] cursor-pointer"
+            className="hidden md:block h-8 w-[240px] bg-card border border-border text-foreground text-sm rounded-lg px-3 outline-none focus:border-[#6366f1] cursor-pointer"
           >
             {(profile.plan === "ultra"
               ? models.filter((m) => ["anthropic/claude-opus-4-6","anthropic/claude-sonnet-4","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
@@ -761,38 +761,38 @@ export default function WorkspacePage() {
             ))}
           </select>
         ) : (
-          <div className="hidden md:flex items-center gap-2 h-8 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3">
+          <div className="hidden md:flex items-center gap-2 h-8 bg-card border border-border text-foreground text-sm rounded-lg px-3">
             <Sparkles className="w-3.5 h-3.5 text-[#6366f1]" />
-            <span className="text-xs text-[#94a3b8]">{profile?.plan === "starter" ? "Haiku 4.5" : "Sonnet 4"}</span>
+            <span className="text-xs text-muted-foreground">{profile?.plan === "starter" ? "Haiku 4.5" : "Sonnet 4"}</span>
           </div>
         )}
 
         <div className="flex items-center gap-2">
           {/* Project selector — hidden on mobile */}
           <div className="relative hidden md:block">
-            <button onClick={() => setShowProjects(!showProjects)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#e2e8f0] bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg hover:border-[#6366f1] max-w-[200px]">
+            <button onClick={() => setShowProjects(!showProjects)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-foreground bg-card border border-border rounded-lg hover:border-[#6366f1] max-w-[200px]">
               <FolderTree className="w-4 h-4 text-[#6366f1] shrink-0" />
               <span className="truncate">{currentProject?.name || "Niciun proiect"}</span>
             </button>
             {showProjects && (
-              <div className="absolute right-0 top-full mt-1 w-[280px] bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg shadow-xl z-50 overflow-hidden">
-                <div className="p-2 border-b border-[rgba(30,30,46,0.8)]">
+              <div className="absolute right-0 top-full mt-1 w-[280px] bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+                <div className="p-2 border-b border-border">
                   <div className="flex gap-1">
-                    <input value={projectName} onChange={(e) => setProjectName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleNewProject()} placeholder="Nume proiect nou..." className="flex-1 bg-[#0a0a0f] border border-[rgba(30,30,46,0.8)] rounded px-2 py-1 text-xs text-[#e2e8f0] placeholder:text-[#64748b] outline-none focus:border-[#6366f1]" />
+                    <input value={projectName} onChange={(e) => setProjectName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleNewProject()} placeholder="Nume proiect nou..." className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-[#6366f1]" />
                     <button onClick={handleNewProject} className="bg-[#6366f1] text-white px-2 py-1 rounded text-xs"><Plus className="w-3 h-3" /></button>
                   </div>
                 </div>
                 <ScrollArea className="max-h-[200px]">
                   {projects.length === 0 ? (
-                    <p className="text-xs text-[#64748b] p-3 text-center">Niciun proiect încă</p>
+                    <p className="text-xs text-muted-foreground p-3 text-center">Niciun proiect încă</p>
                   ) : (
                     projects.map((p) => (
-                      <button key={p.id} onClick={() => openProject(p.id)} className={cn("w-full flex items-center justify-between px-3 py-2 text-left hover:bg-[#1e1e2e] transition-colors", currentProject?.id === p.id && "bg-[#6366f1]/10")}>
+                      <button key={p.id} onClick={() => openProject(p.id)} className={cn("w-full flex items-center justify-between px-3 py-2 text-left hover:bg-accent transition-colors", currentProject?.id === p.id && "bg-[#6366f1]/10")}>
                         <div>
-                          <p className="text-xs text-[#e2e8f0] font-medium">{p.name}</p>
-                          <p className="text-[10px] text-[#64748b]">{new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
+                          <p className="text-xs text-foreground font-medium">{p.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{new Date(p.updated_at).toLocaleDateString("ro-RO")}</p>
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); deleteProject(p.id).then(() => listProjects(userRef.current?.id).then(setProjects)); }} className="p-1 hover:bg-red-500/20 rounded opacity-0 group-hover:opacity-100"><X className="w-3 h-3 text-[#64748b]" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteProject(p.id).then(() => listProjects(userRef.current?.id).then(setProjects)); }} className="p-1 hover:bg-red-500/20 rounded opacity-0 group-hover:opacity-100"><X className="w-3 h-3 text-muted-foreground" /></button>
                       </button>
                     ))
                   )}
@@ -800,21 +800,21 @@ export default function WorkspacePage() {
               </div>
             )}
           </div>
-          <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] rounded-lg disabled:opacity-30">
+          <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card rounded-lg disabled:opacity-30">
             <Download className="w-4 h-4" />
           </button>
           <button onClick={handleRun} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
-          <div className="hidden md:flex items-center gap-2 ml-2 pl-2 border-l border-[rgba(30,30,46,0.8)]">
+          <div className="hidden md:flex items-center gap-2 ml-2 pl-2 border-l border-border">
             {profile && (
-              <Link href="/preturi" className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[18px] font-bold hover:opacity-80 transition-opacity", profile.totalCredits <= 5 ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-[#111118] border-[rgba(30,30,46,0.8)] text-[#f59e0b]")}>
+              <Link href="/preturi" className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[18px] font-bold hover:opacity-80 transition-opacity", profile.totalCredits <= 5 ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-card border-border text-[#f59e0b]")}>
                 <Zap className="w-4 h-4" />
                 {Number.isInteger(profile.totalCredits) ? profile.totalCredits : profile.totalCredits.toFixed(1)}
               </Link>
             )}
-            <span className="text-[10px] text-[#64748b] truncate max-w-[120px]">{user.email}</span>
-            <button onClick={() => signOut().then(() => router.push("/login"))} className="text-[10px] text-[#64748b] hover:text-red-400 transition-colors">Ieși</button>
+            <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">{user.email}</span>
+            <button onClick={() => signOut().then(() => router.push("/login"))} className="text-[10px] text-muted-foreground hover:text-red-400 transition-colors">Ieși</button>
           </div>
         </div>
       </header>
@@ -825,14 +825,14 @@ export default function WorkspacePage() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Chat view */}
           {mobileTab === "chat" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0f]">
+            <div className="flex-1 flex flex-col overflow-hidden bg-background">
               {/* Model indicator or selector */}
-              <div className="shrink-0 px-3 py-2 border-b border-[rgba(30,30,46,0.8)]">
+              <div className="shrink-0 px-3 py-2 border-b border-border">
                 {profile?.plan === "pro" || profile?.plan === "ultra" ? (
                 <select
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full h-9 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1]"
+                  className="w-full h-9 bg-card border border-border text-foreground text-sm rounded-lg px-3 outline-none focus:border-[#6366f1]"
                 >
                   {(profile.plan === "ultra"
                     ? models.filter((m) => ["anthropic/claude-opus-4-6","anthropic/claude-sonnet-4","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
@@ -842,9 +842,9 @@ export default function WorkspacePage() {
                   ))}
                 </select>
                 ) : (
-                <div className="flex items-center gap-2 h-9 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3">
+                <div className="flex items-center gap-2 h-9 bg-card border border-border text-foreground text-sm rounded-lg px-3">
                   <Sparkles className="w-3.5 h-3.5 text-[#6366f1]" />
-                  <span className="text-xs text-[#94a3b8]">{profile?.plan === "starter" ? "Haiku 4.5" : "Sonnet 4"}</span>
+                  <span className="text-xs text-muted-foreground">{profile?.plan === "starter" ? "Haiku 4.5" : "Sonnet 4"}</span>
                 </div>
                 )}
               </div>
@@ -855,15 +855,15 @@ export default function WorkspacePage() {
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#6366f1]/20 to-[#a855f7]/20 flex items-center justify-center mb-4 mt-8">
                   <Sparkles className="w-7 h-7 text-[#6366f1]" />
                 </div>
-                <h3 className="text-base font-semibold text-[#e2e8f0] mb-1">Ce vrei să construiești?</h3>
-                <p className="text-xs text-[#64748b] mb-4 text-center">Descrie aplicația și o generez instant</p>
+                <h3 className="text-base font-semibold text-foreground mb-1">Ce vrei să construiești?</h3>
+                <p className="text-xs text-muted-foreground mb-4 text-center">Descrie aplicația și o generez instant</p>
                 <div className="w-full space-y-2">
                   {suggestions.map((s, i) => (
-                    <button key={i} onClick={() => handleSuggestion(s.text)} className="w-full bg-[#111118] hover:bg-[#1e1e2e] border border-[rgba(30,30,46,0.8)] rounded-lg p-3 flex items-center gap-2 text-left transition-colors">
+                    <button key={i} onClick={() => handleSuggestion(s.text)} className="w-full bg-card hover:bg-accent border border-border rounded-lg p-3 flex items-center gap-2 text-left transition-colors">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${s.color}20` }}>
                         <s.icon className="w-4 h-4" style={{ color: s.color }} />
                       </div>
-                      <span className="text-xs text-[#e2e8f0]">{s.text}</span>
+                      <span className="text-xs text-foreground">{s.text}</span>
                     </button>
                   ))}
                 </div>
@@ -899,15 +899,15 @@ export default function WorkspacePage() {
 
           {/* Mobile Code view */}
           {mobileTab === "code" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0f]">
+            <div className="flex-1 flex flex-col overflow-hidden bg-background">
               {hasCode && (
-                <div className="h-9 flex items-center gap-0.5 px-2 bg-[#0a0a0f] border-b border-[rgba(30,30,46,0.8)] overflow-x-auto">
+                <div className="h-9 flex items-center gap-0.5 px-2 bg-background border-b border-border overflow-x-auto">
                   {files.map((f) => {
                     const name = f.path.split("/").pop() || f.path;
                     const ext = name.split(".").pop() || "";
                     const isActive = f.path === activeFile;
                     return (
-                      <button key={f.path} onClick={() => setActiveFile(f.path)} className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-t border border-b-0 whitespace-nowrap transition-colors", isActive ? "bg-[#111118] text-[#e2e8f0] border-[rgba(30,30,46,0.8)]" : "text-[#64748b] border-transparent")}>
+                      <button key={f.path} onClick={() => setActiveFile(f.path)} className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-t border border-b-0 whitespace-nowrap transition-colors", isActive ? "bg-card text-foreground border-border" : "text-muted-foreground border-transparent")}>
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getFileColor(ext) }} />
                         {name}
                       </button>
@@ -921,8 +921,8 @@ export default function WorkspacePage() {
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center">
-                  <Code className="w-12 h-12 text-[#64748b]/20 mb-3" />
-                  <p className="text-sm text-[#64748b]">Codul generat de AI va apărea aici</p>
+                  <Code className="w-12 h-12 text-muted-foreground/20 mb-3" />
+                  <p className="text-sm text-muted-foreground">Codul generat de AI va apărea aici</p>
                 </div>
               )}
             </div>
@@ -930,19 +930,19 @@ export default function WorkspacePage() {
 
           {/* Mobile Preview view */}
           {mobileTab === "preview" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0f]">
+            <div className="flex-1 flex flex-col overflow-hidden bg-background">
               {previewUrl ? (
                 <>
-                  <div className="flex items-center gap-2 px-3 py-2 border-b border-[rgba(30,30,46,0.8)]">
-                    <div className="flex-1 flex items-center gap-1.5 bg-[#111118] rounded-md px-2.5 py-1 text-[11px] border border-[rgba(30,30,46,0.8)]">
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+                    <div className="flex-1 flex items-center gap-1.5 bg-card rounded-md px-2.5 py-1 text-[11px] border border-border">
                       <Globe className="w-3 h-3 text-[#10b981] shrink-0" />
-                      <span className="truncate text-[#64748b] font-mono">{previewUrl}</span>
+                      <span className="truncate text-muted-foreground font-mono">{previewUrl}</span>
                     </div>
-                    <button onClick={() => setPreviewKey((k) => k + 1)} className="p-1.5 rounded hover:bg-[#111118]">
-                      <RefreshCw className="w-4 h-4 text-[#64748b]" />
+                    <button onClick={() => setPreviewKey((k) => k + 1)} className="p-1.5 rounded hover:bg-card">
+                      <RefreshCw className="w-4 h-4 text-muted-foreground" />
                     </button>
-                    <button onClick={() => previewHtml && openPreviewInNewTab(previewHtml)} className="p-1.5 rounded hover:bg-[#111118]">
-                      <ExternalLink className="w-4 h-4 text-[#64748b]" />
+                    <button onClick={() => previewHtml && openPreviewInNewTab(previewHtml)} className="p-1.5 rounded hover:bg-card">
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
                     </button>
                   </div>
                   <div className="flex-1 overflow-hidden">
@@ -951,8 +951,8 @@ export default function WorkspacePage() {
                 </>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center">
-                  <Globe className="w-12 h-12 text-[#64748b]/20 mb-3" />
-                  <p className="text-sm text-[#64748b]">{isLoading ? "AI-ul generează codul..." : "Scrie un prompt și preview-ul apare automat"}</p>
+                  <Globe className="w-12 h-12 text-muted-foreground/20 mb-3" />
+                  <p className="text-sm text-muted-foreground">{isLoading ? "AI-ul generează codul..." : "Scrie un prompt și preview-ul apare automat"}</p>
                   {isLoading && <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin mt-2" />}
                 </div>
               )}
@@ -961,17 +961,17 @@ export default function WorkspacePage() {
         </div>
 
         {/* Mobile Bottom Nav */}
-        <div className="shrink-0 flex border-t border-[rgba(30,30,46,0.8)] bg-[#0a0a0f] safe-area-bottom">
-          <button onClick={() => setMobileTab("chat")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5", mobileTab === "chat" ? "text-[#6366f1]" : "text-[#64748b]")}>
+        <div className="shrink-0 flex border-t border-border bg-background safe-area-bottom">
+          <button onClick={() => setMobileTab("chat")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5", mobileTab === "chat" ? "text-[#6366f1]" : "text-muted-foreground")}>
             <Sparkles className="w-5 h-5" />
             <span className="text-[10px] font-medium">Chat</span>
           </button>
-          <button onClick={() => setMobileTab("code")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", mobileTab === "code" ? "text-[#6366f1]" : "text-[#64748b]")}>
+          <button onClick={() => setMobileTab("code")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", mobileTab === "code" ? "text-[#6366f1]" : "text-muted-foreground")}>
             <Code className="w-5 h-5" />
             <span className="text-[10px] font-medium">Cod</span>
             {hasCode && <span className="absolute top-1.5 right-[calc(50%-2px)] translate-x-3 w-1.5 h-1.5 rounded-full bg-[#6366f1]" />}
           </button>
-          <button onClick={() => setMobileTab("preview")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", mobileTab === "preview" ? "text-[#6366f1]" : "text-[#64748b]")}>
+          <button onClick={() => setMobileTab("preview")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", mobileTab === "preview" ? "text-[#6366f1]" : "text-muted-foreground")}>
             <Eye className="w-5 h-5" />
             <span className="text-[10px] font-medium">Preview</span>
             {previewUrl && <span className="absolute top-1.5 right-[calc(50%-2px)] translate-x-3 w-1.5 h-1.5 rounded-full bg-[#10b981]" />}
@@ -982,18 +982,18 @@ export default function WorkspacePage() {
       {/* ===== DESKTOP LAYOUT (unchanged) ===== */}
       <div className="flex-1 hidden md:flex overflow-hidden">
         {/* Chat Sidebar */}
-        <div className={cn("bg-[#0a0a0f] border-r border-[rgba(30,30,46,0.8)] flex flex-col transition-all duration-200 overflow-hidden min-w-0", isChatOpen ? "flex-1" : "w-0")}>
-          <div className="h-10 flex items-center px-3 border-b border-[rgba(30,30,46,0.8)] shrink-0">
+        <div className={cn("bg-background border-r border-border flex flex-col transition-all duration-200 overflow-hidden min-w-0", isChatOpen ? "flex-1" : "w-0")}>
+          <div className="h-10 flex items-center px-3 border-b border-border shrink-0">
             <Sparkles className="w-4 h-4 text-[#6366f1] mr-2" />
-            <span className="text-sm text-[#e2e8f0] font-medium">Chat AI</span>
+            <span className="text-sm text-foreground font-medium">Chat AI</span>
             <div className="ml-auto flex items-center gap-2">
               {isLoading && <span className="text-[10px] text-[#6366f1] animate-pulse">generare...</span>}
               {!isEmpty && (
                 <div className="flex items-center gap-1.5" title={`${contextTokens.toLocaleString()} / ${(contextBudget / 1000).toFixed(0)}K tokeni`}>
-                  <div className="w-16 h-1.5 bg-[#111118] rounded-full overflow-hidden">
+                  <div className="w-16 h-1.5 bg-card rounded-full overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all", contextNearLimit ? "bg-amber-500" : "bg-[#6366f1]")} style={{ width: `${contextPercent}%` }} />
                   </div>
-                  <span className={cn("text-[9px]", contextNearLimit ? "text-amber-500" : "text-[#64748b]")}>{contextPercent}%</span>
+                  <span className={cn("text-[9px]", contextNearLimit ? "text-amber-500" : "text-muted-foreground")}>{contextPercent}%</span>
                 </div>
               )}
             </div>
@@ -1005,15 +1005,15 @@ export default function WorkspacePage() {
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#6366f1]/20 to-[#a855f7]/20 flex items-center justify-center mb-4 mt-8">
                   <Sparkles className="w-7 h-7 text-[#6366f1]" />
                 </div>
-                <h3 className="text-base font-semibold text-[#e2e8f0] mb-1">Ce vrei să construiești?</h3>
-                <p className="text-xs text-[#64748b] mb-4 text-center">Descrie aplicația și o generez instant</p>
+                <h3 className="text-base font-semibold text-foreground mb-1">Ce vrei să construiești?</h3>
+                <p className="text-xs text-muted-foreground mb-4 text-center">Descrie aplicația și o generez instant</p>
                 <div className="w-full space-y-2">
                   {suggestions.map((s, i) => (
-                    <button key={i} onClick={() => handleSuggestion(s.text)} className="w-full bg-[#111118] hover:bg-[#1e1e2e] border border-[rgba(30,30,46,0.8)] rounded-lg p-3 flex items-center gap-2 text-left transition-colors">
+                    <button key={i} onClick={() => handleSuggestion(s.text)} className="w-full bg-card hover:bg-accent border border-border rounded-lg p-3 flex items-center gap-2 text-left transition-colors">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${s.color}20` }}>
                         <s.icon className="w-4 h-4" style={{ color: s.color }} />
                       </div>
-                      <span className="text-xs text-[#e2e8f0]">{s.text}</span>
+                      <span className="text-xs text-foreground">{s.text}</span>
                     </button>
                   ))}
                 </div>
@@ -1046,27 +1046,27 @@ export default function WorkspacePage() {
 
         {/* Main Panel */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="h-10 flex items-center justify-between px-3 border-b border-[rgba(30,30,46,0.8)] bg-[#0a0a0f]">
+          <div className="h-10 flex items-center justify-between px-3 border-b border-border bg-background">
             <div className="flex items-center gap-2">
-              <button onClick={() => setIsChatOpen(!isChatOpen)} className="p-1.5 rounded hover:bg-[#111118]">
-                {isChatOpen ? <PanelLeftClose className="w-4 h-4 text-[#64748b]" /> : <PanelLeftOpen className="w-4 h-4 text-[#64748b]" />}
+              <button onClick={() => setIsChatOpen(!isChatOpen)} className="p-1.5 rounded hover:bg-card">
+                {isChatOpen ? <PanelLeftClose className="w-4 h-4 text-muted-foreground" /> : <PanelLeftOpen className="w-4 h-4 text-muted-foreground" />}
               </button>
-              <div className="flex bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg h-8">
-                <button onClick={() => setActiveTab("code")} className={cn("flex items-center gap-1.5 px-3 text-xs rounded-lg transition-colors", activeTab === "code" ? "bg-[#1e1e2e] text-[#e2e8f0]" : "text-[#64748b]")}>
+              <div className="flex bg-card border border-border rounded-lg h-8">
+                <button onClick={() => setActiveTab("code")} className={cn("flex items-center gap-1.5 px-3 text-xs rounded-lg transition-colors", activeTab === "code" ? "bg-accent text-foreground" : "text-muted-foreground")}>
                   <Code className="w-3.5 h-3.5" />Cod
                   {hasCode && <span className="bg-[#6366f1]/20 text-[#6366f1] text-[10px] px-1 rounded">{files.length}</span>}
                 </button>
-                <button onClick={() => setActiveTab("preview")} className={cn("flex items-center gap-1.5 px-3 text-xs rounded-lg transition-colors", activeTab === "preview" ? "bg-[#1e1e2e] text-[#e2e8f0]" : "text-[#64748b]")}>
+                <button onClick={() => setActiveTab("preview")} className={cn("flex items-center gap-1.5 px-3 text-xs rounded-lg transition-colors", activeTab === "preview" ? "bg-accent text-foreground" : "text-muted-foreground")}>
                   <Eye className="w-3.5 h-3.5" />Preview
                   {previewUrl && <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />}
                 </button>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setIsTerminalOpen(!isTerminalOpen)} className={cn("p-1.5 rounded", isTerminalOpen ? "bg-[#111118] text-[#e2e8f0]" : "text-[#64748b]")}>
+              <button onClick={() => setIsTerminalOpen(!isTerminalOpen)} className={cn("p-1.5 rounded", isTerminalOpen ? "bg-card text-foreground" : "text-muted-foreground")}>
                 <TerminalIcon className="w-4 h-4" />
               </button>
-              <button onClick={handleUndo} disabled={fileHistory.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] disabled:opacity-30 transition-colors" title="Undo">
+              <button onClick={handleUndo} disabled={fileHistory.length === 0} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 transition-colors" title="Undo">
                 <Undo2 className="w-3.5 h-3.5" />
               </button>
               <button onClick={handleRun} disabled={!hasCode} className="flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
@@ -1080,13 +1080,13 @@ export default function WorkspacePage() {
             {activeTab === "code" ? (
               <div className="flex-1 flex flex-col overflow-hidden">
                 {hasCode && (
-                  <div className="h-9 flex items-center gap-0.5 px-2 bg-[#0a0a0f] border-b border-[rgba(30,30,46,0.8)]">
+                  <div className="h-9 flex items-center gap-0.5 px-2 bg-background border-b border-border">
                     {files.map((f) => {
                       const name = f.path.split("/").pop() || f.path;
                       const ext = name.split(".").pop() || "";
                       const isActive = f.path === activeFile;
                       return (
-                        <button key={f.path} onClick={() => setActiveFile(f.path)} className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-t border border-b-0 transition-colors", isActive ? "bg-[#111118] text-[#e2e8f0] border-[rgba(30,30,46,0.8)]" : "text-[#64748b] border-transparent hover:text-[#e2e8f0]")}>
+                        <button key={f.path} onClick={() => setActiveFile(f.path)} className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-t border border-b-0 transition-colors", isActive ? "bg-card text-foreground border-border" : "text-muted-foreground border-transparent hover:text-foreground")}>
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getFileColor(ext) }} />
                           {name}
                         </button>
@@ -1100,8 +1100,8 @@ export default function WorkspacePage() {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center">
-                    <Code className="w-12 h-12 text-[#64748b]/20 mb-3" />
-                    <p className="text-sm text-[#64748b]">Codul generat de AI va apărea aici</p>
+                    <Code className="w-12 h-12 text-muted-foreground/20 mb-3" />
+                    <p className="text-sm text-muted-foreground">Codul generat de AI va apărea aici</p>
                   </div>
                 )}
               </div>
@@ -1109,34 +1109,34 @@ export default function WorkspacePage() {
               <div className="flex-1 flex flex-col overflow-hidden">
                 {previewUrl ? (
                   <>
-                    <div className="flex items-center gap-2 px-3 py-2 border-b border-[rgba(30,30,46,0.8)] bg-[#0a0a0f]">
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-background">
                       <div className="flex gap-1.5 mr-1">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
                         <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
                         <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
                       </div>
-                      <div className="flex-1 flex items-center gap-1.5 bg-[#111118] rounded-md px-2.5 py-1 text-[11px] border border-[rgba(30,30,46,0.8)]">
+                      <div className="flex-1 flex items-center gap-1.5 bg-card rounded-md px-2.5 py-1 text-[11px] border border-border">
                         <Globe className="w-3 h-3 text-[#10b981] shrink-0" />
-                        <span className="truncate text-[#64748b] font-mono">{previewUrl}</span>
+                        <span className="truncate text-muted-foreground font-mono">{previewUrl}</span>
                       </div>
-                      <button onClick={() => setViewMode(viewMode === "desktop" ? "mobile" : "desktop")} className="p-1 rounded hover:bg-[#111118]">
-                        {viewMode === "desktop" ? <Monitor className="w-4 h-4 text-[#64748b]" /> : <Smartphone className="w-4 h-4 text-[#6366f1]" />}
+                      <button onClick={() => setViewMode(viewMode === "desktop" ? "mobile" : "desktop")} className="p-1 rounded hover:bg-card">
+                        {viewMode === "desktop" ? <Monitor className="w-4 h-4 text-muted-foreground" /> : <Smartphone className="w-4 h-4 text-[#6366f1]" />}
                       </button>
-                      <button onClick={() => setPreviewKey((k) => k + 1)} className="p-1 rounded hover:bg-[#111118]">
-                        <RefreshCw className="w-4 h-4 text-[#64748b]" />
+                      <button onClick={() => setPreviewKey((k) => k + 1)} className="p-1 rounded hover:bg-card">
+                        <RefreshCw className="w-4 h-4 text-muted-foreground" />
                       </button>
-                      <button onClick={() => previewHtml && openPreviewInNewTab(previewHtml)} className="p-1 rounded hover:bg-[#111118]">
-                        <ExternalLink className="w-4 h-4 text-[#64748b]" />
+                      <button onClick={() => previewHtml && openPreviewInNewTab(previewHtml)} className="p-1 rounded hover:bg-card">
+                        <ExternalLink className="w-4 h-4 text-muted-foreground" />
                       </button>
                     </div>
-                    <div className="flex-1 flex items-start justify-center bg-[#111118] overflow-hidden">
+                    <div className="flex-1 flex items-start justify-center bg-card overflow-hidden">
                       <iframe key={previewKey} srcDoc={previewHtml || ""} className={cn("h-full border-0 bg-white transition-all", viewMode === "mobile" ? "w-[375px] rounded-xl shadow-2xl my-3" : "w-full")} title="Preview" sandbox="allow-scripts allow-forms" />
                     </div>
                   </>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center">
-                    <Globe className="w-12 h-12 text-[#64748b]/20 mb-3" />
-                    <p className="text-sm text-[#64748b]">{isLoading ? "AI-ul generează codul..." : "Scrie un prompt și preview-ul apare automat"}</p>
+                    <Globe className="w-12 h-12 text-muted-foreground/20 mb-3" />
+                    <p className="text-sm text-muted-foreground">{isLoading ? "AI-ul generează codul..." : "Scrie un prompt și preview-ul apare automat"}</p>
                     {isLoading && <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin mt-2" />}
                   </div>
                 )}
@@ -1145,7 +1145,7 @@ export default function WorkspacePage() {
           </div>
 
           {isTerminalOpen && (
-            <div className="h-[180px] border-t border-[rgba(30,30,46,0.8)] flex-shrink-0">
+            <div className="h-[180px] border-t border-border flex-shrink-0">
               <Terminal logs={terminalLogs} />
             </div>
           )}

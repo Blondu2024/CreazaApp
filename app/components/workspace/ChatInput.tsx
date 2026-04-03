@@ -30,18 +30,18 @@ export function ChatInput({
   const fileInputRef = localFileRef;
 
   return (
-    <div className="p-3 border-t border-[rgba(30,30,46,0.8)] shrink-0">
+    <div className="p-3 border-t border-border shrink-0">
       {attachments.length > 0 && (
         <div className="flex gap-2 mb-2 flex-wrap">
           {attachments.map((att, i) => (
-            <div key={i} className="relative flex items-center gap-1.5 bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-2 py-1.5">
+            <div key={i} className="relative flex items-center gap-1.5 bg-card border border-border rounded-lg px-2 py-1.5">
               {att.type === "image" ? (
                 <img src={att.base64} alt={att.name} className="w-8 h-8 rounded object-cover" />
               ) : (
                 <FileText className="w-4 h-4 text-[#6366f1]" />
               )}
-              <span className="text-[11px] text-[#e2e8f0] max-w-[100px] truncate">{att.name}</span>
-              <button onClick={() => onRemoveAttachment(i)} className="ml-1 text-[#64748b] hover:text-red-400">
+              <span className="text-[11px] text-foreground max-w-[100px] truncate">{att.name}</span>
+              <button onClick={() => onRemoveAttachment(i)} className="ml-1 text-muted-foreground hover:text-red-400">
                 <X className="w-3 h-3" />
               </button>
             </div>
@@ -56,11 +56,11 @@ export function ChatInput({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSubmit(); } }}
           placeholder="Descrie ce vrei sa construiesti..."
-          className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-20 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
+          className="w-full bg-card border border-border rounded-lg px-3 py-2 pr-20 text-[25px] text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
           rows={2}
         />
         <div className="absolute right-2 bottom-2 flex items-center gap-1">
-          <button type="button" onClick={() => fileInputRef.current?.click()} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] transition-colors">
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-card transition-colors">
             <Paperclip className="w-4 h-4" />
           </button>
           {isLoading ? (
@@ -74,7 +74,7 @@ export function ChatInput({
           )}
         </div>
       </form>
-      <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie noua</p>
+      <p className="text-[9px] text-muted-foreground/50 text-center mt-1">Enter trimite · Shift+Enter linie noua</p>
     </div>
   );
 }

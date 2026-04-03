@@ -37,15 +37,15 @@ export function SummaryModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-[rgba(30,30,46,0.8)] bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10">
           <div className="w-10 h-10 rounded-xl bg-[#6366f1]/20 flex items-center justify-center">
             <RefreshCw className="w-5 h-5 text-[#6366f1]" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-[#e2e8f0]">Conversatie noua</h3>
-            <p className="text-xs text-[#64748b]">Contextul a atins limita. Continuam cu un rezumat.</p>
+            <h3 className="text-base font-semibold text-foreground">Conversatie noua</h3>
+            <p className="text-xs text-muted-foreground">Contextul a atins limita. Continuam cu un rezumat.</p>
           </div>
         </div>
 
@@ -54,10 +54,10 @@ export function SummaryModal({
           {isLoading ? (
             <div className="flex items-center justify-center py-8 gap-3">
               <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin" />
-              <span className="text-sm text-[#64748b]">Se genereaza rezumatul...</span>
+              <span className="text-sm text-muted-foreground">Se genereaza rezumatul...</span>
             </div>
           ) : (
-            <div className="text-sm text-[#94a3b8] leading-relaxed whitespace-pre-wrap">
+            <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
               {summary}
             </div>
           )}
@@ -65,12 +65,12 @@ export function SummaryModal({
 
         {/* Model selector for Pro/Ultra */}
         {canChooseModel && !isLoading && (
-          <div className="px-6 py-3 border-t border-[rgba(30,30,46,0.8)]">
-            <label className="text-xs text-[#64748b] mb-1.5 block">Alege modelul pentru continuare:</label>
+          <div className="px-6 py-3 border-t border-border">
+            <label className="text-xs text-muted-foreground mb-1.5 block">Alege modelul pentru continuare:</label>
             <select
               value={selectedModel}
               onChange={(e) => onModelChange(e.target.value)}
-              className="w-full h-9 bg-[#0a0a0f] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1]"
+              className="w-full h-9 bg-background border border-border text-foreground text-sm rounded-lg px-3 outline-none focus:border-[#6366f1]"
             >
               {models.filter((m) => allowedModels.includes(m.value)).map((m) => (
                 <option key={m.value} value={m.value}>{m.label}</option>
@@ -80,7 +80,7 @@ export function SummaryModal({
         )}
 
         {/* Actions */}
-        <div className="px-6 py-4 border-t border-[rgba(30,30,46,0.8)] flex justify-end">
+        <div className="px-6 py-4 border-t border-border flex justify-end">
           <button
             onClick={onContinue}
             disabled={isLoading}
