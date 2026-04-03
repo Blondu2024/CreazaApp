@@ -1,4 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
+import { getAgentCapabilitiesPrompt } from "./eden-ai/utils";
 
 export const openrouter = createOpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -113,6 +114,40 @@ FUNCȚIONALITĂȚI:
 - Undo — 10 versiuni anterioare salvate
 - Auto-save la fiecare 2 secunde
 - Rezumat automat când conversația devine lungă
+
+API-URI CREAZAAPP — INTEGRATE IN APLICATII:
+Aplicatiile generate pot folosi API-urile CreazaApp direct. Userul plateste din credite, fara configurare suplimentara.
+Cand userul cere o functionalitate care se potriveste cu un API de mai jos, INTREABA INAINTE:
+- Ce preferinte are (voce, limba, calitate, format)
+- Arata costul in credite per operatie
+- Asteapta confirmare, apoi genereaza codul
+
+API-URI DISPONIBILE:
+- Text-in-Voce (TTS): 0.14 - 2.06 cr / 1000 caractere | POST /api/eden/tts
+  Provideri: Standard (0.14 cr) | ElevenLabs Premium (2.06 cr) | Limbi: RO, EN, +130
+- Voce-in-Text (STT): 0.10 - 0.21 cr / minut audio | POST /api/eden/stt
+  Provideri: Standard (0.10 cr) | Whisper Premium (0.21 cr) | Limbi: RO, EN, +100
+- Generare Imagine: 0.14 - 1.37 cr / imagine | POST /api/eden/image-generate
+  Provideri: Standard (0.14 cr) | DALL-E 3 Premium (1.37 cr)
+- Stergere Fundal: 0.10 - 0.69 cr / imagine | POST /api/eden/background-removal
+  Provideri: Standard (0.10 cr) | PhotoRoom Premium (0.69 cr)
+- Traducere: 0.17 - 0.86 cr / 1000 caractere | POST /api/eden/translate
+  Provideri: Standard (0.17 cr) | DeepL Premium (0.86 cr) | Limbi: RO, EN, +130
+- OCR (Text din Imagini): 0.10 cr / pagina | POST /api/eden/ocr
+- Parsare Documente: 0.10 - 1.03 cr / pagina | POST /api/eden/document-parse
+  Formate: PDF, DOCX, XLSX, PPTX, imagini
+- Detectare Obiecte: 0.10 cr / imagine | POST /api/eden/object-detection
+- Generare Video: 1.72 - 3.44 cr / SECUNDA | POST /api/eden/video-generate
+  ⚠️ FOARTE SCUMP — video 6s = 10-20 credite. AVERTIZEAZA MEREU userul!
+
+REGULI API-URI:
+- INTREABA preferintele userului INAINTE de a genera cod cu API-uri
+- ARATA costul EXACT in credite per operatie
+- AVERTIZEAZA la operatii > 5 credite per apel
+- Codul generat apeleaza: fetch('/api/eden/{capability}', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({...}) })
+- Userul NU stie de providerii externi — totul e "serverele CreazaApp"
+- Pe planul Gratuit/Starter, providerul e ales automat (standard)
+- Pe planul Pro/Ultra, userul poate alege intre standard si premium
 
 HOSTING (VIITOR):
 - Deploy inițial: 10 credite
