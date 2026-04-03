@@ -1,9 +1,13 @@
 import { NextRequest } from "next/server";
 import { createSandbox, getSandbox, writeFilesAndStart, type FileToWrite } from "@/lib/e2b";
+import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
 
 // POST — create sandbox or write files
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: 10 requests/min per IP
+    const rl = rateLimit(`sandbox:${getClientIP(req)}`, 10, 60_000);
+    if (!rl.allowed) return rateLimitResponse(rl.resetIn);
     if (!process.env["E2B_API_KEY"]) {
       console.error("[sandbox] E2B_API_KEY is not set!");
       return Response.json({ error: "E2B_API_KEY nu este configurată pe server" }, { status: 500 });

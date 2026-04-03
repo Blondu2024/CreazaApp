@@ -1,8 +1,13 @@
 import { openrouter } from "@/lib/ai";
+import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
 
 export const maxDuration = 30;
 
 export async function GET(req: Request) {
+  // Rate limit: 10 requests/min per IP
+  const rl = rateLimit(`image:${getClientIP(req)}`, 10, 60_000);
+  if (!rl.allowed) return rateLimitResponse(rl.resetIn);
+
   const url = new URL(req.url);
   const prompt = url.searchParams.get("prompt");
 

@@ -1,8 +1,12 @@
 import { NextRequest } from "next/server";
+import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
 
 // GET /api/preview?url=https://3000-sandboxid.e2b.app/path
 // Proxies E2B sandbox content through our domain to avoid iframe CSP blocks
 export async function GET(req: NextRequest) {
+  // Rate limit: 30 requests/min per IP (assets load multiple requests)
+  const rl = rateLimit(`preview:${getClientIP(req)}`, 30, 60_000);
+  if (!rl.allowed) return rateLimitResponse(rl.resetIn);
   const targetUrl = req.nextUrl.searchParams.get("url");
 
   if (!targetUrl || !targetUrl.includes(".e2b.app")) {

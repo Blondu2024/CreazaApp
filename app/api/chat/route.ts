@@ -1,6 +1,7 @@
 import { streamText, convertToModelMessages, type TextPart, type ImagePart } from "ai";
 import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext, estimateTokens } from "@/lib/ai";
 import { PLANS, PRO_MODELS, ULTRA_MODELS, getModelCostOrMinimum, estimateCreditCost, checkCredits, deductCredits, getUserCredits, ensureProfile } from "@/lib/credits";
+import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
 
 // Vercel Pro: max 300s for streaming
 export const maxDuration = 300;
@@ -8,6 +9,11 @@ export const maxDuration = 300;
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
+    // Rate limit: 20 requests/min per user, 10/min per IP for anonymous
+    const rlKey = body.userId ? `chat:${body.userId}` : `chat:${getClientIP(req)}`;
+    const rl = rateLimit(rlKey, body.userId ? 20 : 10, 60_000);
+    if (!rl.allowed) return rateLimitResponse(rl.resetIn);
 
     const messages = body.messages || [];
     const requestedModel = body.model || DEFAULT_MODEL;

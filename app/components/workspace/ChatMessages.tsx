@@ -164,7 +164,9 @@ export function ChatMessages({
       )}
       {error && (
         <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
-          {error.message?.includes("402") || error.message?.includes("insufficient_credits") ? (
+          {error.message?.includes("429") || error.message?.includes("rate_limit") ? (
+            <p className="text-xs text-red-400">Prea multe cereri. Așteaptă câteva secunde și încearcă din nou.</p>
+          ) : error.message?.includes("402") || error.message?.includes("insufficient_credits") ? (
             <>
               <p className="text-xs text-red-400">Credite insuficiente.</p>
               <div className="flex gap-3 mt-2">
