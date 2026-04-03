@@ -75,10 +75,14 @@ const LANG_LABELS: Record<string, string> = {
 };
 
 function stripCodeBlocks(text: string): string {
-  return text.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang: string) => {
-    const label = LANG_LABELS[lang?.toLowerCase()] || lang || "Cod";
-    return `[${label} generat]`;
-  }).trim();
+  // Remove complete code blocks entirely from chat
+  return text.replace(/```(\w*)\n([\s\S]*?)```/g, "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function isWritingCode(text: string): boolean {
+  // Detect if streaming text is currently inside an unclosed code block
+  const opens = (text.match(/```/g) || []).length;
+  return opens % 2 !== 0;
 }
 
 function ChatMarkdown({ text }: { text: string }) {
@@ -774,23 +778,33 @@ export default function WorkspacePage() {
                 {messages.filter(m => m.role === "assistant").map((msg) => {
                   const text = getTextFromMessage(msg);
                   if (!text) return null;
+                  const cleaned = stripCodeBlocks(text);
+                  const writingCode = isWritingCode(text);
                   return (
                     <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30">
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-4 h-4 text-[#6366f1]" />
                         <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                       </div>
-                      <div className="chat-markdown text-[#e2e8f0] break-words">
-                        <ChatMarkdown text={stripCodeBlocks(text)} />
-                      </div>
+                      {cleaned && (
+                        <div className="chat-markdown text-[#e2e8f0] break-words">
+                          <ChatMarkdown text={cleaned} />
+                        </div>
+                      )}
+                      {writingCode && (
+                        <div className="flex items-center gap-2 mt-2 py-2 px-3 rounded-md bg-[#6366f1]/10 border border-[#6366f1]/20">
+                          <div className="w-2 h-2 rounded-full bg-[#6366f1] animate-pulse" />
+                          <span className="text-xs text-[#a78bfa]">Se scrie codul...</span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
-                {isLoading && (
+                {isLoading && messages.filter(m => m.role === "assistant").length === 0 && (
                   <div className="rounded-lg p-3 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border border-[#6366f1]/30">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează... ({status})</span>
+                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează...</span>
                     </div>
                   </div>
                 )}
@@ -1001,23 +1015,33 @@ export default function WorkspacePage() {
                 {messages.filter(m => m.role === "assistant").map((msg) => {
                   const text = getTextFromMessage(msg);
                   if (!text) return null;
+                  const cleaned = stripCodeBlocks(text);
+                  const writingCode = isWritingCode(text);
                   return (
                     <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30">
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-4 h-4 text-[#6366f1]" />
                         <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
                       </div>
-                      <div className="chat-markdown text-[#e2e8f0] break-words">
-                        <ChatMarkdown text={stripCodeBlocks(text)} />
-                      </div>
+                      {cleaned && (
+                        <div className="chat-markdown text-[#e2e8f0] break-words">
+                          <ChatMarkdown text={cleaned} />
+                        </div>
+                      )}
+                      {writingCode && (
+                        <div className="flex items-center gap-2 mt-2 py-2 px-3 rounded-md bg-[#6366f1]/10 border border-[#6366f1]/20">
+                          <div className="w-2 h-2 rounded-full bg-[#6366f1] animate-pulse" />
+                          <span className="text-xs text-[#a78bfa]">Se scrie codul...</span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
-                {isLoading && (
+                {isLoading && messages.filter(m => m.role === "assistant").length === 0 && (
                   <div className="rounded-lg p-3 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border border-[#6366f1]/30">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează... ({status})</span>
+                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează...</span>
                     </div>
                   </div>
                 )}
