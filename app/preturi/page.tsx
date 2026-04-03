@@ -16,19 +16,19 @@ const plans = [
   {
     id: "starter", name: "Starter", description: "Proiecte personale",
     price: 69, period: "/lună", credits: 300, badge: "Popular",
-    features: ["300 credite/lună", "Agent AI rapid (Haiku 4.5)", "Deploy cu un click", "Hosting inclus", "Subdomain gratuit", "Top-up credite disponibil"],
+    features: ["300 credite/lună", "Agent AI rapid", "Preview instant", "Download ZIP", "Subdomain gratuit", "Top-up credite disponibil"],
     cta: "Începe Starter →", ctaStyle: "gradient" as const, highlighted: true,
   },
   {
     id: "pro", name: "Pro", description: "Creatori serioși",
     price: 149, period: "/lună", credits: 400, badge: "Avansat",
-    features: ["400 credite/lună", "Alegi modelul AI", "Modele puternice disponibile", "Context 200K tokeni", "Deploy + Hosting inclus", "Top-up credite disponibil"],
+    features: ["400 credite/lună", "Alegi modelul AI", "Modele puternice disponibile", "Context 200K tokeni", "Deploy + Hosting (pe credite)", "Top-up credite disponibil"],
     cta: "Începe Pro →", ctaStyle: "gradient" as const, highlighted: false,
   },
   {
     id: "ultra", name: "Ultra", description: "Performanță maximă",
     price: 299, period: "/lună", credits: 500,
-    features: ["500 credite/lună", "Alegi modelul AI premium", "Cele mai puternice modele", "Context 1M tokeni", "Deploy + Hosting prioritar", "Top-up credite disponibil"],
+    features: ["500 credite/lună", "Alegi modelul AI premium", "Cele mai puternice modele", "Context 1M tokeni", "Deploy + Hosting (pe credite)", "Top-up credite disponibil"],
     cta: "Începe Ultra →", ctaStyle: "gradient" as const, highlighted: false,
   },
 ];
