@@ -738,7 +738,7 @@ export default function WorkspacePage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0f] overflow-hidden" data-workspace>
+    <div className="dark h-screen flex flex-col bg-[#0a0a0f] overflow-hidden" data-workspace>
       {/* Header */}
       <header className="h-12 flex-shrink-0 glass-header border-b border-[rgba(30,30,46,0.8)] flex items-center justify-between px-3 gap-2">
         <Link href="/" className="flex items-center gap-2 shrink-0">

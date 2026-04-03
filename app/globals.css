@@ -49,6 +49,41 @@
 }
 
 :root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #f8fafc;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #6366f1;
+  --chart-1: #6366f1;
+  --chart-2: #8b5cf6;
+  --chart-3: #a855f7;
+  --chart-4: #ec4899;
+  --chart-5: #f43f5e;
+  --radius: 0.5rem;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #6366f1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #6366f1;
+}
+
+.dark {
   --background: #0a0a0f;
   --foreground: #e2e8f0;
   --card: #111118;
@@ -67,12 +102,6 @@
   --border: rgba(30, 30, 46, 0.8);
   --input: rgba(30, 30, 46, 0.8);
   --ring: #6366f1;
-  --chart-1: #6366f1;
-  --chart-2: #8b5cf6;
-  --chart-3: #a855f7;
-  --chart-4: #ec4899;
-  --chart-5: #f43f5e;
-  --radius: 0.5rem;
   --sidebar: #0d0d14;
   --sidebar-foreground: #e2e8f0;
   --sidebar-primary: #6366f1;
@@ -84,8 +113,8 @@
 }
 
 @layer base {
-  * { @apply border-[rgba(30,30,46,0.8)] outline-ring/50; }
-  body { @apply bg-[#0a0a0f] text-[#e2e8f0]; }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
   html { @apply font-sans; }
 }
 
@@ -109,15 +138,18 @@
 
 /* Glass header */
 .glass-header {
-  background: rgba(10, 10, 15, 0.7);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+}
+.dark .glass-header {
+  background: rgba(10, 10, 15, 0.7);
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #0a0a0f; }
-::-webkit-scrollbar-thumb { background: rgba(30, 30, 46, 0.8); border-radius: 4px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
 /* Card hover */

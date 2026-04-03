@@ -57,29 +57,29 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-[#6366f1] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 mb-8">
         <Sparkles className="w-7 h-7 text-[#6366f1]" />
         <span className="text-2xl font-bold">
           <span className="gradient-text">Creaza</span>
-          <span className="text-[#e2e8f0]">App</span>
+          <span className="text-foreground">App</span>
         </span>
       </Link>
 
       {/* Card */}
-      <div className="w-full max-w-[400px] bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-2xl p-8">
-        <h1 className="text-xl font-bold text-[#e2e8f0] text-center mb-1">
+      <div className="w-full max-w-[400px] bg-card border border-border rounded-2xl p-8">
+        <h1 className="text-xl font-bold text-foreground text-center mb-1">
           {mode === "login" ? "Bine ai revenit!" : "Creează cont"}
         </h1>
-        <p className="text-sm text-[#64748b] text-center mb-6">
+        <p className="text-sm text-muted-foreground text-center mb-6">
           {mode === "login" ? "Intră în contul tău" : "Începe să construiești cu AI"}
         </p>
 
@@ -98,26 +98,26 @@ export default function LoginPage() {
         </button>
 
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-[rgba(30,30,46,0.8)]" />
-          <span className="text-xs text-[#64748b]">sau</span>
-          <div className="flex-1 h-px bg-[rgba(30,30,46,0.8)]" />
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-xs text-muted-foreground">sau</span>
+          <div className="flex-1 h-px bg-border" />
         </div>
 
         {/* Email/Password Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b]" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               required
-              className="w-full h-11 bg-[#0a0a0f] border border-[rgba(30,30,46,0.8)] rounded-lg pl-10 pr-3 text-sm text-[#e2e8f0] placeholder:text-[#64748b] focus:outline-none focus:border-[#6366f1]"
+              className="w-full h-11 bg-background border border-border rounded-lg pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#6366f1]"
             />
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b]" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type={showPassword ? "text" : "password"}
               value={password}
@@ -125,9 +125,9 @@ export default function LoginPage() {
               placeholder="Parolă"
               required
               minLength={6}
-              className="w-full h-11 bg-[#0a0a0f] border border-[rgba(30,30,46,0.8)] rounded-lg pl-10 pr-10 text-sm text-[#e2e8f0] placeholder:text-[#64748b] focus:outline-none focus:border-[#6366f1]"
+              className="w-full h-11 bg-background border border-border rounded-lg pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#6366f1]"
             />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-[#e2e8f0]">
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
@@ -153,7 +153,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-xs text-[#64748b] text-center mt-4">
+        <p className="text-xs text-muted-foreground text-center mt-4">
           {mode === "login" ? (
             <>Nu ai cont? <button onClick={() => { setMode("register"); setError(""); setSuccess(""); }} className="text-[#6366f1] hover:underline">Creează unul</button></>
           ) : (
@@ -162,7 +162,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <p className="text-[10px] text-[#64748b]/40 mt-4">CreazaApp.com</p>
+      <p className="text-[10px] text-muted-foreground/40 mt-4">CreazaApp.com</p>
     </div>
   );
 }
