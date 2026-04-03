@@ -16,54 +16,54 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Get all users whose credits need resetting
+    // Get all users due for monthly credit top-up
     const { data: users, error: fetchError } = await supabaseAdmin
       .from("user_profiles")
-      .select("id, plan, credits_monthly, credits_reset_at")
+      .select("id, plan, credits_monthly, credits_topup, credits_reset_at")
       .lte("credits_reset_at", new Date().toISOString());
 
     if (fetchError) throw fetchError;
     if (!users || users.length === 0) {
-      return Response.json({ message: "No users to reset", count: 0 });
+      return Response.json({ message: "No users to top up", count: 0 });
     }
 
-    let resetCount = 0;
+    let count = 0;
     const nextReset = getNextMonthStart();
 
     for (const user of users) {
       const plan = PLANS[user.plan] || PLANS.free;
-      const oldCredits = user.credits_monthly;
+      const newMonthly = Number(user.credits_monthly) + plan.creditsPerMonth;
 
-      // Reset monthly credits to plan allocation
+      // ADD credits to existing balance (credits never expire)
       const { error: updateError } = await supabaseAdmin
         .from("user_profiles")
         .update({
-          credits_monthly: plan.creditsPerMonth,
+          credits_monthly: newMonthly,
           credits_reset_at: nextReset,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
 
       if (updateError) {
-        console.error(`[cron] Failed to reset user ${user.id}:`, updateError);
+        console.error(`[cron] Failed to top up user ${user.id}:`, updateError);
         continue;
       }
 
-      // Log the reset transaction
+      // Log the transaction
       await supabaseAdmin.from("credit_transactions").insert({
         user_id: user.id,
-        amount: plan.creditsPerMonth - oldCredits,
-        balance_after_monthly: plan.creditsPerMonth,
-        balance_after_topup: 0, // topup stays unchanged, we don't read it here
+        amount: plan.creditsPerMonth,
+        balance_after_monthly: newMonthly,
+        balance_after_topup: user.credits_topup,
         type: "monthly_reset",
-        description: `Reset lunar: ${plan.name} → ${plan.creditsPerMonth} credite`,
+        description: `Credite lunare: ${plan.name} +${plan.creditsPerMonth} credite`,
       });
 
-      resetCount++;
+      count++;
     }
 
-    console.log(`[cron] Monthly credit reset: ${resetCount}/${users.length} users`);
-    return Response.json({ message: "Credits reset", count: resetCount, total: users.length });
+    console.log(`[cron] Monthly credit top-up: ${count}/${users.length} users`);
+    return Response.json({ message: "Credits added", count, total: users.length });
   } catch (error) {
     console.error("[cron] Reset error:", error);
     return Response.json(

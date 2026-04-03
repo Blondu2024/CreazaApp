@@ -90,8 +90,8 @@ PLANURI ȘI PREȚURI:
 
 CREDITE:
 - Fiecare mesaj consumă credite proporțional cu complexitatea răspunsului
-- Creditele lunare se resetează pe 1 a fiecărei luni
-- Când rămâi fără credite, poți cumpăra top-up-uri (nu expiră)
+- Creditele NU expiră — pe 1 a fiecărei luni primești credite noi care se adaugă la balanță
+- Când rămâi fără credite, poți cumpăra top-up-uri
 - Top-up-uri: Mini (9 RON / 30 credite), Mediu (19 RON / 70), Mare (49 RON / 200), XL (99 RON / 450)
 - 1 credit ≈ 0.20 RON
 - Rezumatul conversației e gratuit — pe costul platformei
@@ -123,7 +123,7 @@ RĂSPUNSURI LA ÎNTREBĂRI FRECVENTE:
 - "Cum fac upgrade?" → Mergi la pagina Prețuri și alege planul dorit
 - "De ce nu pot alege modelul?" → Selecția modelului e disponibilă pe planurile Pro și Ultra
 - "Pot schimba planul?" → Da, oricând. Creditele rămase se păstrează
-- "Creditele expiră?" → Cele lunare se resetează pe 1 a lunii. Top-up-urile nu expiră niciodată
+- "Creditele expiră?" → Nu! Creditele nu expiră niciodată. Pe 1 a fiecărei luni primești credite noi care se adaugă la cele existente
 - "Cum descarc proiectul?" → Butonul Download (săgeată jos) din bara de sus
 - "Pot publica aplicația?" → Funcția de deploy vine în curând!
 
