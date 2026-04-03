@@ -76,8 +76,8 @@ const LANG_LABELS: Record<string, string> = {
 };
 
 function stripCodeBlocks(text: string): string {
-  // Remove complete code blocks entirely from chat
-  return text.replace(/```(\w*)\n([\s\S]*?)```/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  // Remove complete code blocks entirely from chat (supports filenames like App.jsx, index.html)
+  return text.replace(/```\S*\n([\s\S]*?)```/g, "").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function isWritingCode(text: string): boolean {
@@ -276,6 +276,7 @@ export default function WorkspacePage() {
     if (!authLoading && !user) router.push("/login");
   }, [authLoading, user, router]);
 
+  const [lastCreditCost, setLastCreditCost] = useState<number | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
@@ -476,8 +477,14 @@ export default function WorkspacePage() {
         }
       }
 
-      // Refresh credit balance after AI response
+      // Refresh credit balance and show cost
       refreshCreditsRef.current?.();
+      const model = modelRef.current;
+      if (!isModelFree(model)) {
+        const est = estimateCreditCost(model);
+        setLastCreditCost(est);
+        setTimeout(() => setLastCreditCost(null), 5000);
+      }
     }, []),
   });
 
@@ -731,10 +738,10 @@ export default function WorkspacePage() {
           </button>
           <div className="hidden md:flex items-center gap-2 ml-2 pl-2 border-l border-[rgba(30,30,46,0.8)]">
             {profile && (
-              <div className={cn("flex items-center gap-1 px-2 py-1 rounded-md border text-[10px] font-medium", profile.totalCredits <= 5 ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-[#111118] border-[rgba(30,30,46,0.8)] text-[#f59e0b]")}>
-                <Zap className="w-3 h-3" />
+              <Link href="/preturi" className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[18px] font-bold hover:opacity-80 transition-opacity", profile.totalCredits <= 5 ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-[#111118] border-[rgba(30,30,46,0.8)] text-[#f59e0b]")}>
+                <Zap className="w-4 h-4" />
                 {profile.totalCredits}
-              </div>
+              </Link>
             )}
             <span className="text-[10px] text-[#64748b] truncate max-w-[120px]">{user.email}</span>
             <button onClick={() => signOut().then(() => router.push("/login"))} className="text-[10px] text-[#64748b] hover:text-red-400 transition-colors">Ieși</button>
@@ -842,6 +849,13 @@ export default function WorkspacePage() {
                       <Sparkles className="w-4 h-4 text-[#6366f1]" />
                       <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează...</span>
                     </div>
+                  </div>
+                )}
+                {lastCreditCost !== null && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/20">
+                    <Zap className="w-3 h-3 text-[#f59e0b]" />
+                    <span className="text-xs text-[#f59e0b]">~{lastCreditCost} credite consumate</span>
+                    <Link href="/preturi" className="text-xs text-[#6366f1] underline ml-auto">Cumpără credite</Link>
                   </div>
                 )}
                 {error && (
@@ -1091,6 +1105,13 @@ export default function WorkspacePage() {
                       <Sparkles className="w-4 h-4 text-[#6366f1]" />
                       <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează...</span>
                     </div>
+                  </div>
+                )}
+                {lastCreditCost !== null && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/20">
+                    <Zap className="w-3 h-3 text-[#f59e0b]" />
+                    <span className="text-xs text-[#f59e0b]">~{lastCreditCost} credite consumate</span>
+                    <Link href="/preturi" className="text-xs text-[#6366f1] underline ml-auto">Cumpără credite</Link>
                   </div>
                 )}
                 {error && (
