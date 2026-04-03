@@ -59,8 +59,6 @@ export function Terminal({ logs }: TerminalProps) {
       xterm.writeln(`\x1b[31m${last}\x1b[0m`);
     } else if (last.startsWith("[AI]")) {
       xterm.writeln(`\x1b[35m${last}\x1b[0m`);
-    } else if (last.startsWith("[E2B]")) {
-      xterm.writeln(`\x1b[36m${last}\x1b[0m`);
     } else {
       xterm.writeln(last);
     }

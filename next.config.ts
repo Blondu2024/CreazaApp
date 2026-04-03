@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["e2b"],
-  // Allow E2B sandbox preview URLs in iframes
+  // Allow preview in iframes
   async headers() {
     return [
       {
