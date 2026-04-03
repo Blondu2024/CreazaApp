@@ -10,8 +10,9 @@ import type { UIMessage } from "ai";
 import { CodeEditor } from "../components/editor/CodeEditor";
 import { Terminal } from "../components/terminal/Terminal";
 import { models, MODEL_CATEGORIES } from "../components/models";
-import { estimateTokens, CONTEXT_BUDGETS } from "@/lib/ai";
-import { estimateCreditCost, isModelFree } from "@/lib/credits";
+import { estimateTokens } from "@/lib/ai";
+import { estimateCreditCost, isModelFree, PLANS } from "@/lib/credits";
+import { SummaryModal } from "../components/workspace/SummaryModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, PanelLeftClose, PanelLeftOpen, Code, Eye,
@@ -279,6 +280,9 @@ export default function WorkspacePage() {
   }, [authLoading, user, router]);
 
   const [lastCreditCost, setLastCreditCost] = useState<number | null>(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryText, setSummaryText] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
@@ -558,6 +562,7 @@ export default function WorkspacePage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "instant" }); }, [messages, isLoading, allChatMessages]);
 
+
   useEffect(() => {
     const el = textareaRef.current;
     if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }
@@ -620,6 +625,43 @@ export default function WorkspacePage() {
     sendWithContext(text);
   }, [isLoading, sendWithContext]);
 
+  // Trigger summary when context hits 90%
+  const triggerSummary = useCallback(async () => {
+    if (summaryLoading || showSummaryModal) return;
+    setSummaryLoading(true);
+    setShowSummaryModal(true);
+    try {
+      const res = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatHistory: allChatMessages.slice(-30),
+          files: filesRef.current.map(f => ({ path: f.path, content: f.content.slice(0, 2000) })),
+          projectName: currentProjectRef.current?.name || "Proiect",
+        }),
+      });
+      const data = await res.json();
+      setSummaryText(data.summary || "Rezumatul nu a putut fi generat.");
+    } catch {
+      setSummaryText("Eroare la generarea rezumatului. Continuă oricum.");
+    }
+    setSummaryLoading(false);
+  }, [allChatMessages, summaryLoading, showSummaryModal]);
+
+  // Continue after summary — clear chat, save summary, keep files
+  const handleContinueAfterSummary = useCallback(async () => {
+    const proj = currentProjectRef.current;
+    if (proj && summaryText) {
+      await saveContextSummary(proj.id, summaryText);
+      await clearChatHistory(proj.id);
+    }
+    setAllChatMessages([]);
+    setMessages([]);
+    setShowSummaryModal(false);
+    setSummaryText("");
+    addLog("[REZUMAT] Conversație reîmprospătată. Proiectul continuă.");
+  }, [summaryText, setMessages, addLog]);
+
   const handleUndo = useCallback(() => {
     if (fileHistory.length === 0) return;
     const previous = fileHistory[fileHistory.length - 1];
@@ -654,12 +696,21 @@ export default function WorkspacePage() {
   const isEmpty = messages.length === 0 && allChatMessages.length === 0;
   const currentModelLabel = models.find((m) => m.value === selectedModel)?.label || selectedModel;
 
-  // Token usage tracking
+  // Token usage tracking — budget from user's plan
+  const userPlan = PLANS[profile?.plan || "free"] || PLANS.free;
   const contextTokens = allChatMessages.reduce((sum, m) => sum + estimateTokens(m.content), 0)
     + files.reduce((sum, f) => sum + estimateTokens(f.content), 0);
-  const contextBudget = CONTEXT_BUDGETS.free; // TODO: use user tier
+  const contextBudget = userPlan.contextBudget;
   const contextPercent = Math.min(100, Math.round((contextTokens / contextBudget) * 100));
   const contextNearLimit = contextPercent > 80;
+  const contextAtLimit = contextPercent >= 90;
+
+  // Auto-trigger summary at 90% context
+  useEffect(() => {
+    if (contextAtLimit && !showSummaryModal && !summaryLoading && allChatMessages.length > 4) {
+      triggerSummary();
+    }
+  }, [contextAtLimit, showSummaryModal, summaryLoading, allChatMessages.length, triggerSummary]);
 
   // Auth loading / redirect
   if (authLoading || !user) {
@@ -1084,6 +1135,19 @@ export default function WorkspacePage() {
           )}
         </div>
       </div>
+
+      {/* Summary Modal */}
+      {showSummaryModal && (
+        <SummaryModal
+          summary={summaryText}
+          isLoading={summaryLoading}
+          canChooseModel={userPlan.canChooseModel}
+          plan={profile?.plan || "free"}
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+          onContinue={handleContinueAfterSummary}
+        />
+      )}
     </div>
   );
 }
