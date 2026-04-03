@@ -60,6 +60,15 @@ export async function signInWithGoogle() {
   return { error: null };
 }
 
+export async function signInWithGitHub() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "github",
+    options: { redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/workspace` },
+  });
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
 export async function signOut() {
   await supabase.auth.signOut();
 }
