@@ -9,7 +9,7 @@ import { Footer } from "./components/Footer";
 const features = [
   { icon: Bot, title: "Agent AI avansat", description: "Descrii ce vrei in romana. Agentul analizeaza, scrie cod, si repara erorile automat.", color: "#a855f7" },
   { icon: Eye, title: "Preview instant", description: "Vezi rezultatul live in browser. Fiecare modificare apare imediat.", color: "#10b981" },
-  { icon: Layers, title: "25+ modele AI", description: "Claude, GPT, Gemini, Llama, DeepSeek, Qwen — alegi ce vrei, inclusiv modele gratuite.", color: "#6366f1" },
+  { icon: Layers, title: "AI puternic", description: "Claude Sonnet 4, Opus 4.6, GPT-4.1, Gemini 2.5 Pro — platforma alege cel mai bun AI pentru tine.", color: "#6366f1" },
   { icon: Code, title: "Editor profesional", description: "CodeMirror cu evidentierea sintaxei. Editezi manual sau lasi AI-ul sa scrie.", color: "#f59e0b" },
   { icon: Terminal, title: "Terminal integrat", description: "Loguri, erori, si status in timp real. Agentul le vede si le repara.", color: "#ef4444" },
   { icon: Download, title: "Download ZIP", description: "Descarci proiectul complet si il folosesti oriunde.", color: "#3b82f6" },
@@ -27,7 +27,7 @@ const models = [
   { name: "GPT-4.1", badge: "Alternativa solida", color: "#10b981" },
   { name: "Gemini 2.5 Pro", badge: "Context mare", color: "#3b82f6" },
   { name: "Gemini 2.5 Flash", badge: "Ultra-rapid", color: "#f59e0b" },
-  { name: "Qwen3 Coder", badge: "GRATUIT", color: "#ef4444" },
+  { name: "DeepSeek R1", badge: "Reasoning", color: "#ef4444" },
 ];
 
 const plans = [
@@ -48,7 +48,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-[#6366f1]/10 border border-[#6366f1]/20 rounded-full px-4 py-1.5 mb-6">
             <Zap className="w-3.5 h-3.5 text-[#f59e0b]" />
-            <span className="text-xs text-[#a78bfa] font-medium">Modele gratuite nelimitate incluse</span>
+            <span className="text-xs text-[#a78bfa] font-medium">50 credite gratuite la inregistrare</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight text-[#e2e8f0] mb-6 leading-[1.1]">
             Construieste aplicatii web{" "}
@@ -133,8 +133,8 @@ export default function Home() {
             <p className="text-sm text-[#64748b] mt-1">Modele AI</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-[#e2e8f0]">6</p>
-            <p className="text-sm text-[#64748b] mt-1">Modele gratuite</p>
+            <p className="text-3xl font-bold text-[#e2e8f0]">50</p>
+            <p className="text-sm text-[#64748b] mt-1">Credite gratuite</p>
           </div>
           <div>
             <p className="text-3xl font-bold text-[#e2e8f0]">&lt;30s</p>
@@ -195,7 +195,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#e2e8f0] mb-4">Alege modelul potrivit</h2>
-            <p className="text-[#64748b]">De la modele gratuite la cele mai puternice AI-uri disponibile</p>
+            <p className="text-[#64748b]">Cele mai puternice AI-uri, selectate automat pentru planul tau</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {models.map((m) => (
@@ -216,7 +216,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#e2e8f0] mb-4">Preturi simple</h2>
-            <p className="text-[#64748b]">Platesti doar cat folosesti. Modelele gratuite sunt nelimitate.</p>
+            <p className="text-[#64748b]">Platesti doar cat folosesti. 50 credite gratuite la start.</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {plans.map((p) => (
@@ -253,7 +253,7 @@ export default function Home() {
                 <Shield className="w-6 h-6 text-[#10b981]" />
               </div>
               <h3 className="font-semibold text-[#e2e8f0] mb-2">Fara surprize</h3>
-              <p className="text-sm text-[#64748b]">Modele gratuite nelimitate. Platesti doar cand vrei modele premium.</p>
+              <p className="text-sm text-[#64748b]">Preturi transparente. 50 credite gratuite la inregistrare, apoi platesti cat folosesti.</p>
             </div>
             <div className="text-center p-6">
               <div className="w-12 h-12 rounded-xl bg-[#6366f1]/10 flex items-center justify-center mx-auto mb-4">

@@ -10,7 +10,7 @@ const plans = [
   {
     id: "free", name: "Gratuit", description: "Explorează platforma",
     price: 0, period: "/lună", credits: 50,
-    features: ["50 credite gratuite/lună", "Agent AI (Sonnet 4)", "Preview instant", "Download ZIP", "Subdomain gratuit"],
+    features: ["50 credite/lună", "Agent AI performant", "Preview instant", "Download ZIP", "Subdomain gratuit"],
     cta: "Începe gratuit", ctaStyle: "outline" as const, highlighted: false,
   },
   {
