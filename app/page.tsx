@@ -31,7 +31,7 @@ const models = [
 ];
 
 const plans = [
-  { name: "Gratuit", price: "0", credits: "10", desc: "Exploreaza platforma" },
+  { name: "Gratuit", price: "0", credits: "50", desc: "Exploreaza platforma" },
   { name: "Starter", price: "69", credits: "300", desc: "Proiecte personale", popular: true },
   { name: "Pro", price: "149", credits: "400", desc: "Creatori seriosi" },
   { name: "Ultra", price: "299", credits: "500", desc: "Performanta maxima" },

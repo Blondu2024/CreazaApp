@@ -9,8 +9,8 @@ import { Footer } from "../components/Footer";
 const plans = [
   {
     id: "free", name: "Gratuit", description: "Explorează platforma gratuit",
-    price: 0, period: "/lună", credits: 10, defaultModel: "Sonnet 4",
-    features: ["10 credite gratuite/lună", "Acces la toate modelele AI", "Modele gratuite nelimitate", "Preview instant", "Download ZIP"],
+    price: 0, period: "/lună", credits: 50, defaultModel: "Sonnet 4",
+    features: ["50 credite gratuite/lună", "Acces la toate modelele AI", "Modele gratuite nelimitate", "Preview instant", "Download ZIP"],
     cta: "Începe gratuit", ctaStyle: "outline" as const, highlighted: false,
   },
   {

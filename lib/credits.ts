@@ -13,7 +13,7 @@ export interface PlanDefinition {
 }
 
 export const PLANS: Record<string, PlanDefinition> = {
-  free:    { id: "free",    name: "Gratuit", priceRON: 0,   creditsPerMonth: 10,  defaultModel: "anthropic/claude-sonnet-4" },
+  free:    { id: "free",    name: "Gratuit", priceRON: 0,   creditsPerMonth: 50,  defaultModel: "anthropic/claude-sonnet-4" },
   starter: { id: "starter", name: "Starter", priceRON: 69,  creditsPerMonth: 300, defaultModel: "anthropic/claude-haiku-4.5" },
   pro:     { id: "pro",     name: "Pro",     priceRON: 149, creditsPerMonth: 400, defaultModel: "anthropic/claude-sonnet-4" },
   ultra:   { id: "ultra",   name: "Ultra",   priceRON: 299, creditsPerMonth: 500, defaultModel: "anthropic/claude-opus-4-6" },
@@ -128,9 +128,9 @@ export async function getUserCredits(userId: string): Promise<UserCredits | null
 export async function ensureProfile(userId: string): Promise<UserCredits> {
   const existing = await getUserCredits(userId);
   if (existing) return existing;
-  if (!supabaseAdmin) return { plan: "free", creditsMonthly: 10, creditsTopup: 0, totalCredits: 10, creditsResetAt: "" };
+  if (!supabaseAdmin) return { plan: "free", creditsMonthly: 50, creditsTopup: 0, totalCredits: 50, creditsResetAt: "" };
   await supabaseAdmin.from("user_profiles").insert({
-    id: userId, plan: "free", credits_monthly: 10, credits_topup: 0,
+    id: userId, plan: "free", credits_monthly: 50, credits_topup: 0,
   });
   return { plan: "free", creditsMonthly: 10, creditsTopup: 0, totalCredits: 10, creditsResetAt: "" };
 }
