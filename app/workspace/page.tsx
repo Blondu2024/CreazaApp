@@ -176,7 +176,24 @@ function stripModuleSyntax(code: string): string {
 
 function buildPreviewHtml(files: { path: string; content: string }[]): string {
   const htmlFile = files.find((f) => f.path.endsWith(".html"));
-  if (htmlFile) return htmlFile.content;
+  if (htmlFile) {
+    // Inline external JS/CSS references — srcdoc can't load separate files
+    let html = htmlFile.content;
+    for (const f of files) {
+      if (f.path === htmlFile.path) continue;
+      if (f.path.endsWith(".css")) {
+        // Replace <link href="file.css"> with inline <style>
+        const linkRegex = new RegExp(`<link[^>]*href=["']${f.path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*/?>`, "gi");
+        html = html.replace(linkRegex, `<style>${f.content}</style>`);
+      }
+      if (f.path.endsWith(".js") || f.path.endsWith(".jsx") || f.path.endsWith(".tsx")) {
+        // Replace <script src="file.js"> with inline <script>
+        const scriptRegex = new RegExp(`<script[^>]*src=["']${f.path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>\\s*</script>`, "gi");
+        html = html.replace(scriptRegex, `<script>${f.content}<\/script>`);
+      }
+    }
+    return html;
+  }
 
   const cssFile = files.find((f) => f.path.endsWith(".css"));
   const jsxFile = files.find((f) => f.path.endsWith(".jsx") || f.path.endsWith(".tsx") || f.path.endsWith(".js"));
