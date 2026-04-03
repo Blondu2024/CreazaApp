@@ -1,5 +1,6 @@
 import { streamText, convertToModelMessages, type TextPart, type ImagePart } from "ai";
-import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext } from "@/lib/ai";
+import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext, estimateTokens } from "@/lib/ai";
+import { isModelFree, estimateCreditCost, checkCredits, deductCredits, calculateCreditCost } from "@/lib/credits";
 
 // Vercel Pro: max 300s for streaming
 export const maxDuration = 300;
@@ -17,6 +18,25 @@ export async function POST(req: Request) {
     const errors = body.errors || undefined;
     const images: string[] = body.images || [];
     const documents: { name: string; content: string }[] = body.documents || [];
+    const userId: string | undefined = body.userId;
+
+    // Credit pre-check for paid models
+    const modelFree = isModelFree(model);
+    if (!modelFree && userId) {
+      const estimated = estimateCreditCost(model);
+      const { allowed, balance } = await checkCredits(userId, estimated);
+      if (!allowed) {
+        return new Response(
+          JSON.stringify({
+            error: "insufficient_credits",
+            message: "Credite insuficiente. Schimba la un model gratuit sau cumpara credite.",
+            balance,
+            estimatedCost: estimated,
+          }),
+          { status: 402, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     let modelMessages = await convertToModelMessages(messages);
 
@@ -40,7 +60,6 @@ export async function POST(req: Request) {
         const textContent = typeof lastMsg.content === "string" ? lastMsg.content : "";
         const parts: (TextPart | ImagePart)[] = [];
 
-        // Add document text as context
         if (documents.length > 0) {
           const docText = documents.map((d: { name: string; content: string }) => `\n[Document: ${d.name}]\n${d.content}`).join("\n");
           parts.push({ type: "text" as const, text: textContent + docText });
@@ -48,7 +67,6 @@ export async function POST(req: Request) {
           parts.push({ type: "text" as const, text: textContent });
         }
 
-        // Add images as base64 data URLs
         for (const img of images) {
           parts.push({ type: "image" as const, image: new URL(img) });
         }
@@ -58,17 +76,34 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log("[chat] Model:", model);
-    console.log("[chat] Tier:", tier);
+    console.log("[chat] Model:", model, modelFree ? "(free)" : "(paid)");
+    console.log("[chat] User:", userId || "anonymous");
     console.log("[chat] Messages:", modelMessages.length);
-    console.log("[chat] Images:", images.length);
-    console.log("[chat] Documents:", documents.length);
-    console.log("[chat] System prompt length:", systemPrompt.length, "chars (~", Math.ceil(systemPrompt.length / 4), "tokens)");
+    console.log("[chat] System prompt:", Math.ceil(systemPrompt.length / 4), "tokens");
 
     const result = streamText({
       model: openrouter(model),
       system: systemPrompt,
       messages: modelMessages,
+      onFinish: async ({ usage }) => {
+        if (modelFree || !userId) return;
+
+        const inputTokens = usage.inputTokens || estimateTokens(systemPrompt);
+        const outputTokens = usage.outputTokens || 5000;
+
+        const cost = calculateCreditCost(model, inputTokens, outputTokens);
+        if (cost > 0) {
+          const modelLabel = model.split("/").pop() || model;
+          const result = await deductCredits(userId, cost, {
+            model,
+            inputTokens,
+            outputTokens,
+            description: `${modelLabel}: ${inputTokens} in / ${outputTokens} out`,
+          });
+          console.log("[credits]", modelLabel, `cost=${cost.toFixed(2)} cr`, result.success ? "OK" : "FAIL",
+            `remaining=${result.monthly}+${result.topup}`);
+        }
+      },
     });
 
     return result.toUIMessageStreamResponse();

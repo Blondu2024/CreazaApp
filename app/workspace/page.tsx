@@ -11,13 +11,14 @@ import { CodeEditor } from "../components/editor/CodeEditor";
 import { Terminal } from "../components/terminal/Terminal";
 import { models, MODEL_CATEGORIES } from "../components/models";
 import { estimateTokens, CONTEXT_BUDGETS } from "@/lib/ai";
+import { estimateCreditCost, isModelFree } from "@/lib/credits";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, PanelLeftClose, PanelLeftOpen, Code, Eye,
   Terminal as TerminalIcon, Play, RefreshCw, ExternalLink,
   Monitor, Smartphone, Send, Coffee, CheckSquare, ShoppingBag,
   User, FolderTree, Plus, X, Loader2, Globe, Download,
-  Rocket, Copy, Check, Bot, ArrowUp, Square, Undo2, Trash2, Paperclip, Image, FileText,
+  Rocket, Copy, Check, Bot, ArrowUp, Square, Undo2, Trash2, Paperclip, Image, FileText, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -251,7 +252,7 @@ async function downloadZip(files: { path: string; content: string }[]) {
 
 export default function WorkspacePage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, profile, refreshCredits } = useAuth();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -372,6 +373,8 @@ export default function WorkspacePage() {
   modelRef.current = selectedModel;
   const userRef = useRef(user);
   userRef.current = user;
+  const refreshCreditsRef = useRef(refreshCredits);
+  refreshCreditsRef.current = refreshCredits;
 
   // Track all chat messages locally (restored + new)
   const [allChatMessages, setAllChatMessages] = useState<{ role: string; content: string }[]>([]);
@@ -455,6 +458,9 @@ export default function WorkspacePage() {
           saveContextSummary(proj.id, summary);
         }
       }
+
+      // Refresh credit balance after AI response
+      refreshCreditsRef.current?.();
     }, []),
   });
 
@@ -558,6 +564,7 @@ export default function WorkspacePage() {
 
     sendMessage({ text }, { body: {
       model: modelRef.current, currentFiles, chatHistory, summary, errors,
+      userId: userRef.current?.id,
       images: images.length > 0 ? images : undefined,
       documents: documents.length > 0 ? documents : undefined,
     }});
@@ -654,11 +661,14 @@ export default function WorkspacePage() {
         >
           {MODEL_CATEGORIES.map((cat) => (
             <optgroup key={cat.key} label={cat.label}>
-              {models.filter((m) => m.category === cat.key).map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label} — {m.price}
-                </option>
-              ))}
+              {models.filter((m) => m.category === cat.key).map((m) => {
+                const est = estimateCreditCost(m.value);
+                return (
+                  <option key={m.value} value={m.value}>
+                    {m.label} — {m.price}{est > 0 ? ` (~${est} cr)` : ""}
+                  </option>
+                );
+              })}
             </optgroup>
           ))}
         </select>
@@ -703,6 +713,12 @@ export default function WorkspacePage() {
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
           <div className="hidden md:flex items-center gap-2 ml-2 pl-2 border-l border-[rgba(30,30,46,0.8)]">
+            {profile && (
+              <div className={cn("flex items-center gap-1 px-2 py-1 rounded-md border text-[10px] font-medium", profile.totalCredits <= 5 ? "bg-red-500/10 border-red-500/30 text-red-400" : "bg-[#111118] border-[rgba(30,30,46,0.8)] text-[#f59e0b]")}>
+                <Zap className="w-3 h-3" />
+                {profile.totalCredits}
+              </div>
+            )}
             <span className="text-[10px] text-[#64748b] truncate max-w-[120px]">{user.email}</span>
             <button onClick={() => signOut().then(() => router.push("/login"))} className="text-[10px] text-[#64748b] hover:text-red-400 transition-colors">Ieși</button>
           </div>
@@ -725,9 +741,12 @@ export default function WorkspacePage() {
                 >
                   {MODEL_CATEGORIES.map((cat) => (
                     <optgroup key={cat.key} label={cat.label}>
-                      {models.filter((m) => m.category === cat.key).map((m) => (
-                        <option key={m.value} value={m.value}>{m.label} — {m.price}</option>
-                      ))}
+                      {models.filter((m) => m.category === cat.key).map((m) => {
+                        const est = estimateCreditCost(m.value);
+                        return (
+                          <option key={m.value} value={m.value}>{m.label} — {m.price}{est > 0 ? ` (~${est} cr)` : ""}</option>
+                        );
+                      })}
                     </optgroup>
                   ))}
                 </select>
@@ -810,8 +829,20 @@ export default function WorkspacePage() {
                 )}
                 {error && (
                   <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
-                    <p className="text-xs text-red-400">Eroare: {error.message}</p>
-                    <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
+                    {error.message?.includes("402") || error.message?.includes("insufficient_credits") ? (
+                      <>
+                        <p className="text-xs text-red-400">Credite insuficiente pentru acest model.</p>
+                        <div className="flex gap-3 mt-2">
+                          <button onClick={() => setSelectedModel("qwen/qwen3.6-plus-preview:free")} className="text-xs text-[#6366f1] underline">Model gratuit</button>
+                          <Link href="/preturi" className="text-xs text-[#6366f1] underline">Cumpara credite</Link>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-red-400">Eroare: {error.message}</p>
+                        <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
+                      </>
+                    )}
                   </div>
                 )}
                 <div ref={bottomRef} />
@@ -1047,8 +1078,20 @@ export default function WorkspacePage() {
                 )}
                 {error && (
                   <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
-                    <p className="text-xs text-red-400">Eroare: {error.message}</p>
-                    <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
+                    {error.message?.includes("402") || error.message?.includes("insufficient_credits") ? (
+                      <>
+                        <p className="text-xs text-red-400">Credite insuficiente pentru acest model.</p>
+                        <div className="flex gap-3 mt-2">
+                          <button onClick={() => setSelectedModel("qwen/qwen3.6-plus-preview:free")} className="text-xs text-[#6366f1] underline">Model gratuit</button>
+                          <Link href="/preturi" className="text-xs text-[#6366f1] underline">Cumpara credite</Link>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-red-400">Eroare: {error.message}</p>
+                        <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
+                      </>
+                    )}
                   </div>
                 )}
                 <div ref={bottomRef} />
