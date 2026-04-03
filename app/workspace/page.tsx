@@ -16,11 +16,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, PanelLeftClose, PanelLeftOpen, Code, Eye,
   Terminal as TerminalIcon, Play, RefreshCw, ExternalLink,
-  Monitor, Smartphone, Send, Coffee, CheckSquare, ShoppingBag,
+  Monitor, Smartphone, Coffee, CheckSquare, ShoppingBag,
   User, FolderTree, Plus, X, Loader2, Globe, Download,
-  Rocket, Copy, Check, Bot, ArrowUp, Square, Undo2, Trash2, Paperclip, Image, FileText, Zap,
+  Rocket, Copy, Check, Undo2, Trash2, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChatMessages } from "../components/workspace/ChatMessages";
+import { ChatInput } from "../components/workspace/ChatInput";
 
 import {
   createProject, listProjects, deleteProject, updateProjectTimestamp,
@@ -800,139 +802,31 @@ export default function WorkspacePage() {
                 </div>
               </div>
             ) : (
-              <div className="p-3 space-y-3">
-                {/* All chat messages (restored + completed) */}
-                {allChatMessages.map((msg, i) => {
-                  const isUser = msg.role === "user";
-                  return (
-                    <div key={`chat-${i}`} className={cn("rounded-lg p-3 border", isUser ? "bg-[#111118] border-[rgba(30,30,46,0.8)]" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
-                      {!isUser && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                          <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
-                        </div>
-                      )}
-                      <div className="chat-markdown text-[#e2e8f0] break-words">
-                        {isUser
-                          ? <p className="text-[25px] leading-relaxed">{msg.content}</p>
-                          : <ChatMarkdown text={stripCodeBlocks(msg.content)} />
-                        }
-                      </div>
-                    </div>
-                  );
-                })}
-                {/* Live streaming message from useChat */}
-                {messages.filter(m => m.role === "assistant").map((msg) => {
-                  const text = getTextFromMessage(msg);
-                  if (!text) return null;
-                  const cleaned = stripCodeBlocks(text);
-                  const writingCode = isWritingCode(text);
-                  return (
-                    <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                        <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
-                      </div>
-                      {cleaned && (
-                        <div className="chat-markdown text-[#e2e8f0] break-words">
-                          <ChatMarkdown text={cleaned} />
-                        </div>
-                      )}
-                      {writingCode && (
-                        <div className="flex items-center gap-2 mt-2 py-2 px-3 rounded-md bg-[#6366f1]/10 border border-[#6366f1]/20">
-                          <div className="w-2 h-2 rounded-full bg-[#6366f1] animate-pulse" />
-                          <span className="text-xs text-[#a78bfa]">Se scrie codul...</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                {isLoading && messages.filter(m => m.role === "assistant").length === 0 && (
-                  <div className="rounded-lg p-3 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border border-[#6366f1]/30">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează...</span>
-                    </div>
-                  </div>
-                )}
-                {lastCreditCost !== null && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/20">
-                    <Zap className="w-3 h-3 text-[#f59e0b]" />
-                    <span className="text-xs text-[#f59e0b]">~{lastCreditCost} credite consumate</span>
-                    <Link href="/preturi" className="text-xs text-[#6366f1] underline ml-auto">Cumpără credite</Link>
-                  </div>
-                )}
-                {error && (
-                  <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
-                    {error.message?.includes("402") || error.message?.includes("insufficient_credits") ? (
-                      <>
-                        <p className="text-xs text-red-400">Credite insuficiente pentru acest model.</p>
-                        <div className="flex gap-3 mt-2">
-                          <button onClick={() => setSelectedModel("qwen/qwen3.6-plus-preview:free")} className="text-xs text-[#6366f1] underline">Model gratuit</button>
-                          <Link href="/preturi" className="text-xs text-[#6366f1] underline">Cumpara credite</Link>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xs text-red-400">Eroare: {error.message}</p>
-                        <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
-                      </>
-                    )}
-                  </div>
-                )}
-                <div ref={bottomRef} />
-              </div>
+              <ChatMessages
+                allChatMessages={allChatMessages}
+                streamingMessages={messages}
+                isLoading={isLoading}
+                status={status}
+                lastCreditCost={lastCreditCost}
+                error={error}
+                onSwitchFreeModel={() => {}}
+                bottomRef={bottomRef}
+              />
             )}
           </div>
 
           {/* Chat Input */}
-          <div className="p-3 border-t border-[rgba(30,30,46,0.8)]">
-            {/* Attachment previews */}
-            {attachments.length > 0 && (
-              <div className="flex gap-2 mb-2 flex-wrap">
-                {attachments.map((att, i) => (
-                  <div key={i} className="relative flex items-center gap-1.5 bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-2 py-1.5">
-                    {att.type === "image" ? (
-                      <img src={att.base64} alt={att.name} className="w-8 h-8 rounded object-cover" />
-                    ) : (
-                      <FileText className="w-4 h-4 text-[#6366f1]" />
-                    )}
-                    <span className="text-[11px] text-[#e2e8f0] max-w-[100px] truncate">{att.name}</span>
-                    <button onClick={() => removeAttachment(i)} className="ml-1 text-[#64748b] hover:text-red-400">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="relative">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-                placeholder="Descrie ce vrei să construiești..."
-                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-20 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
-                rows={2}
-              />
-              <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                <input ref={fileInputRef} type="file" accept="image/*,.pdf,.txt,.md,.csv" multiple onChange={handleFileUpload} className="hidden" />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] transition-colors">
-                  <Paperclip className="w-4 h-4" />
-                </button>
-                {isLoading ? (
-                  <button type="button" onClick={stop} className="w-7 h-7 bg-red-500/20 hover:bg-red-500/30 rounded-lg flex items-center justify-center transition-colors">
-                    <Square className="w-3 h-3 text-red-400" fill="currentColor" />
-                  </button>
-                ) : (
-                  <button type="submit" disabled={!input.trim() && attachments.length === 0} className="w-7 h-7 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-lg flex items-center justify-center disabled:opacity-30">
-                    <Send className="w-3.5 h-3.5 text-white" />
-                  </button>
-                )}
-              </div>
-            </form>
-            <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie nouă · 📎 atașează imagini/documente</p>
-          </div>
+          <ChatInput
+            input={input}
+            setInput={setInput}
+            isLoading={isLoading}
+            attachments={attachments}
+            onSubmit={handleSubmit}
+            onStop={stop}
+            onFileUpload={handleFileUpload}
+            onRemoveAttachment={removeAttachment}
+            textareaRef={textareaRef}
+          />
             </div>
           )}
 
@@ -1058,133 +952,29 @@ export default function WorkspacePage() {
                 </div>
               </div>
             ) : (
-              <div className="p-3 space-y-3">
-                {allChatMessages.map((msg, i) => {
-                  const isUser = msg.role === "user";
-                  return (
-                    <div key={`chat-${i}`} className={cn("rounded-lg p-3 border", isUser ? "bg-[#111118] border-[rgba(30,30,46,0.8)]" : "bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30")}>
-                      {!isUser && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                          <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
-                        </div>
-                      )}
-                      <div className="chat-markdown text-[#e2e8f0] break-words">
-                        {isUser
-                          ? <p className="text-[25px] leading-relaxed">{msg.content}</p>
-                          : <ChatMarkdown text={stripCodeBlocks(msg.content)} />
-                        }
-                      </div>
-                    </div>
-                  );
-                })}
-                {messages.filter(m => m.role === "assistant").map((msg) => {
-                  const text = getTextFromMessage(msg);
-                  if (!text) return null;
-                  const cleaned = stripCodeBlocks(text);
-                  const writingCode = isWritingCode(text);
-                  return (
-                    <div key={msg.id} className="rounded-lg p-3 border bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border-[#6366f1]/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                        <span className="text-xs font-medium text-[#e2e8f0]">CreazaApp AI</span>
-                      </div>
-                      {cleaned && (
-                        <div className="chat-markdown text-[#e2e8f0] break-words">
-                          <ChatMarkdown text={cleaned} />
-                        </div>
-                      )}
-                      {writingCode && (
-                        <div className="flex items-center gap-2 mt-2 py-2 px-3 rounded-md bg-[#6366f1]/10 border border-[#6366f1]/20">
-                          <div className="w-2 h-2 rounded-full bg-[#6366f1] animate-pulse" />
-                          <span className="text-xs text-[#a78bfa]">Se scrie codul...</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                {isLoading && messages.filter(m => m.role === "assistant").length === 0 && (
-                  <div className="rounded-lg p-3 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border border-[#6366f1]/30">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#6366f1]" />
-                      <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează...</span>
-                    </div>
-                  </div>
-                )}
-                {lastCreditCost !== null && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/20">
-                    <Zap className="w-3 h-3 text-[#f59e0b]" />
-                    <span className="text-xs text-[#f59e0b]">~{lastCreditCost} credite consumate</span>
-                    <Link href="/preturi" className="text-xs text-[#6366f1] underline ml-auto">Cumpără credite</Link>
-                  </div>
-                )}
-                {error && (
-                  <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
-                    {error.message?.includes("402") || error.message?.includes("insufficient_credits") ? (
-                      <>
-                        <p className="text-xs text-red-400">Credite insuficiente pentru acest model.</p>
-                        <div className="flex gap-3 mt-2">
-                          <button onClick={() => setSelectedModel("qwen/qwen3.6-plus-preview:free")} className="text-xs text-[#6366f1] underline">Model gratuit</button>
-                          <Link href="/preturi" className="text-xs text-[#6366f1] underline">Cumpara credite</Link>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xs text-red-400">Eroare: {error.message}</p>
-                        <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
-                      </>
-                    )}
-                  </div>
-                )}
-                <div ref={bottomRef} />
-              </div>
+              <ChatMessages
+                allChatMessages={allChatMessages}
+                streamingMessages={messages}
+                isLoading={isLoading}
+                status={status}
+                lastCreditCost={lastCreditCost}
+                error={error}
+                onSwitchFreeModel={() => {}}
+                bottomRef={bottomRef}
+              />
             )}
           </div>
 
-          <div className="p-3 border-t border-[rgba(30,30,46,0.8)] shrink-0">
-            {attachments.length > 0 && (
-              <div className="flex gap-2 mb-2 flex-wrap">
-                {attachments.map((att, i) => (
-                  <div key={i} className="relative flex items-center gap-1.5 bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-2 py-1.5">
-                    {att.type === "image" ? (
-                      <img src={att.base64} alt={att.name} className="w-8 h-8 rounded object-cover" />
-                    ) : (
-                      <FileText className="w-4 h-4 text-[#6366f1]" />
-                    )}
-                    <span className="text-[11px] text-[#e2e8f0] max-w-[100px] truncate">{att.name}</span>
-                    <button onClick={() => removeAttachment(i)} className="ml-1 text-[#64748b] hover:text-red-400">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="relative">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-                placeholder="Descrie ce vrei să construiești..."
-                className="w-full bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-lg px-3 py-2 pr-20 text-[25px] text-[#e2e8f0] placeholder:text-[#64748b] resize-none focus:outline-none focus:border-[#6366f1] min-h-[60px]"
-                rows={2}
-              />
-              <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-7 h-7 rounded-lg flex items-center justify-center text-[#64748b] hover:text-[#e2e8f0] hover:bg-[#111118] transition-colors">
-                  <Paperclip className="w-4 h-4" />
-                </button>
-                {isLoading ? (
-                  <button type="button" onClick={stop} className="w-7 h-7 bg-red-500/20 hover:bg-red-500/30 rounded-lg flex items-center justify-center transition-colors">
-                    <Square className="w-3 h-3 text-red-400" fill="currentColor" />
-                  </button>
-                ) : (
-                  <button type="submit" disabled={!input.trim() && attachments.length === 0} className="w-7 h-7 bg-gradient-to-r from-[#6366f1] to-[#a855f7] rounded-lg flex items-center justify-center disabled:opacity-30">
-                    <Send className="w-3.5 h-3.5 text-white" />
-                  </button>
-                )}
-              </div>
-            </form>
-            <p className="text-[9px] text-[#64748b]/50 text-center mt-1">Enter trimite · Shift+Enter linie nouă · 📎 atașează imagini/documente</p>
-          </div>
+          <ChatInput
+            input={input}
+            setInput={setInput}
+            isLoading={isLoading}
+            attachments={attachments}
+            onSubmit={handleSubmit}
+            onStop={stop}
+            onFileUpload={handleFileUpload}
+            onRemoveAttachment={removeAttachment}
+          />
         </div>
 
         {/* Main Panel */}
