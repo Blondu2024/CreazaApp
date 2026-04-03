@@ -78,7 +78,7 @@ export function Preview({ html, isLoading }: PreviewProps) {
             viewport === "mobile" ? "w-[375px] rounded-xl shadow-2xl shadow-black/40 my-3" : "w-full"
           )}
           title="Preview"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          sandbox="allow-scripts allow-forms"
         />
       </div>
     </div>

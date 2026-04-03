@@ -31,6 +31,12 @@ export interface ChatMessage {
   created_at: string;
 }
 
+// Get current access token for API calls
+export async function getAccessToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token || null;
+}
+
 // Auth
 export async function signUp(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({ email, password });

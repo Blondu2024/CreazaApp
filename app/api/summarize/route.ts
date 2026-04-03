@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { openrouter } from "@/lib/ai";
 import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
+import { verifyAuth } from "@/lib/verify-auth";
 
 // Uses Haiku — cheap, fast, on our cost (not user credits)
 const SUMMARIZE_MODEL = "anthropic/claude-haiku-4.5";
@@ -35,8 +36,12 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    // Rate limit: 5 requests/min per IP
-    const rl = rateLimit(`summarize:${getClientIP(req)}`, 5, 60_000);
+    // Require auth
+    const userId = await verifyAuth(req);
+    if (!userId) return new Response("Unauthorized", { status: 401 });
+
+    // Rate limit: 5 requests/min per user
+    const rl = rateLimit(`summarize:${userId}`, 5, 60_000);
     if (!rl.allowed) return rateLimitResponse(rl.resetIn);
 
     const { chatHistory, files, projectName } = await req.json();

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "../components/AuthProvider";
-import { signOut } from "@/lib/supabase";
+import { signOut, getAccessToken } from "@/lib/supabase";
 import type { UIMessage } from "ai";
 import { CodeEditor } from "../components/editor/CodeEditor";
 import { Terminal } from "../components/terminal/Terminal";
@@ -578,7 +578,7 @@ export default function WorkspacePage() {
   const allChatRef = useRef(allChatMessages);
   allChatRef.current = allChatMessages;
 
-  const sendWithContext = useCallback((text: string) => {
+  const sendWithContext = useCallback(async (text: string) => {
     const proj = currentProjectRef.current;
     if (proj) saveChatMessage(proj.id, "user", text);
 
@@ -600,12 +600,17 @@ export default function WorkspacePage() {
     const images = attachments.filter(a => a.type === "image").map(a => a.base64);
     const documents = attachments.filter(a => a.type === "document").map(a => ({ name: a.name, content: a.base64 }));
 
-    sendMessage({ text }, { body: {
-      model: modelRef.current, currentFiles, chatHistory, summary, errors,
-      userId: userRef.current?.id,
-      images: images.length > 0 ? images : undefined,
-      documents: documents.length > 0 ? documents : undefined,
-    }});
+    // Get auth token for server-side verification
+    const token = await getAccessToken();
+
+    sendMessage({ text }, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: {
+        model: modelRef.current, currentFiles, chatHistory, summary, errors,
+        images: images.length > 0 ? images : undefined,
+        documents: documents.length > 0 ? documents : undefined,
+      },
+    });
     if (previewErrors.length > 0) setPreviewErrors([]);
     setAttachments([]); // Clear attachments after sending
   }, [sendMessage]);
@@ -638,9 +643,13 @@ export default function WorkspacePage() {
     setSummaryLoading(true);
     setShowSummaryModal(true);
     try {
+      const token = await getAccessToken();
       const res = await fetch("/api/summarize", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           chatHistory: allChatMessages.slice(-30),
           files: filesRef.current.map(f => ({ path: f.path, content: f.content.slice(0, 2000) })),
@@ -937,7 +946,7 @@ export default function WorkspacePage() {
                     </button>
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <iframe key={previewKey} srcDoc={previewHtml || ""} className="w-full h-full border-0 bg-white" title="Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+                    <iframe key={previewKey} srcDoc={previewHtml || ""} className="w-full h-full border-0 bg-white" title="Preview" sandbox="allow-scripts allow-forms" />
                   </div>
                 </>
               ) : (
@@ -1121,7 +1130,7 @@ export default function WorkspacePage() {
                       </button>
                     </div>
                     <div className="flex-1 flex items-start justify-center bg-[#111118] overflow-hidden">
-                      <iframe key={previewKey} srcDoc={previewHtml || ""} className={cn("h-full border-0 bg-white transition-all", viewMode === "mobile" ? "w-[375px] rounded-xl shadow-2xl my-3" : "w-full")} title="Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+                      <iframe key={previewKey} srcDoc={previewHtml || ""} className={cn("h-full border-0 bg-white transition-all", viewMode === "mobile" ? "w-[375px] rounded-xl shadow-2xl my-3" : "w-full")} title="Preview" sandbox="allow-scripts allow-forms" />
                     </div>
                   </>
                 ) : (

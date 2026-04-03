@@ -1,11 +1,16 @@
 import { openrouter } from "@/lib/ai";
 import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
+import { verifyAuth } from "@/lib/verify-auth";
 
 export const maxDuration = 30;
 
 export async function GET(req: Request) {
-  // Rate limit: 10 requests/min per IP
-  const rl = rateLimit(`image:${getClientIP(req)}`, 10, 60_000);
+  // Require auth
+  const userId = await verifyAuth(req);
+  if (!userId) return new Response("Unauthorized", { status: 401 });
+
+  // Rate limit: 10 requests/min per user
+  const rl = rateLimit(`image:${userId}`, 10, 60_000);
   if (!rl.allowed) return rateLimitResponse(rl.resetIn);
 
   const url = new URL(req.url);

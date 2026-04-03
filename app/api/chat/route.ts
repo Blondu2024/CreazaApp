@@ -2,28 +2,37 @@ import { streamText, convertToModelMessages, type TextPart, type ImagePart } fro
 import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext, estimateTokens } from "@/lib/ai";
 import { PLANS, PRO_MODELS, ULTRA_MODELS, getModelCostOrMinimum, estimateCreditCost, checkCredits, deductCredits, getUserCredits, ensureProfile } from "@/lib/credits";
 import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
+import { verifyAuth } from "@/lib/verify-auth";
 
 // Vercel Pro: max 300s for streaming
 export const maxDuration = 300;
 
 export async function POST(req: Request) {
   try {
+    // Verify auth token — userId comes from server verification, not client
+    const userId = await verifyAuth(req);
+
     const body = await req.json();
 
     // Rate limit: 20 requests/min per user, 10/min per IP for anonymous
-    const rlKey = body.userId ? `chat:${body.userId}` : `chat:${getClientIP(req)}`;
-    const rl = rateLimit(rlKey, body.userId ? 20 : 10, 60_000);
+    const rlKey = userId ? `chat:${userId}` : `chat:${getClientIP(req)}`;
+    const rl = rateLimit(rlKey, userId ? 20 : 10, 60_000);
     if (!rl.allowed) return rateLimitResponse(rl.resetIn);
 
+    // Payload validation
     const messages = body.messages || [];
+    const images: string[] = body.images || [];
+    const documents: { name: string; content: string }[] = body.documents || [];
+    if (messages.length > 100) return new Response("Too many messages", { status: 400 });
+    if (images.length > 5) return new Response("Too many images", { status: 400 });
+    if (documents.length > 5) return new Response("Too many documents", { status: 400 });
+    if (documents.some(d => d.content.length > 500_000)) return new Response("Document too large", { status: 400 });
+
     const requestedModel = body.model || DEFAULT_MODEL;
     const currentFiles = body.currentFiles || [];
     const chatHistory = body.chatHistory || [];
     const summary = body.summary || undefined;
     const errors = body.errors || undefined;
-    const images: string[] = body.images || [];
-    const documents: { name: string; content: string }[] = body.documents || [];
-    const userId: string | undefined = body.userId;
 
     // Determine model based on user's plan
     let model = DEFAULT_MODEL;
