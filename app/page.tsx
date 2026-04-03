@@ -49,9 +49,67 @@ const plans = [
   { name: "Ultra", price: "299", credits: "500", desc: "Modele premium + 1M context" },
 ];
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "CreazaApp",
+      "url": "https://creazaapp.com",
+      "description": "Platformă AI care generează aplicații web. Descrie ce vrei în română, AI-ul scrie codul, preview-ul apare instant.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web",
+      "inLanguage": "ro",
+      "offers": [
+        { "@type": "Offer", "name": "Gratuit", "price": "0", "priceCurrency": "RON", "description": "50 credite/lună, agent AI performant" },
+        { "@type": "Offer", "name": "Starter", "price": "69", "priceCurrency": "RON", "description": "300 credite/lună, agent AI rapid + deploy" },
+        { "@type": "Offer", "name": "Pro", "price": "149", "priceCurrency": "RON", "description": "400 credite/lună, alegi modelul AI, API-uri premium" },
+        { "@type": "Offer", "name": "Ultra", "price": "299", "priceCurrency": "RON", "description": "500 credite/lună, modele premium, context 1M tokeni" },
+      ],
+      "featureList": [
+        "Agent AI conversațional",
+        "Preview instant live",
+        "14+ modele AI (Claude, GPT-4.1, Gemini, DeepSeek)",
+        "8 API-uri AI integrate (TTS, STT, Imagini, Video, Traducere, OCR)",
+        "Editor profesional cu CodeMirror",
+        "Terminal integrat",
+        "Download ZIP",
+        "Suport complet în limba română",
+      ],
+    },
+    {
+      "@type": "Organization",
+      "name": "CreazaApp",
+      "url": "https://creazaapp.com",
+      "logo": "https://creazaapp.com/favicon.ico",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "contact@creazaapp.com",
+        "contactType": "customer support",
+        "availableLanguage": "Romanian",
+      },
+    },
+    {
+      "@type": "WebSite",
+      "name": "CreazaApp",
+      "url": "https://creazaapp.com",
+      "inLanguage": "ro",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://creazaapp.com/?q={search_term_string}",
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Navbar />
 
       {/* Hero */}

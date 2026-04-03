@@ -3,8 +3,9 @@ import { Footer } from "../components/Footer";
 import { Cookie } from "lucide-react";
 
 export const metadata = {
-  title: "Politica de cookie-uri – CreazaApp",
-  description: "Politica de cookie-uri CreazaApp. Află ce cookie-uri folosim și cum le poți gestiona.",
+  title: "Politica de cookie-uri",
+  description: "Politica de cookie-uri CreazaApp. Ce cookie-uri folosim, tipuri, cum le gestionezi.",
+  alternates: { canonical: "https://creazaapp.com/cookies" },
 };
 
 export default function CookiesPage() {

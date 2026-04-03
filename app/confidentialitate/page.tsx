@@ -3,8 +3,9 @@ import { Footer } from "../components/Footer";
 import { Shield } from "lucide-react";
 
 export const metadata = {
-  title: "Politica de confidențialitate – CreazaApp",
-  description: "Politica de confidențialitate CreazaApp. Află cum colectăm, utilizăm și protejăm datele tale personale.",
+  title: "Politica de confidențialitate",
+  description: "Politica de confidențialitate CreazaApp. Află cum colectăm, utilizăm și protejăm datele tale personale conform GDPR.",
+  alternates: { canonical: "https://creazaapp.com/confidentialitate" },
 };
 
 export default function ConfidentialitatePage() {

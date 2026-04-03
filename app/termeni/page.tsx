@@ -3,8 +3,9 @@ import { Footer } from "../components/Footer";
 import { FileText } from "lucide-react";
 
 export const metadata = {
-  title: "Termeni și condiții – CreazaApp",
-  description: "Termenii și condițiile de utilizare a platformei CreazaApp.",
+  title: "Termeni și condiții",
+  description: "Termenii și condițiile de utilizare a platformei CreazaApp. Credite, plăți, proprietate intelectuală, răspundere.",
+  alternates: { canonical: "https://creazaapp.com/termeni" },
 };
 
 export default function TermeniPage() {

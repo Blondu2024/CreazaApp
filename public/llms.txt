@@ -1,0 +1,37 @@
+# CreazaApp
+
+> Platformă AI care generează aplicații web. Descrie ce vrei în română, AI-ul scrie codul, preview-ul apare instant.
+
+CreazaApp este un AI app builder românesc. Utilizatorii descriu în limba română ce aplicație web doresc, iar un agent AI conversațional scrie codul, afișează preview-ul live și permite iterare până la rezultatul dorit.
+
+## Funcționalități principale
+
+- Agent AI conversațional — descrii ce vrei, agentul scrie cod și repară erori automat
+- Preview instant — vezi rezultatul live în browser după fiecare modificare
+- Editor profesional — CodeMirror cu evidențiere sintaxă, editare manuală sau AI
+- Terminal integrat — loguri și erori în timp real
+- Download ZIP — descarci proiectul complet
+- 14+ modele AI — Claude Opus 4.6, Claude Sonnet 4, GPT-4.1, Gemini 2.5 Pro, DeepSeek R1 și altele
+- 8 API-uri AI integrate — Text-în-Voce, Voce-în-Text, Generare Imagini, Ștergere Fundal, Traducere, OCR, Parsare Documente, Generare Video
+- Suport complet în limba română
+
+## Planuri și prețuri
+
+- Gratuit: 0 RON/lună, 50 credite, model AI performant
+- Starter: 69 RON/lună, 300 credite, model AI rapid + deploy
+- Pro: 149 RON/lună, 400 credite, alegi modelul AI, API-uri premium
+- Ultra: 299 RON/lună, 500 credite, modele premium, context 1M tokeni, suport dedicat
+
+Creditele achiziționate prin top-up nu expiră.
+
+## Link-uri
+
+- Website: https://creazaapp.com
+- Prețuri: https://creazaapp.com/preturi
+- Autentificare: https://creazaapp.com/login
+- Politica de confidențialitate: https://creazaapp.com/confidentialitate
+- Termeni și condiții: https://creazaapp.com/termeni
+
+## Contact
+
+Email: contact@creazaapp.com
