@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   plan TEXT NOT NULL DEFAULT 'free'
     CHECK (plan IN ('free', 'starter', 'pro', 'ultra')),
-  credits_monthly INTEGER NOT NULL DEFAULT 10,
-  credits_topup INTEGER NOT NULL DEFAULT 0,
+  credits_monthly NUMERIC(10,2) NOT NULL DEFAULT 50,
+  credits_topup NUMERIC(10,2) NOT NULL DEFAULT 0,
   credits_reset_at TIMESTAMPTZ NOT NULL DEFAULT (date_trunc('month', now()) + interval '1 month'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS public.credit_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   amount NUMERIC(10,4) NOT NULL,
-  balance_after_monthly INTEGER NOT NULL,
-  balance_after_topup INTEGER NOT NULL,
+  balance_after_monthly NUMERIC(10,2) NOT NULL,
+  balance_after_topup NUMERIC(10,2) NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('usage', 'topup', 'monthly_reset', 'plan_change')),
   description TEXT,
   model TEXT,
@@ -54,7 +54,7 @@ SET search_path = public
 AS $$
 BEGIN
   INSERT INTO public.user_profiles (id, plan, credits_monthly, credits_topup)
-  VALUES (NEW.id, 'free', 10, 0)
+  VALUES (NEW.id, 'free', 50, 0)
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
@@ -79,12 +79,12 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_monthly INTEGER;
-  v_topup INTEGER;
-  v_cost INTEGER;
-  v_remainder INTEGER;
+  v_monthly NUMERIC(10,2);
+  v_topup NUMERIC(10,2);
+  v_cost NUMERIC(10,2);
+  v_remainder NUMERIC(10,2);
 BEGIN
-  v_cost := CEIL(p_cost_raw);
+  v_cost := ROUND(p_cost_raw, 2);
 
   SELECT credits_monthly, credits_topup
   INTO v_monthly, v_topup
@@ -95,8 +95,8 @@ BEGIN
   IF NOT FOUND THEN
     -- Auto-create profile for existing users
     INSERT INTO user_profiles (id, plan, credits_monthly, credits_topup)
-    VALUES (p_user_id, 'free', 10, 0);
-    v_monthly := 10;
+    VALUES (p_user_id, 'free', 50, 0);
+    v_monthly := 50;
     v_topup := 0;
   END IF;
 
@@ -126,7 +126,7 @@ $$;
 
 -- 6. Creează profiluri pentru userii existenți
 INSERT INTO user_profiles (id, plan, credits_monthly, credits_topup)
-SELECT id, 'free', 10, 0
+SELECT id, 'free', 50, 0
 FROM auth.users
 WHERE id NOT IN (SELECT id FROM user_profiles)
 ON CONFLICT (id) DO NOTHING;

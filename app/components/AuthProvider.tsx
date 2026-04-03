@@ -15,10 +15,10 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   profile: UserProfile | null;
-  refreshCredits: () => Promise<void>;
+  refreshCredits: () => Promise<UserProfile | null>;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true, profile: null, refreshCredits: async () => {} });
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true, profile: null, refreshCredits: async () => null });
 
 async function fetchProfile(userId: string): Promise<UserProfile | null> {
   const { data } = await supabase
@@ -41,9 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   const refreshCredits = useCallback(async () => {
-    if (!user) return;
+    if (!user) return null;
     const p = await fetchProfile(user.id);
     if (p) setProfile(p);
+    return p;
   }, [user]);
 
   useEffect(() => {

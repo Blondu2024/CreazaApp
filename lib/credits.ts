@@ -65,10 +65,10 @@ export const MODEL_COSTS: Record<string, ModelPricing> = {
   // Anthropic
   "anthropic/claude-opus-4-6":    { inputPer1M: 5,    outputPer1M: 25 },
   "anthropic/claude-sonnet-4":    { inputPer1M: 3,    outputPer1M: 15 },
-  "anthropic/claude-haiku-4.5":   { inputPer1M: 0.80, outputPer1M: 4 },
+  "anthropic/claude-haiku-4.5":   { inputPer1M: 1,    outputPer1M: 5 },
   "anthropic/claude-3.5-sonnet":  { inputPer1M: 3,    outputPer1M: 15 },
   // OpenAI
-  "openai/gpt-4.1":              { inputPer1M: 2.50, outputPer1M: 10 },
+  "openai/gpt-4.1":              { inputPer1M: 2,    outputPer1M: 8 },
   "openai/gpt-4.1-mini":         { inputPer1M: 0.40, outputPer1M: 1.60 },
   "openai/gpt-4o":               { inputPer1M: 2.50, outputPer1M: 10 },
   "openai/gpt-4o-mini":          { inputPer1M: 0.15, outputPer1M: 0.60 },
@@ -160,13 +160,13 @@ export async function ensureProfile(userId: string): Promise<UserCredits> {
   await supabaseAdmin.from("user_profiles").insert({
     id: userId, plan: "free", credits_monthly: 50, credits_topup: 0,
   });
-  return { plan: "free", creditsMonthly: 10, creditsTopup: 0, totalCredits: 10, creditsResetAt: "" };
+  return { plan: "free", creditsMonthly: 50, creditsTopup: 0, totalCredits: 50, creditsResetAt: "" };
 }
 
 export async function checkCredits(userId: string, estimatedCost: number): Promise<{ allowed: boolean; balance: number }> {
   if (estimatedCost <= 0) return { allowed: true, balance: 0 };
   const credits = await ensureProfile(userId);
-  return { allowed: credits.totalCredits >= Math.ceil(estimatedCost), balance: credits.totalCredits };
+  return { allowed: credits.totalCredits >= estimatedCost, balance: credits.totalCredits };
 }
 
 export async function deductCredits(

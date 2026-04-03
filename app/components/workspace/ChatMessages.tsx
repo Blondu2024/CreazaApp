@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
 
 // Duplicated from page.tsx to avoid circular deps — these are pure functions
 function stripCodeBlocks(text: string): string {
-  return text.replace(/```\S*\n([\s\S]*?)```/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  // Remove completed code blocks
+  let cleaned = text.replace(/```\S*\n([\s\S]*?)```/g, "");
+  // Remove unclosed code block at the end (streaming — cod care se scrie)
+  cleaned = cleaned.replace(/```[\s\S]*$/, "");
+  return cleaned.replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function isWritingCode(text: string): boolean {
@@ -131,26 +135,30 @@ export function ChatMessages({
               </div>
             )}
             {writingCode && (
-              <div className="flex items-center gap-2 mt-2 py-2 px-3 rounded-md bg-[#6366f1]/10 border border-[#6366f1]/20">
-                <div className="w-2 h-2 rounded-full bg-[#6366f1] animate-pulse" />
-                <span className="text-xs text-[#a78bfa]">Se scrie codul...</span>
+              <div className="flex items-center gap-3 mt-3 py-3 px-4 rounded-lg bg-gradient-to-r from-[#6366f1]/15 to-[#a855f7]/15 border border-[#6366f1]/30">
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 rounded-full bg-[#6366f1] animate-bounce" style={{ animationDelay: "0ms", animationDuration: "0.8s" }} />
+                  <div className="w-2 h-2 rounded-full bg-[#818cf8] animate-bounce" style={{ animationDelay: "150ms", animationDuration: "0.8s" }} />
+                  <div className="w-2 h-2 rounded-full bg-[#a855f7] animate-bounce" style={{ animationDelay: "300ms", animationDuration: "0.8s" }} />
+                </div>
+                <span className="text-sm text-[#a78bfa] font-medium">Se construiește aplicația...</span>
               </div>
             )}
           </div>
         );
       })}
       {isLoading && streamingMessages.filter(m => m.role === "assistant").length === 0 && (
-        <div className="rounded-lg p-3 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 border border-[#6366f1]/30">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#6366f1]" />
-            <span className="text-xs text-[#e2e8f0] animate-pulse">Se generează...</span>
+        <div className="rounded-lg p-4 bg-gradient-to-r from-[#6366f1]/15 to-[#a855f7]/15 border border-[#6366f1]/30">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-[#6366f1] animate-pulse" />
+            <span className="text-sm text-[#e2e8f0] font-medium animate-pulse">Se pregătește...</span>
           </div>
         </div>
       )}
       {lastCreditCost !== null && (
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/20">
           <Zap className="w-3 h-3 text-[#f59e0b]" />
-          <span className="text-xs text-[#f59e0b]">~{lastCreditCost} credite consumate</span>
+          <span className="text-xs text-[#f59e0b]">{lastCreditCost} credite consumate</span>
           <Link href="/preturi" className="text-xs text-[#6366f1] underline ml-auto">Cumpara credite</Link>
         </div>
       )}
