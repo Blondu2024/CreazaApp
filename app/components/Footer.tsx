@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
+
 export function Footer() {
   return (
     <footer className="bg-background border-t border-border py-12 px-6">
@@ -35,9 +36,9 @@ export function Footer() {
           <div>
             <h4 className="text-foreground font-semibold mb-4 text-sm">Legal</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Politica de confidențialitate</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Termeni și condiții</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Cookie-uri</a></li>
+              <li><Link href="/confidentialitate" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Politica de confidențialitate</Link></li>
+              <li><Link href="/termeni" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Termeni și condiții</Link></li>
+              <li><Link href="/cookies" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Cookie-uri</Link></li>
             </ul>
           </div>
         </div>
