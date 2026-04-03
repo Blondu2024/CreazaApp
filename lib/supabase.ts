@@ -14,6 +14,7 @@ export interface Project {
   context_summary: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 export interface ProjectFile {
@@ -88,7 +89,9 @@ export async function createProject(name: string, model: string, userId?: string
 }
 
 export async function listProjects(userId?: string): Promise<Project[]> {
-  let query = supabase.from("projects").select("*").order("updated_at", { ascending: false });
+  let query = supabase.from("projects").select("*")
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false });
   if (userId) query = query.eq("user_id", userId);
   const { data, error } = await query;
   if (error) { console.error("listProjects:", error); return []; }
@@ -96,9 +99,32 @@ export async function listProjects(userId?: string): Promise<Project[]> {
 }
 
 export async function deleteProject(id: string): Promise<boolean> {
-  const { error } = await supabase.from("projects").delete().eq("id", id);
+  // Soft delete — marcăm deleted_at, datele rămân 48h
+  const { error } = await supabase
+    .from("projects")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
   if (error) { console.error("deleteProject:", error); return false; }
   return true;
+}
+
+export async function restoreProject(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  if (error) { console.error("restoreProject:", error); return false; }
+  return true;
+}
+
+export async function listDeletedProjects(userId?: string): Promise<Project[]> {
+  let query = supabase.from("projects").select("*")
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false });
+  if (userId) query = query.eq("user_id", userId);
+  const { data, error } = await query;
+  if (error) { console.error("listDeletedProjects:", error); return []; }
+  return data || [];
 }
 
 export async function updateProjectTimestamp(id: string) {

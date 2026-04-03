@@ -29,8 +29,8 @@ export function Navbar() {
         <Link href="/preturi" className={`transition-colors duration-200 text-sm font-medium ${pathname === "/preturi" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
           Prețuri
         </Link>
-        <Link href="/workspace" className="text-muted-foreground hover:text-foreground transition-colors duration-200 text-sm font-medium">
-          Demo
+        <Link href="/projects" className={`transition-colors duration-200 text-sm font-medium ${pathname === "/projects" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+          Proiecte
         </Link>
       </nav>
 
