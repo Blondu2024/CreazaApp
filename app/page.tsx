@@ -31,10 +31,10 @@ const models = [
 ];
 
 const plans = [
-  { name: "Gratuit", price: "0", credits: "50", desc: "Exploreaza platforma" },
-  { name: "Starter", price: "69", credits: "300", desc: "Proiecte personale", popular: true },
-  { name: "Pro", price: "149", credits: "400", desc: "Creatori seriosi" },
-  { name: "Ultra", price: "299", credits: "500", desc: "Performanta maxima" },
+  { name: "Gratuit", price: "0", credits: "50", desc: "Agent AI (Sonnet 4)" },
+  { name: "Starter", price: "69", credits: "300", desc: "Agent AI rapid + Deploy", popular: true },
+  { name: "Pro", price: "149", credits: "400", desc: "Alegi modelul AI" },
+  { name: "Ultra", price: "299", credits: "500", desc: "Modele premium + 1M context" },
 ];
 
 export default function Home() {

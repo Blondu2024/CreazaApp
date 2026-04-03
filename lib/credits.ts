@@ -9,15 +9,35 @@ export interface PlanDefinition {
   name: string;
   priceRON: number;
   creditsPerMonth: number;
-  defaultModel: string;
+  model: string;           // Fixed model for free/starter, default for pro/ultra
+  canChooseModel: boolean; // Pro/Ultra can choose at project start
+  contextBudget: number;   // Max context tokens
 }
 
 export const PLANS: Record<string, PlanDefinition> = {
-  free:    { id: "free",    name: "Gratuit", priceRON: 0,   creditsPerMonth: 50,  defaultModel: "anthropic/claude-sonnet-4" },
-  starter: { id: "starter", name: "Starter", priceRON: 69,  creditsPerMonth: 300, defaultModel: "anthropic/claude-haiku-4.5" },
-  pro:     { id: "pro",     name: "Pro",     priceRON: 149, creditsPerMonth: 400, defaultModel: "anthropic/claude-sonnet-4" },
-  ultra:   { id: "ultra",   name: "Ultra",   priceRON: 299, creditsPerMonth: 500, defaultModel: "anthropic/claude-opus-4-6" },
+  free:    { id: "free",    name: "Gratuit", priceRON: 0,   creditsPerMonth: 50,  model: "anthropic/claude-sonnet-4",  canChooseModel: false, contextBudget: 200_000 },
+  starter: { id: "starter", name: "Starter", priceRON: 69,  creditsPerMonth: 300, model: "anthropic/claude-haiku-4.5", canChooseModel: false, contextBudget: 200_000 },
+  pro:     { id: "pro",     name: "Pro",     priceRON: 149, creditsPerMonth: 400, model: "anthropic/claude-sonnet-4",  canChooseModel: true,  contextBudget: 200_000 },
+  ultra:   { id: "ultra",   name: "Ultra",   priceRON: 299, creditsPerMonth: 500, model: "anthropic/claude-opus-4-6",  canChooseModel: true,  contextBudget: 1_000_000 },
 };
+
+// Models available for Pro/Ultra selection
+export const PRO_MODELS = [
+  "anthropic/claude-sonnet-4",
+  "anthropic/claude-haiku-4.5",
+  "openai/gpt-4.1",
+  "google/gemini-2.5-pro-preview",
+  "google/gemini-2.5-flash",
+  "deepseek/deepseek-r1",
+];
+
+export const ULTRA_MODELS = [
+  "anthropic/claude-opus-4-6",
+  "anthropic/claude-sonnet-4",
+  "openai/gpt-4.1",
+  "google/gemini-2.5-pro-preview",
+  "deepseek/deepseek-r1",
+];
 
 export interface TopupPackage {
   id: string;
@@ -79,7 +99,16 @@ export const CREDIT_VALUE_USD = 0.043;
 // ============================================
 
 export function isModelFree(model: string): boolean {
-  return model.endsWith(":free") || !(model in MODEL_COSTS);
+  // Free OpenRouter models (":free" suffix) still cost 0 on OpenRouter
+  // but we charge a minimal platform fee of 0.1 credits for tracking
+  return false;
+}
+
+export function getModelCostOrMinimum(model: string, inputTokens: number, outputTokens: number): number {
+  const cost = calculateCreditCost(model, inputTokens, outputTokens);
+  // Free OpenRouter models: charge 0.1 credit minimum for platform usage
+  if (cost === 0 && (model.endsWith(":free") || !(model in MODEL_COSTS))) return 0.1;
+  return cost;
 }
 
 export function calculateCreditCost(model: string, inputTokens: number, outputTokens: number): number {

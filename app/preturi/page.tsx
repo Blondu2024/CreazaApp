@@ -2,33 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Sparkles, Zap, ChevronDown } from "lucide-react";
+import { Check, Sparkles, Zap, ChevronDown, Globe, Rocket, Server } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 
 const plans = [
   {
-    id: "free", name: "Gratuit", description: "Explorează platforma gratuit",
-    price: 0, period: "/lună", credits: 50, defaultModel: "Sonnet 4",
-    features: ["50 credite gratuite/lună", "Acces la toate modelele AI", "Modele gratuite nelimitate", "Preview instant", "Download ZIP"],
+    id: "free", name: "Gratuit", description: "Explorează platforma",
+    price: 0, period: "/lună", credits: 50,
+    features: ["50 credite gratuite/lună", "Agent AI (Sonnet 4)", "Preview instant", "Download ZIP", "Subdomain gratuit"],
     cta: "Începe gratuit", ctaStyle: "outline" as const, highlighted: false,
   },
   {
-    id: "starter", name: "Starter", description: "Perfect pentru proiecte personale",
-    price: 69, period: "/lună", credits: 300, badge: "Popular", defaultModel: "Haiku 4.5",
-    features: ["300 credite/lună (~400 generări)", "Default: Haiku 4.5 (rapid)", "Acces la toate modelele", "Credite top-up disponibile", "Proiecte nelimitate"],
+    id: "starter", name: "Starter", description: "Proiecte personale",
+    price: 69, period: "/lună", credits: 300, badge: "Popular",
+    features: ["300 credite/lună", "Agent AI rapid (Haiku 4.5)", "Deploy cu un click", "Hosting inclus", "Subdomain gratuit", "Top-up credite disponibil"],
     cta: "Începe Starter →", ctaStyle: "gradient" as const, highlighted: true,
   },
   {
-    id: "pro", name: "Pro", description: "Pentru creatori serioși",
-    price: 149, period: "/lună", credits: 400, badge: "Avansat", defaultModel: "Sonnet 4",
-    features: ["400 credite/lună (~97 generări)", "Default: Sonnet 4 (puternic)", "Context extins 1M tokeni", "Credite top-up disponibile", "Suport prioritar"],
+    id: "pro", name: "Pro", description: "Creatori serioși",
+    price: 149, period: "/lună", credits: 400, badge: "Avansat",
+    features: ["400 credite/lună", "Alegi modelul AI", "Sonnet 4, GPT-4.1, Gemini 2.5", "Context 200K tokeni", "Deploy + Hosting inclus", "Top-up credite disponibil"],
     cta: "Începe Pro →", ctaStyle: "gradient" as const, highlighted: false,
   },
   {
     id: "ultra", name: "Ultra", description: "Performanță maximă",
-    price: 299, period: "/lună", credits: 500, defaultModel: "Opus 4.6",
-    features: ["500 credite/lună (~44 generări)", "Default: Opus 4.6 (cel mai bun)", "Acces premium la toate modelele", "Credite top-up disponibile", "Suport dedicat"],
+    price: 299, period: "/lună", credits: 500,
+    features: ["500 credite/lună", "Alegi modelul AI premium", "Opus 4.6, Sonnet 4, GPT-4.1", "Context 1M tokeni", "Deploy + Hosting prioritar", "Top-up credite disponibil"],
     cta: "Începe Ultra →", ctaStyle: "gradient" as const, highlighted: false,
   },
 ];
@@ -40,22 +40,22 @@ const topups = [
   { name: "XL", price: 99, credits: 450 },
 ];
 
-const costExamples = [
-  { model: "Opus 4.6", cost: "~11 cr", desc: "Cel mai complet, ~19K tokeni output" },
-  { model: "Sonnet 4", cost: "~4 cr", desc: "Puternic, ~11K tokeni output" },
-  { model: "Haiku 4.5", cost: "~0.7 cr", desc: "Rapid și eficient, ~6K tokeni output" },
-  { model: "GPT-4.1", cost: "~0.7 cr", desc: "Alternativă rapidă, ~3K tokeni output" },
-  { model: "Gemini 2.5 Flash", cost: "~0.6 cr", desc: "Rapid, output bun, ~10K tokeni" },
-  { model: "Modele gratuite", cost: "0 cr", desc: "Qwen, Llama, DeepSeek — nelimitate" },
+const hostingPrices = [
+  { action: "Deploy inițial", credits: 10, desc: "Publici proiectul online" },
+  { action: "Subdomain gratuit", credits: 0, desc: "proiect.creazaapp.com" },
+  { action: "Hosting sleep mode", credits: 25, desc: "Se trezește la request (2-3s delay)", perMonth: true },
+  { action: "Hosting 24/7", credits: 60, desc: "Always on, fără delay", perMonth: true },
+  { action: "Domeniu custom (conectare)", credits: 50, desc: "Conectezi propriul domeniu" },
 ];
 
 const faqs = [
-  { q: "Ce este un credit și cum se consumă?", a: "1 credit = 0.20 RON. Creditele se consumă proporțional cu tokenii folosiți de modelul AI. Modelele gratuite (Qwen, Llama, DeepSeek) nu consumă credite deloc. Modelele premium consumă în funcție de complexitate — de la 0.7 credite (Haiku) la 11 credite (Opus) per generare." },
+  { q: "Ce este un credit și cum se consumă?", a: "1 credit = 0.20 RON. Creditele se consumă automat la fiecare mesaj trimis agentului AI, proporțional cu complexitatea răspunsului. Nu alegi tu modelul — platforma folosește cel mai potrivit AI pentru planul tău." },
   { q: "Ce se întâmplă cu creditele nefolosite?", a: "Creditele lunare se resetează la începutul fiecărei luni. Creditele cumpărate prin top-up NU expiră niciodată — se consumă după creditele lunare." },
-  { q: "Pot folosi orice model pe orice plan?", a: "Da! Toate planurile au acces la toate modelele. Diferența e doar numărul de credite incluse. Modelele gratuite funcționează nelimitat pe orice plan." },
-  { q: "Pot schimba planul oricând?", a: "Da, poți face upgrade sau downgrade în orice moment. Modificările se aplică imediat." },
+  { q: "De ce nu pot alege modelul AI?", a: "Pe planurile Gratuit și Starter, platforma alege automat cel mai bun model pentru tine. Asta simplifică experiența și garantează calitate. Pe Pro și Ultra, poți alege modelul la începutul fiecărui proiect." },
+  { q: "Cum funcționează hostingul?", a: "După ce proiectul e gata, dai deploy cu un click. Primești un subdomain gratuit (proiect.creazaapp.com). Hostingul sleep mode pornește site-ul la cerere. Hostingul 24/7 ține site-ul mereu activ." },
   { q: "Pot cumpăra top-up fără abonament?", a: "Top-up-urile sunt disponibile doar cu un abonament activ (inclusiv Gratuit). Creditele top-up nu expiră niciodată." },
-  { q: "Oferiți factură pentru firme?", a: "Da, oferim facturi fiscale pentru toate planurile plătite. La checkout poți introduce datele companiei." },
+  { q: "Pot schimba planul oricând?", a: "Da, poți face upgrade sau downgrade în orice moment. Modificările se aplică imediat." },
+  { q: "Oferiți factură pentru firme?", a: "Da, oferim facturi fiscale pentru toate planurile plătite." },
 ];
 
 export default function PricingPage() {
@@ -72,7 +72,7 @@ export default function PricingPage() {
             Prețuri simple, fără surprize
           </h1>
           <p className="text-lg text-[#64748b] mb-4">
-            Plătești doar cât folosești. Modelele gratuite sunt nelimitate.
+            Platforma alege cel mai bun AI pentru tine. Tu doar construiești.
           </p>
           <p className="text-sm text-[#6366f1]">1 credit = 0.20 RON</p>
         </div>
@@ -100,7 +100,6 @@ export default function PricingPage() {
                 <Zap className="w-5 h-5 text-[#f59e0b]" />
                 <span className="text-sm text-[#e2e8f0]"><span className="font-semibold">{plan.credits}</span> credite/lună</span>
               </div>
-              <p className="text-[10px] text-[#64748b] mb-4">Default: {plan.defaultModel}</p>
               <ul className="space-y-3 mb-6 flex-1">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-3">
@@ -117,7 +116,36 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Top-up Packages */}
+      {/* Hosting & Deploy */}
+      <section className="pb-16 px-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Rocket className="w-5 h-5 text-[#6366f1]" />
+              <h2 className="text-2xl font-semibold text-[#e2e8f0]">Hosting & Deploy</h2>
+            </div>
+            <p className="text-sm text-[#64748b]">Publică proiectul online cu un click. Creditele se consumă din balanța ta.</p>
+          </div>
+          <div className="bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-xl overflow-hidden">
+            {hostingPrices.map((h, i) => (
+              <div key={i} className={`flex items-center justify-between px-5 py-4 ${i < hostingPrices.length - 1 ? "border-b border-[rgba(30,30,46,0.8)]" : ""}`}>
+                <div className="flex items-center gap-3">
+                  {h.credits === 0 ? <Globe className="w-4 h-4 text-[#10b981]" /> : <Server className="w-4 h-4 text-[#6366f1]" />}
+                  <div>
+                    <p className="text-sm font-medium text-[#e2e8f0]">{h.action}</p>
+                    <p className="text-[11px] text-[#64748b]">{h.desc}</p>
+                  </div>
+                </div>
+                <span className={`text-sm font-bold ${h.credits === 0 ? "text-[#10b981]" : "text-[#f59e0b]"}`}>
+                  {h.credits === 0 ? "GRATUIT" : `${h.credits} cr${h.perMonth ? "/lună" : ""}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Top-up */}
       <section className="pb-16 px-6">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-2xl font-semibold text-[#e2e8f0] text-center mb-2">Credite Top-up</h2>
@@ -129,25 +157,6 @@ export default function PricingPage() {
                 <p className="text-xs text-[#64748b] mb-2">credite</p>
                 <p className="text-sm font-semibold text-[#f59e0b]">{t.price} RON</p>
                 <p className="text-[10px] text-[#64748b] mt-1">{(t.price / t.credits).toFixed(2)} RON/credit</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Cost Examples */}
-      <section className="pb-16 px-6">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-semibold text-[#e2e8f0] text-center mb-2">Cât costă o generare?</h2>
-          <p className="text-sm text-[#64748b] text-center mb-8">Estimări pentru un prompt complex (site complet)</p>
-          <div className="bg-[#111118] border border-[rgba(30,30,46,0.8)] rounded-xl overflow-hidden">
-            {costExamples.map((ex, i) => (
-              <div key={i} className={`flex items-center justify-between px-5 py-3 ${i < costExamples.length - 1 ? "border-b border-[rgba(30,30,46,0.8)]" : ""}`}>
-                <div>
-                  <p className="text-sm font-medium text-[#e2e8f0]">{ex.model}</p>
-                  <p className="text-[11px] text-[#64748b]">{ex.desc}</p>
-                </div>
-                <span className={`text-sm font-bold ${ex.cost === "0 cr" ? "text-[#10b981]" : "text-[#f59e0b]"}`}>{ex.cost}</span>
               </div>
             ))}
           </div>

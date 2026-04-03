@@ -677,25 +677,26 @@ export default function WorkspacePage() {
           <span className="text-base font-bold"><span className="gradient-text">Creaza</span><span className="text-[#e2e8f0]">App</span></span>
         </Link>
 
-        {/* Model Selector — hidden on mobile, shown in chat header instead */}
-        <select
-          value={selectedModel}
-          onChange={(e) => setSelectedModel(e.target.value)}
-          className="hidden md:block h-8 w-[280px] bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1] cursor-pointer"
-        >
-          {MODEL_CATEGORIES.map((cat) => (
-            <optgroup key={cat.key} label={cat.label}>
-              {models.filter((m) => m.category === cat.key).map((m) => {
-                const est = estimateCreditCost(m.value);
-                return (
-                  <option key={m.value} value={m.value}>
-                    {m.label} — {m.price}{est > 0 ? ` (~${est} cr)` : ""}
-                  </option>
-                );
-              })}
-            </optgroup>
-          ))}
-        </select>
+        {/* Model indicator or selector based on plan */}
+        {profile?.plan === "pro" || profile?.plan === "ultra" ? (
+          <select
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            className="hidden md:block h-8 w-[240px] bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1] cursor-pointer"
+          >
+            {(profile.plan === "ultra"
+              ? models.filter((m) => ["anthropic/claude-opus-4-6","anthropic/claude-sonnet-4","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
+              : models.filter((m) => ["anthropic/claude-sonnet-4","anthropic/claude-haiku-4.5","openai/gpt-4.1","google/gemini-2.5-pro-preview","google/gemini-2.5-flash","deepseek/deepseek-r1"].includes(m.value))
+            ).map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+        ) : (
+          <div className="hidden md:flex items-center gap-2 h-8 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3">
+            <Sparkles className="w-3.5 h-3.5 text-[#6366f1]" />
+            <span className="text-xs text-[#94a3b8]">{profile?.plan === "starter" ? "Haiku 4.5" : "Sonnet 4"}</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           {/* Project selector — hidden on mobile */}
@@ -756,24 +757,27 @@ export default function WorkspacePage() {
           {/* Chat view */}
           {mobileTab === "chat" && (
             <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0f]">
-              {/* Model selector */}
+              {/* Model indicator or selector */}
               <div className="shrink-0 px-3 py-2 border-b border-[rgba(30,30,46,0.8)]">
+                {profile?.plan === "pro" || profile?.plan === "ultra" ? (
                 <select
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
                   className="w-full h-9 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3 outline-none focus:border-[#6366f1]"
                 >
-                  {MODEL_CATEGORIES.map((cat) => (
-                    <optgroup key={cat.key} label={cat.label}>
-                      {models.filter((m) => m.category === cat.key).map((m) => {
-                        const est = estimateCreditCost(m.value);
-                        return (
-                          <option key={m.value} value={m.value}>{m.label} — {m.price}{est > 0 ? ` (~${est} cr)` : ""}</option>
-                        );
-                      })}
-                    </optgroup>
+                  {(profile.plan === "ultra"
+                    ? models.filter((m) => ["anthropic/claude-opus-4-6","anthropic/claude-sonnet-4","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
+                    : models.filter((m) => ["anthropic/claude-sonnet-4","anthropic/claude-haiku-4.5","openai/gpt-4.1","google/gemini-2.5-pro-preview","google/gemini-2.5-flash","deepseek/deepseek-r1"].includes(m.value))
+                  ).map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>
+                ) : (
+                <div className="flex items-center gap-2 h-9 bg-[#111118] border border-[rgba(30,30,46,0.8)] text-[#e2e8f0] text-sm rounded-lg px-3">
+                  <Sparkles className="w-3.5 h-3.5 text-[#6366f1]" />
+                  <span className="text-xs text-[#94a3b8]">{profile?.plan === "starter" ? "Haiku 4.5" : "Sonnet 4"}</span>
+                </div>
+                )}
               </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
