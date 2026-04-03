@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./components/AuthProvider";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { ToastProvider } from "./components/Toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,7 +33,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full">
-        <ThemeProvider><AuthProvider><TooltipProvider>{children}</TooltipProvider></AuthProvider></ThemeProvider>
+        <ThemeProvider><ToastProvider><AuthProvider><TooltipProvider>{children}</TooltipProvider></AuthProvider></ToastProvider></ThemeProvider>
       </body>
     </html>
   );

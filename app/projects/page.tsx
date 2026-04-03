@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Folder, Plus, Trash2, Undo2, Clock, Code, Sparkles, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/app/components/AuthProvider";
+import { useToast } from "@/app/components/Toast";
 import { Navbar } from "@/app/components/Navbar";
 import { listProjects, listDeletedProjects, deleteProject, restoreProject } from "@/lib/supabase";
 import type { Project } from "@/lib/supabase";
@@ -17,6 +18,7 @@ export default function ProjectsPage() {
   const [showDeleted, setShowDeleted] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Project | null>(null);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const { toast } = useToast();
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -42,12 +44,14 @@ export default function ProjectsPage() {
   const handleDelete = async () => {
     if (!deleteConfirm) return;
     await deleteProject(deleteConfirm.id);
+    toast(`"${deleteConfirm.name}" mutat în coș. Poți restaura în 48h.`, "success");
     setDeleteConfirm(null);
     refresh();
   };
 
   const handleRestore = async (id: string) => {
     await restoreProject(id);
+    toast("Proiect restaurat cu succes", "success");
     refresh();
   };
 

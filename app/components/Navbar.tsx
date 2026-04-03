@@ -32,6 +32,9 @@ export function Navbar() {
         <Link href="/projects" className={`transition-colors duration-200 text-sm font-medium ${pathname === "/projects" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
           Proiecte
         </Link>
+        <Link href="/cont" className={`transition-colors duration-200 text-sm font-medium ${pathname === "/cont" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+          Cont
+        </Link>
       </nav>
 
       <div className="flex items-center gap-4">
