@@ -48,13 +48,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    getUser().then(async (u) => {
-      setUser(u);
-      setLoading(false);
-      if (u) {
-        const p = await fetchProfile(u.id);
+    // Try session first (instant, from cookies), then verify with getUser
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        setLoading(false);
+        const p = await fetchProfile(session.user.id);
         if (p) setProfile(p);
       }
+      // Always verify server-side (refreshes token if needed)
+      const u = await getUser();
+      if (u) {
+        setUser(u);
+        if (!session?.user) {
+          const p = await fetchProfile(u.id);
+          if (p) setProfile(p);
+        }
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+      setLoading(false);
     });
 
     const { data: { subscription } } = onAuthChange(async (u, event) => {
