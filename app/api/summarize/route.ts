@@ -67,7 +67,7 @@ CONVERSAȚIA (ultimele ${Math.min((chatHistory || []).length, 20)} mesaje):
 ${recentMessages || "Nicio conversație"}`;
 
     const result = await generateText({
-      model: openrouter(SUMMARIZE_MODEL),
+      model: openrouter.chat(SUMMARIZE_MODEL),
       system: SUMMARIZE_PROMPT,
       prompt: userPrompt,
     });

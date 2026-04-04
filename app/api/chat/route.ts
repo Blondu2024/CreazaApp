@@ -114,7 +114,7 @@ export async function POST(req: Request) {
     console.log("[chat] System prompt:", Math.ceil(systemPrompt.length / 4), "tokens");
 
     const result = streamText({
-      model: openrouter(model),
+      model: openrouter.chat(model),
       system: systemPrompt,
       messages: modelMessages,
       stopWhen: stepCountIs(3),
