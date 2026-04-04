@@ -28,6 +28,8 @@ export interface Deployment {
   status: string;
   error_message: string | null;
   credits_charged: number;
+  custom_domain: string | null;
+  custom_domain_verified: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -463,4 +465,129 @@ export async function handleDeploy(
     cached: false,
     creditsCost: cost,
   };
+}
+
+// ============================================
+// Custom Domain Management
+// ============================================
+
+interface DnsRecord {
+  type: string;
+  name: string;
+  value: string;
+}
+
+/**
+ * Add a custom domain to the Vercel project.
+ */
+export async function addCustomDomain(
+  deployment: Deployment,
+  domain: string
+): Promise<{ success: boolean; dnsRecords?: DnsRecord[]; error?: string }> {
+  if (!deployment.vercel_project_id) {
+    return { success: false, error: "Proiectul nu a fost publicat încă" };
+  }
+
+  try {
+    // Add domain to Vercel project
+    const res = await fetch(
+      `${VERCEL_API}/v10/projects/${deployment.vercel_project_id}/domains${teamParam()}`,
+      {
+        method: "POST",
+        headers: vercelHeaders(),
+        body: JSON.stringify({ name: domain }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok && res.status !== 409) {
+      return { success: false, error: data.error?.message || "Eroare la adăugarea domeniului" };
+    }
+
+    // Save to DB
+    if (supabaseAdmin) {
+      await supabaseAdmin
+        .from("deployments")
+        .update({ custom_domain: domain, custom_domain_verified: false, updated_at: new Date().toISOString() })
+        .eq("id", deployment.id);
+    }
+
+    // Return DNS instructions for the user
+    const isApex = domain.split(".").length === 2; // e.g. mysite.ro (no subdomain)
+    const dnsRecords: DnsRecord[] = isApex
+      ? [{ type: "A", name: "@", value: "76.76.21.21" }]
+      : [{ type: "CNAME", name: domain.split(".")[0], value: "cname.vercel-dns.com" }];
+
+    return { success: true, dnsRecords };
+  } catch (err) {
+    console.error("[deploy] add custom domain error:", err);
+    return { success: false, error: "Eroare de conexiune" };
+  }
+}
+
+/**
+ * Check if a custom domain is verified/configured on Vercel.
+ */
+export async function checkDomainStatus(
+  vercelProjectId: string,
+  domain: string
+): Promise<{ verified: boolean; dnsRecords?: DnsRecord[]; error?: string }> {
+  try {
+    const res = await fetch(
+      `${VERCEL_API}/v9/projects/${vercelProjectId}/domains/${domain}${teamParam()}`,
+      { headers: vercelHeaders() }
+    );
+
+    const data = await res.json();
+    if (!res.ok) {
+      return { verified: false, error: data.error?.message };
+    }
+
+    const verified = data.verified === true;
+
+    // Update DB
+    if (supabaseAdmin && verified) {
+      await supabaseAdmin
+        .from("deployments")
+        .update({ custom_domain_verified: true })
+        .eq("vercel_project_id", vercelProjectId)
+        .eq("custom_domain", domain);
+    }
+
+    if (!verified) {
+      const isApex = domain.split(".").length === 2;
+      const dnsRecords: DnsRecord[] = isApex
+        ? [{ type: "A", name: "@", value: "76.76.21.21" }]
+        : [{ type: "CNAME", name: domain.split(".")[0], value: "cname.vercel-dns.com" }];
+      return { verified: false, dnsRecords };
+    }
+
+    return { verified: true };
+  } catch {
+    return { verified: false, error: "Eroare la verificare" };
+  }
+}
+
+/**
+ * Remove custom domain from Vercel project + DB.
+ */
+export async function removeCustomDomain(deployment: Deployment): Promise<void> {
+  if (deployment.vercel_project_id && deployment.custom_domain) {
+    try {
+      await fetch(
+        `${VERCEL_API}/v9/projects/${deployment.vercel_project_id}/domains/${deployment.custom_domain}${teamParam()}`,
+        { method: "DELETE", headers: vercelHeaders() }
+      );
+    } catch {
+      // Ignore — cleanup best effort
+    }
+  }
+
+  if (supabaseAdmin) {
+    await supabaseAdmin
+      .from("deployments")
+      .update({ custom_domain: null, custom_domain_verified: false, updated_at: new Date().toISOString() })
+      .eq("id", deployment.id);
+  }
 }

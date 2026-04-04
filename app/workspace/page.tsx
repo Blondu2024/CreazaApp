@@ -304,6 +304,12 @@ export default function WorkspacePage() {
   const [deploying, setDeploying] = useState(false);
   const [deployUrl, setDeployUrl] = useState<string | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
+
+  // Custom domain state
+  const [showDomainModal, setShowDomainModal] = useState(false);
+  const [domainInput, setDomainInput] = useState("");
+  const [domainLoading, setDomainLoading] = useState(false);
+  const [domainInfo, setDomainInfo] = useState<{ domain: string; verified: boolean; dnsRecords?: { type: string; name: string; value: string }[] } | null>(null);
   const [fileHistory, setFileHistory] = useState<{ path: string; content: string }[][]>([]); // Undo stack
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -756,19 +762,75 @@ export default function WorkspacePage() {
     }
   }, [files, deploying, addLog]);
 
-  // Load deploy status when project opens
+  // Load deploy status + custom domain when project opens
   useEffect(() => {
     if (!currentProject || !user) return;
     (async () => {
       const token = await getAccessToken();
-      const res = await fetch(`/api/deploy?projectId=${currentProject.id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await res.json();
-      if (data.deployment?.url) setDeployUrl(data.deployment.url);
+      const [deployRes, domainRes] = await Promise.all([
+        fetch(`/api/deploy?projectId=${currentProject.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }),
+        fetch(`/api/deploy/domain?projectId=${currentProject.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }),
+      ]);
+      const deployData = await deployRes.json();
+      if (deployData.deployment?.url) setDeployUrl(deployData.deployment.url);
       else setDeployUrl(null);
+
+      const domainData = await domainRes.json();
+      if (domainData.domain) {
+        setDomainInfo({ domain: domainData.domain, verified: domainData.verified, dnsRecords: domainData.dnsRecords });
+      } else {
+        setDomainInfo(null);
+      }
     })();
   }, [currentProject, user]);
+
+  // Connect custom domain handler
+  const handleConnectDomain = useCallback(async () => {
+    if (!currentProjectRef.current || !domainInput.trim() || domainLoading) return;
+    setDomainLoading(true);
+    try {
+      const token = await getAccessToken();
+      const res = await fetch("/api/deploy/domain", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ projectId: currentProjectRef.current.id, domain: domainInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        addLog(`[DOMENIU] Eroare: ${data.error}`);
+        return;
+      }
+      setDomainInfo({ domain: data.domain, verified: data.verified, dnsRecords: data.dnsRecords });
+      addLog(`[DOMENIU] ${data.domain} adăugat! Configurează DNS-ul.`);
+      refreshCreditsRef.current?.();
+      setDomainInput("");
+    } catch {
+      addLog("[DOMENIU] Eroare de conexiune");
+    } finally {
+      setDomainLoading(false);
+    }
+  }, [domainInput, domainLoading, addLog]);
+
+  // Check domain verification
+  const handleCheckDomain = useCallback(async () => {
+    if (!currentProjectRef.current) return;
+    const token = await getAccessToken();
+    const res = await fetch(`/api/deploy/domain?projectId=${currentProjectRef.current.id}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const data = await res.json();
+    if (data.domain) {
+      setDomainInfo({ domain: data.domain, verified: data.verified, dnsRecords: data.dnsRecords });
+      addLog(data.verified ? `[DOMENIU] ${data.domain} verificat!` : `[DOMENIU] ${data.domain} — DNS nu e configurat încă`);
+    }
+  }, [addLog]);
 
   const activeContent = files.find((f) => f.path === activeFile)?.content || "";
   const hasCode = files.length > 0;
@@ -875,12 +937,73 @@ export default function WorkspacePage() {
             {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
             <span className="hidden lg:inline">{deploying ? "Se publică..." : "Publică"}</span>
           </button>
-          {/* Deploy URL indicator */}
+          {/* Deploy URL indicator + Domain button */}
           {deployUrl && !deploying && (
-            <a href={deployUrl} target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-1 px-2 py-1.5 text-[10px] text-[#10b981] hover:text-[#34d399] transition-colors" title={deployUrl}>
-              <Globe className="w-3 h-3" />
-              <span className="max-w-[100px] truncate">Live</span>
-            </a>
+            <>
+              <a href={deployUrl} target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-1 px-2 py-1.5 text-[10px] text-[#10b981] hover:text-[#34d399] transition-colors" title={deployUrl}>
+                <Globe className="w-3 h-3" />
+                <span className="max-w-[100px] truncate">Live</span>
+              </a>
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => setShowDomainModal(!showDomainModal)}
+                  className={cn("flex items-center gap-1 px-2 py-1.5 text-[10px] rounded-lg border transition-colors", domainInfo?.verified ? "text-[#10b981] border-[#10b981]/30" : "text-muted-foreground border-border hover:border-[#6366f1]")}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  <span>{domainInfo?.domain || "Domeniu"}</span>
+                </button>
+                {showDomainModal && (
+                  <div className="absolute right-0 top-full mt-1 w-[320px] bg-card border border-border rounded-lg shadow-xl z-50 p-3">
+                    <h3 className="text-xs font-semibold text-foreground mb-2">Domeniu custom</h3>
+                    {domainInfo ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className={cn("w-2 h-2 rounded-full", domainInfo.verified ? "bg-[#10b981]" : "bg-amber-500 animate-pulse")} />
+                          <span className="text-xs text-foreground font-medium">{domainInfo.domain}</span>
+                          <span className={cn("text-[10px]", domainInfo.verified ? "text-[#10b981]" : "text-amber-500")}>
+                            {domainInfo.verified ? "Conectat" : "DNS neconfigurat"}
+                          </span>
+                        </div>
+                        {!domainInfo.verified && domainInfo.dnsRecords && (
+                          <div className="bg-background rounded p-2 space-y-1">
+                            <p className="text-[10px] text-muted-foreground mb-1">Adaugă în DNS-ul domeniului tău:</p>
+                            {domainInfo.dnsRecords.map((r, i) => (
+                              <div key={i} className="flex gap-2 text-[10px] font-mono">
+                                <span className="text-[#6366f1] font-semibold">{r.type}</span>
+                                <span className="text-foreground">{r.name}</span>
+                                <span className="text-muted-foreground">→</span>
+                                <span className="text-foreground">{r.value}</span>
+                              </div>
+                            ))}
+                            <button onClick={handleCheckDomain} className="mt-2 text-[10px] text-[#6366f1] hover:underline">Verifică acum</button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-[10px] text-muted-foreground">Conectează propriul domeniu (50 credite)</p>
+                        <div className="flex gap-1">
+                          <input
+                            value={domainInput}
+                            onChange={(e) => setDomainInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleConnectDomain()}
+                            placeholder="mysite.ro"
+                            className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-[#6366f1]"
+                          />
+                          <button
+                            onClick={handleConnectDomain}
+                            disabled={!domainInput.trim() || domainLoading}
+                            className="bg-[#6366f1] text-white px-2 py-1 rounded text-xs disabled:opacity-40"
+                          >
+                            {domainLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Conectează"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
           )}
           <button onClick={handleRun} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
             <RefreshCw className="w-3.5 h-3.5" />
