@@ -172,6 +172,21 @@ function teamParam() {
 // CreazaApp watermark — injected in deployed HTML for free plan
 const CREAZAAPP_WATERMARK = `<a href="https://creazaapp.com" target="_blank" rel="noopener" id="creazaapp-badge" style="position:fixed;bottom:12px;right:12px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(15,15,30,0.85);backdrop-filter:blur(8px);padding:6px 12px;border-radius:8px;border:1px solid rgba(99,102,241,0.3);text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity 0.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='0.7'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5h4.74l-3.84 2.79 1.47 4.52L12 12.02l-3.87 2.79 1.47-4.52L5.76 7.5h4.74L12 3z"/></svg><span style="color:#a5b4fc;font-size:11px;font-weight:500">Creat cu CreazaApp.com</span></a>`;
 
+// Base URL for the main CreazaApp app — deployed sites call APIs here
+const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://creazaapp.com";
+
+/**
+ * Rewrite relative API paths to absolute URLs so deployed static sites
+ * can reach CreazaApp APIs (images, Eden AI, etc.)
+ */
+function rewriteApiUrls(code: string): string {
+  // Match fetch('/api/...) and fetch("/api/...) — both quote styles
+  return code
+    .replace(/fetch\(\s*(['"])\/api\//g, `fetch($1${APP_BASE_URL}/api/`)
+    .replace(/['"]\/api\/images\/search/g, `'${APP_BASE_URL}/api/images/search`)
+    .replace(/['"]\/api\/eden\//g, `'${APP_BASE_URL}/api/eden/`);
+}
+
 /**
  * Build the static HTML package for deployment.
  * Generates a single-page app with all files inlined.
@@ -212,6 +227,8 @@ function buildDeploymentPackage(files: { path: string; content: string }[], user
     if (showWatermark) {
       html = html.replace("</body>", `${CREAZAAPP_WATERMARK}\n</body>`);
     }
+    // Rewrite relative API URLs to absolute so they work on deployed subdomain
+    html = rewriteApiUrls(html);
     return [{ path: "index.html", content: html }];
   }
 
@@ -252,7 +269,8 @@ function buildDeploymentPackage(files: { path: string; content: string }[], user
 </body>
 </html>`;
 
-  return [{ path: "index.html", content: fullHtml }];
+  // Rewrite relative API URLs to absolute so they work on deployed subdomain
+  return [{ path: "index.html", content: rewriteApiUrls(fullHtml) }];
 }
 
 /**
