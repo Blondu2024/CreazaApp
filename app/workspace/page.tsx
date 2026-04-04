@@ -57,6 +57,28 @@ function extractProjectName(message: string): string {
   return name || "Proiect nou";
 }
 
+// Compress image to maxDim pixels and quality (0-1), returns base64 data URL
+function compressImage(file: File, maxDim: number, quality: number): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 const suggestions = [
   { icon: Coffee, text: "Landing page pentru o cafenea", color: "#f59e0b" },
   { icon: CheckSquare, text: "Aplicație Todo cu categorii", color: "#3b82f6" },
@@ -252,23 +274,19 @@ export default function WorkspacePage() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+    const uploadedFiles = e.target.files;
+    if (!uploadedFiles) return;
 
-    for (const file of Array.from(files)) {
+    for (const file of Array.from(uploadedFiles)) {
       if (file.type.startsWith("image/")) {
-        // Images → base64 data URL
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = reader.result as string;
-          setAttachments((prev) => [...prev, {
-            type: "image",
-            name: file.name,
-            base64,
-            mimeType: file.type,
-          }]);
-        };
-        reader.readAsDataURL(file);
+        // Compress image to max 1MB / 1200px before sending as base64
+        const compressed = await compressImage(file, 1200, 0.8);
+        setAttachments((prev) => [...prev, {
+          type: "image",
+          name: file.name,
+          base64: compressed,
+          mimeType: "image/jpeg",
+        }]);
       } else if (file.type === "application/pdf" || file.type === "text/plain" || file.name.endsWith(".md") || file.name.endsWith(".csv")) {
         // Text documents → extract text
         const text = await file.text();
@@ -1215,6 +1233,10 @@ export default function WorkspacePage() {
 
         {/* Mobile Bottom Nav */}
         <div className="shrink-0 flex border-t border-border bg-background safe-area-bottom">
+          <Link href="/" className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-muted-foreground">
+            <Globe className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Acasă</span>
+          </Link>
           <button onClick={() => setMobileTab("chat")} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5", mobileTab === "chat" ? "text-[#6366f1]" : "text-muted-foreground")}>
             <Sparkles className="w-5 h-5" />
             <span className="text-[10px] font-medium">Chat</span>
