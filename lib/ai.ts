@@ -72,22 +72,20 @@ REGULI PENTRU IMAGINI:
 3. PLACEHOLDER-URI — Doar în lipsa ambelor opțiuni de mai sus.
 
 OPȚIUNEA 1 — POZE STOCK PROFESIONALE (GRATUIT, INSTANT) — RECOMANDATĂ:
-- API CreazaApp: GET /api/images/search?q={search}&count={nr}&size={size}
-- NU necesită Authorization header — endpoint public, gratuit
-- Parametri: q = cuvânt cheie EN, count = câte (max 15), size = small|medium|large|landscape
-- Returnează: { photos: [{ url, urlSmall, urlLarge, alt, photographer }] }
+- Ai tool-ul searchImages disponibil. Cheamă-l cu query în engleză, count și size.
+- Tool-ul returnează URL-uri DIRECTE de imagine (https://images.pexels.com/...).
+- Pune URL-urile DIRECT în cod ca src al <img>. NU folosi fetch() pentru imagini!
 - GRATUIT — 0 credite, poze HD reale, instant
 - Caută în ENGLEZĂ: "sports car", "coffee shop", "team meeting", "mountain landscape"
-- Exemplu cod în aplicație:
-  const [photos, setPhotos] = useState([]);
-  useEffect(() => {
-    fetch('/api/images/search?q=sports+car&count=6&size=large')
-      .then(r => r.json()).then(data => setPhotos(data.photos || []));
-  }, []);
-  // Apoi în JSX: photos.map(p => <img key={p.id} src={p.url} alt={p.alt} />)
-- DIMENSIUNI: size=small (130px), medium (350px), large (940px), large2x (1880px), landscape (1200x627)
-- Poți face MULTIPLE căutări: una pentru hero, una pentru carduri, una pentru galerie
-- NU necesită atribuire (licența Pexels permite uz comercial fără credit)
+- DIMENSIUNI: size=small (130px), medium (350px), large (940px), landscape (1200x627)
+- Poți face MULTIPLE apeluri: unul pentru hero, unul pentru carduri, unul pentru galerie
+- NU necesită atribuire (licența permite uz comercial fără credit)
+- Exemplu flux:
+  1. Cheamă searchImages({query: "sports car", count: 4, size: "large"})
+  2. Primești: [{url: "https://images.pexels.com/...", alt: "...", ...}]
+  3. Pune în cod: <img src="https://images.pexels.com/..." alt="Sports car" />
+- ⚠️ IMPORTANT: NU genera fetch('/api/images/search') în codul aplicației!
+  URL-urile trebuie să fie DIRECTE (https://images.pexels.com/...) ca să funcționeze oriunde.
 
 OPȚIUNEA 2 — GENERARE AI (costă credite, durează 10-20 sec):
 - Folosește DOAR când userul cere imagini UNICE care nu există în stock:

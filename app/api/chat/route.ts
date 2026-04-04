@@ -1,8 +1,11 @@
-import { streamText, convertToModelMessages, type TextPart, type ImagePart } from "ai";
+import { streamText, convertToModelMessages, tool, stepCountIs, type TextPart, type ImagePart } from "ai";
+import { z } from "zod";
 import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext, estimateTokens } from "@/lib/ai";
 import { PLANS, PRO_MODELS, ULTRA_MODELS, getModelCostOrMinimum, estimateCreditCost, checkCredits, deductCredits, getUserCredits, ensureProfile } from "@/lib/credits";
 import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
 import { verifyAuth } from "@/lib/verify-auth";
+
+const PEXELS_API_KEY = process.env.PEXELS_API_KEY || "";
 
 // Vercel Pro: max 300s for streaming
 export const maxDuration = 300;
@@ -114,6 +117,41 @@ export async function POST(req: Request) {
       model: openrouter(model),
       system: systemPrompt,
       messages: modelMessages,
+      stopWhen: stepCountIs(3),
+      tools: {
+        searchImages: tool({
+          description: "Search for professional stock photos. Returns direct image URLs to embed in code. Use for any real content: people, places, objects, scenes, backgrounds.",
+          inputSchema: z.object({
+            query: z.string().describe("Search query in English (e.g. 'sports car', 'coffee shop interior')"),
+            count: z.number().min(1).max(15).default(6).describe("Number of photos"),
+            size: z.enum(["small", "medium", "large", "landscape"]).default("large").describe("Photo size: small (130px), medium (350px), large (940px), landscape (1200x627)"),
+          }),
+          execute: async ({ query, count, size }) => {
+            if (!PEXELS_API_KEY) return { photos: [] };
+            try {
+              const res = await fetch(
+                `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${count}&locale=ro-RO`,
+                { headers: { Authorization: PEXELS_API_KEY } }
+              );
+              if (!res.ok) return { photos: [] };
+              const data = await res.json();
+              return {
+                photos: (data.photos || []).map((p: { id: number; alt: string; photographer: string; src: Record<string, string> }) => ({
+                  id: p.id,
+                  url: p.src[size] || p.src.large,
+                  urlSmall: p.src.small,
+                  urlMedium: p.src.medium,
+                  urlLarge: p.src.large2x,
+                  alt: p.alt || query,
+                  photographer: p.photographer,
+                })),
+              };
+            } catch {
+              return { photos: [] };
+            }
+          },
+        }),
+      },
       onFinish: async ({ usage }) => {
         if (!userId) return;
 
