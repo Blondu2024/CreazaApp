@@ -73,7 +73,7 @@ REGULI PENTRU IMAGINI:
 
 OPȚIUNEA 1 — POZE STOCK PROFESIONALE (GRATUIT, INSTANT) — RECOMANDATĂ:
 - API CreazaApp: GET /api/images/search?q={search}&count={nr}&size={size}
-- Header: Authorization: Bearer {token}
+- NU necesită Authorization header — endpoint public, gratuit
 - Parametri: q = cuvânt cheie EN, count = câte (max 15), size = small|medium|large|landscape
 - Returnează: { photos: [{ url, urlSmall, urlLarge, alt, photographer }] }
 - GRATUIT — 0 credite, poze HD reale, instant
@@ -81,9 +81,8 @@ OPȚIUNEA 1 — POZE STOCK PROFESIONALE (GRATUIT, INSTANT) — RECOMANDATĂ:
 - Exemplu cod în aplicație:
   const [photos, setPhotos] = useState([]);
   useEffect(() => {
-    fetch('/api/images/search?q=sports+car&count=6&size=large', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    }).then(r => r.json()).then(data => setPhotos(data.photos || []));
+    fetch('/api/images/search?q=sports+car&count=6&size=large')
+      .then(r => r.json()).then(data => setPhotos(data.photos || []));
   }, []);
   // Apoi în JSX: photos.map(p => <img key={p.id} src={p.url} alt={p.alt} />)
 - DIMENSIUNI: size=small (130px), medium (350px), large (940px), large2x (1880px), landscape (1200x627)

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { verifyAuth } from "@/lib/verify-auth";
+import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
 
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY || "";
 const PEXELS_API = "https://api.pexels.com/v1";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+};
 
 interface PexelsPhoto {
   id: number;
@@ -19,27 +24,29 @@ interface PexelsPhoto {
   };
 }
 
-// GET /api/images/search?q=cars&count=6&size=medium
-export async function GET(req: NextRequest) {
-  const userId = await verifyAuth(req);
-  if (!userId) {
-    return NextResponse.json({ error: "Autentificare necesară" }, { status: 401 });
-  }
+// OPTIONS — CORS preflight
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
 
-  // Rate limit: 30 requests/min per user
-  const rl = rateLimit(`images:${userId}`, 30, 60_000);
+// GET /api/images/search?q=cars&count=6&size=medium
+// No auth required — images are free. Rate limited by IP.
+export async function GET(req: NextRequest) {
+  // Rate limit: 30 requests/min per IP
+  const ip = getClientIP(req);
+  const rl = rateLimit(`images:${ip}`, 30, 60_000);
   if (!rl.allowed) return rateLimitResponse(rl.resetIn);
 
   const query = req.nextUrl.searchParams.get("q");
   if (!query) {
-    return NextResponse.json({ error: "Parametrul q lipsește" }, { status: 400 });
+    return NextResponse.json({ error: "Parametrul q lipsește" }, { status: 400, headers: CORS_HEADERS });
   }
 
   const count = Math.min(Number(req.nextUrl.searchParams.get("count") || "6"), 15);
   const size = req.nextUrl.searchParams.get("size") || "large";
 
   if (!PEXELS_API_KEY) {
-    return NextResponse.json({ error: "Serviciul de imagini nu este configurat" }, { status: 500 });
+    return NextResponse.json({ error: "Serviciul de imagini nu este configurat" }, { status: 500, headers: CORS_HEADERS });
   }
 
   try {
@@ -49,7 +56,7 @@ export async function GET(req: NextRequest) {
     );
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Eroare la căutarea imaginilor" }, { status: 502 });
+      return NextResponse.json({ error: "Eroare la căutarea imaginilor" }, { status: 502, headers: CORS_HEADERS });
     }
 
     const data = await res.json();
@@ -62,8 +69,8 @@ export async function GET(req: NextRequest) {
       photographer: p.photographer,
     }));
 
-    return NextResponse.json({ photos, total: data.total_results });
+    return NextResponse.json({ photos, total: data.total_results }, { headers: CORS_HEADERS });
   } catch {
-    return NextResponse.json({ error: "Eroare de conexiune" }, { status: 502 });
+    return NextResponse.json({ error: "Eroare de conexiune" }, { status: 502, headers: CORS_HEADERS });
   }
 }
