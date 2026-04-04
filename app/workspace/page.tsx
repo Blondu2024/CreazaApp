@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ChatMessages } from "../components/workspace/ChatMessages";
 import { ChatInput } from "../components/workspace/ChatInput";
+import { useToast } from "../components/Toast";
 
 import {
   createProject, listProjects, deleteProject, updateProjectTimestamp,
@@ -276,6 +277,7 @@ async function downloadZip(files: { path: string; content: string }[]) {
 export default function WorkspacePage() {
   const router = useRouter();
   const { user, loading: authLoading, profile, refreshCredits } = useAuth();
+  const { toast } = useToast();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -723,6 +725,7 @@ export default function WorkspacePage() {
     if (!currentProjectRef.current || files.length === 0 || deploying) return;
     setDeploying(true);
     setDeployError(null);
+    toast("Se publică proiectul...", "info");
     addLog("[DEPLOY] Se publică proiectul...");
 
     try {
@@ -740,14 +743,17 @@ export default function WorkspacePage() {
 
       if (!res.ok) {
         setDeployError(data.error || "Eroare la deploy");
+        toast(data.error || "Eroare la publicare", "error");
         addLog(`[ERR] Deploy eșuat: ${data.error}`);
         return;
       }
 
       setDeployUrl(data.url);
       if (data.cached) {
+        toast("Site-ul e deja la zi! Nicio modificare detectată.", "success");
         addLog("[DEPLOY] Nicio modificare — site-ul e deja la zi!");
       } else {
+        toast(`Publicat cu succes! ${data.url}`, "success");
         addLog(`[DEPLOY] Publicat! ${data.url}`);
         if (data.creditsCost > 0) {
           addLog(`[DEPLOY] Cost: ${data.creditsCost} credite`);
@@ -756,11 +762,12 @@ export default function WorkspacePage() {
       }
     } catch {
       setDeployError("Eroare de conexiune");
+      toast("Eroare de conexiune la serverele de deploy", "error");
       addLog("[ERR] Deploy eșuat — verifică conexiunea");
     } finally {
       setDeploying(false);
     }
-  }, [files, deploying, addLog]);
+  }, [files, deploying, addLog, toast]);
 
   // Load deploy status + custom domain when project opens
   useEffect(() => {
@@ -804,19 +811,22 @@ export default function WorkspacePage() {
       });
       const data = await res.json();
       if (!res.ok) {
+        toast(data.error || "Eroare la conectarea domeniului", "error");
         addLog(`[DOMENIU] Eroare: ${data.error}`);
         return;
       }
       setDomainInfo({ domain: data.domain, verified: data.verified, dnsRecords: data.dnsRecords });
+      toast(`${data.domain} adăugat! Configurează DNS-ul.`, "success");
       addLog(`[DOMENIU] ${data.domain} adăugat! Configurează DNS-ul.`);
       refreshCreditsRef.current?.();
       setDomainInput("");
     } catch {
+      toast("Eroare de conexiune", "error");
       addLog("[DOMENIU] Eroare de conexiune");
     } finally {
       setDomainLoading(false);
     }
-  }, [domainInput, domainLoading, addLog]);
+  }, [domainInput, domainLoading, addLog, toast]);
 
   // Check domain verification
   const handleCheckDomain = useCallback(async () => {
