@@ -38,6 +38,12 @@ export async function getAccessToken(): Promise<string | null> {
   return session?.access_token || null;
 }
 
+// Get GitHub provider token (for GitHub API calls like repo export)
+export async function getGitHubToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.provider_token || null;
+}
+
 // Auth
 export async function signUp(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({ email, password });

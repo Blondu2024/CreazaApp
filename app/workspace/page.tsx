@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "../components/AuthProvider";
-import { signOut, getAccessToken } from "@/lib/supabase";
+import { signOut, getAccessToken, getGitHubToken } from "@/lib/supabase";
 import type { UIMessage } from "ai";
 import { CodeEditor } from "../components/editor/CodeEditor";
 import { Terminal } from "../components/terminal/Terminal";
@@ -19,8 +19,16 @@ import {
   Terminal as TerminalIcon, Play, RefreshCw, ExternalLink,
   Monitor, Smartphone, Coffee, CheckSquare, ShoppingBag,
   User, FolderTree, Plus, X, Loader2, Globe, Download,
-  Rocket, Copy, Check, Undo2, Trash2, Zap,
+  Rocket, Copy, Check, Undo2, Trash2, Zap, GitFork,
 } from "lucide-react";
+
+function GitHubIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+    </svg>
+  );
+}
 import { cn } from "@/lib/utils";
 import { ChatMessages } from "../components/workspace/ChatMessages";
 import { ChatInput } from "../components/workspace/ChatInput";
@@ -312,6 +320,14 @@ export default function WorkspacePage() {
   const [domainInput, setDomainInput] = useState("");
   const [domainLoading, setDomainLoading] = useState(false);
   const [domainInfo, setDomainInfo] = useState<{ domain: string; verified: boolean; dnsRecords?: { type: string; name: string; value: string }[] } | null>(null);
+
+  // GitHub export state
+  const [showGitHubModal, setShowGitHubModal] = useState(false);
+  const [gitHubRepoName, setGitHubRepoName] = useState("");
+  const [gitHubPrivate, setGitHubPrivate] = useState(false);
+  const [gitHubLoading, setGitHubLoading] = useState(false);
+  const [gitHubResult, setGitHubResult] = useState<{ url: string; name: string } | null>(null);
+
   const [fileHistory, setFileHistory] = useState<{ path: string; content: string }[][]>([]); // Undo stack
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -842,6 +858,48 @@ export default function WorkspacePage() {
     }
   }, [addLog]);
 
+  // GitHub export handler
+  const handleGitHubExport = useCallback(async () => {
+    if (!currentProjectRef.current || !gitHubRepoName.trim() || gitHubLoading) return;
+    setGitHubLoading(true);
+    setGitHubResult(null);
+    try {
+      const [token, ghToken] = await Promise.all([getAccessToken(), getGitHubToken()]);
+
+      if (!ghToken) {
+        toast("Trebuie să fii logat cu GitHub pentru export. Relogează-te cu GitHub.", "error");
+        setGitHubLoading(false);
+        return;
+      }
+
+      const res = await fetch("/api/github/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          projectId: currentProjectRef.current.id,
+          repoName: gitHubRepoName.trim(),
+          isPrivate: gitHubPrivate,
+          githubToken: ghToken,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error || "Eroare la export", "error");
+        return;
+      }
+      setGitHubResult({ url: data.repoUrl, name: data.repoName });
+      toast(`Exportat pe GitHub! ${data.repoName}`, "success");
+      addLog(`[GITHUB] Exportat: ${data.repoUrl} (${data.filesCount} fișiere)`);
+    } catch {
+      toast("Eroare de conexiune la GitHub", "error");
+    } finally {
+      setGitHubLoading(false);
+    }
+  }, [gitHubRepoName, gitHubPrivate, gitHubLoading, toast, addLog]);
+
   const activeContent = files.find((f) => f.path === activeFile)?.content || "";
   const hasCode = files.length > 0;
   const isEmpty = messages.length === 0 && allChatMessages.length === 0;
@@ -938,6 +996,55 @@ export default function WorkspacePage() {
           <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card rounded-lg disabled:opacity-30">
             <Download className="w-4 h-4" />
           </button>
+          {/* GitHub export button */}
+          <div className="relative hidden md:block">
+            <button onClick={() => { setShowGitHubModal(!showGitHubModal); setGitHubResult(null); setGitHubRepoName(currentProject?.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || ""); }} disabled={!hasCode} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card rounded-lg disabled:opacity-30">
+              <GitHubIcon className="w-4 h-4" />
+            </button>
+            {showGitHubModal && (
+              <div className="absolute right-0 top-full mt-1 w-[340px] bg-card border border-border rounded-lg shadow-xl z-50 p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Export pe GitHub</h3>
+                {gitHubResult ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-[#10b981]" />
+                      <span className="text-sm text-foreground">Exportat cu succes!</span>
+                    </div>
+                    <a href={gitHubResult.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-[#6366f1] hover:underline">
+                      <GitHubIcon className="w-4 h-4" />
+                      {gitHubResult.name}
+                    </a>
+                    <button onClick={() => setShowGitHubModal(false)} className="text-xs text-muted-foreground hover:text-foreground mt-2">Închide</button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Nume repository</label>
+                      <input
+                        value={gitHubRepoName}
+                        onChange={(e) => setGitHubRepoName(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleGitHubExport()}
+                        placeholder="my-app"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-[#6366f1]"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={gitHubPrivate} onChange={(e) => setGitHubPrivate(e.target.checked)} className="rounded border-border" />
+                      <span className="text-xs text-muted-foreground">Repository privat</span>
+                    </label>
+                    <button
+                      onClick={handleGitHubExport}
+                      disabled={!gitHubRepoName.trim() || gitHubLoading}
+                      className="w-full flex items-center justify-center gap-2 bg-[#24292f] text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-[#32383f] transition-colors"
+                    >
+                      {gitHubLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitHubIcon className="w-4 h-4" />}
+                      {gitHubLoading ? "Se exportă..." : "Exportă pe GitHub"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           {/* Deploy button */}
           <button
             onClick={handleDeployClick}
