@@ -53,18 +53,20 @@ export async function getGitHubToken(): Promise<string | null> {
 
 // Auth (OAuth only)
 export async function signInWithGoogle() {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/workspace` },
+    options: { redirectTo: `${origin}/auth/callback?next=/workspace` },
   });
   if (error) return { error: error.message };
   return { error: null };
 }
 
 export async function signInWithGitHub() {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "github",
-    options: { redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/workspace` },
+    options: { redirectTo: `${origin}/auth/callback?next=/workspace` },
   });
   if (error) return { error: error.message };
   return { error: null };
