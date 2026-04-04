@@ -72,7 +72,9 @@ export async function POST(req: NextRequest) {
   const result = await handleDeploy(projectId, userId, project.name, files, userProfile.plan);
 
   if (!result.success) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    // Cooldown or user-facing errors → 429, actual server errors → 500
+    const isCooldown = result.error?.includes("Așteaptă");
+    return NextResponse.json({ error: result.error }, { status: isCooldown ? 429 : 500 });
   }
 
   // Deduct credits only if not cached
