@@ -84,7 +84,7 @@ export const MODEL_COSTS: Record<string, ModelPricing> = {
   "google/gemini-2.5-flash":      { inputPer1M: 0.075, outputPer1M: 0.30 },
   "google/gemini-2.0-flash":      { inputPer1M: 0.10, outputPer1M: 0.40 },
   // DeepSeek
-  "deepseek/deepseek-r1":        { inputPer1M: 0.55, outputPer1M: 2.19 },
+  "deepseek/deepseek-r1":        { inputPer1M: 0.70, outputPer1M: 2.50 },
   "deepseek/deepseek-chat":      { inputPer1M: 0.14, outputPer1M: 0.28 },
   // Qwen
   "qwen/qwen3-coder":            { inputPer1M: 0.20, outputPer1M: 0.60 },
