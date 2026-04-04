@@ -12,13 +12,18 @@ const POPULAR_MODELS = [
   { id: "qwen/qwen3-next-80b-a3b-instruct:free", name: "Qwen3 Next 80B", tag: "FREE" },
   { id: "nousresearch/hermes-3-llama-3.1-405b:free", name: "Hermes 3 405B", tag: "FREE" },
   { id: "cognitivecomputations/dolphin-mistral-24b-venice-edition:free", name: "Dolphin Mistral 24B", tag: "FREE" },
-  // Paid models
+  // Premium (Ultra)
+  { id: "anthropic/claude-opus-4.6", name: "Claude Opus 4.6", tag: "$$$" },
+  { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6", tag: "$$" },
+  { id: "openai/gpt-5.4", name: "GPT-5.4", tag: "$$$" },
+  // Pro
   { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4", tag: "$$" },
   { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", tag: "$$" },
+  { id: "openai/gpt-5.3-codex", name: "GPT-5.3 Codex", tag: "$$" },
   { id: "openai/gpt-4.1", name: "GPT-4.1", tag: "$$" },
-  { id: "openai/gpt-4.1-mini", name: "GPT-4.1 Mini", tag: "$" },
   { id: "anthropic/claude-haiku-4.5", name: "Claude Haiku 4.5", tag: "$" },
   { id: "google/gemini-2.5-pro-preview", name: "Gemini 2.5 Pro", tag: "$" },
+  { id: "deepseek/deepseek-r1", name: "DeepSeek R1", tag: "$" },
 ];
 
 interface ModelSelectorProps {

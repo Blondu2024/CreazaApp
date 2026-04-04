@@ -89,12 +89,13 @@ interface ChatMessagesProps {
   status: string;
   lastCreditCost: number | null;
   error: Error | undefined;
+  chatError?: string | null;
   bottomRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function ChatMessages({
   allChatMessages, streamingMessages, isLoading, status,
-  lastCreditCost, error, bottomRef,
+  lastCreditCost, error, chatError, bottomRef,
 }: ChatMessagesProps) {
   return (
     <div className="p-3 space-y-3">
@@ -161,7 +162,12 @@ export function ChatMessages({
           <Link href="/preturi" className="text-xs text-[#6366f1] underline ml-auto">Cumpara credite</Link>
         </div>
       )}
-      {error && (
+      {chatError && (
+        <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
+          <p className="text-xs text-red-400">{chatError}</p>
+        </div>
+      )}
+      {!chatError && error && (
         <div className="rounded-lg p-3 bg-red-500/10 border border-red-500/30">
           {error.message?.includes("429") || error.message?.includes("rate_limit") ? (
             <p className="text-xs text-red-400">Prea multe cereri. Așteaptă câteva secunde și încearcă din nou.</p>
@@ -174,8 +180,8 @@ export function ChatMessages({
             </>
           ) : (
             <>
-              <p className="text-xs text-red-400">Eroare: {error.message}</p>
-              <p className="text-[10px] text-red-400/60 mt-1">Status: {status}</p>
+              <p className="text-xs text-red-400">Eroare: {error.message?.slice(0, 200)}</p>
+              <p className="text-[10px] text-red-400/60 mt-1">Încearcă din nou sau schimbă modelul AI.</p>
             </>
           )}
         </div>

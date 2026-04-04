@@ -123,14 +123,30 @@ export async function POST(req: Request) {
         const cost = getModelCostOrMinimum(model, inputTokens, outputTokens);
         if (cost > 0) {
           const modelLabel = model.split("/").pop() || model;
-          const deductResult = await deductCredits(userId, cost, {
+          let deductResult = await deductCredits(userId, cost, {
             model,
             inputTokens,
             outputTokens,
             description: `${modelLabel}: ${inputTokens} in / ${outputTokens} out`,
           });
-          console.log("[credits]", modelLabel, `cost=${cost.toFixed(2)} cr`, deductResult.success ? "OK" : "FAIL",
-            `remaining=${deductResult.monthly}+${deductResult.topup}`);
+
+          // If full deduction failed, deduct whatever the user has left
+          // (response was already streamed — don't let it be free)
+          if (!deductResult.success) {
+            const remaining = deductResult.monthly + deductResult.topup;
+            if (remaining > 0) {
+              deductResult = await deductCredits(userId, remaining, {
+                model,
+                inputTokens,
+                outputTokens,
+                description: `${modelLabel}: ${inputTokens} in / ${outputTokens} out (partial)`,
+              });
+            }
+            console.warn("[credits]", modelLabel, `cost=${cost.toFixed(2)} cr OVER BUDGET, deducted=${remaining.toFixed(2)} cr`);
+          } else {
+            console.log("[credits]", modelLabel, `cost=${cost.toFixed(2)} cr OK`,
+              `remaining=${deductResult.monthly}+${deductResult.topup}`);
+          }
         }
       },
     });

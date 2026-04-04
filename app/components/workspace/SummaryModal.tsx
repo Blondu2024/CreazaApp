@@ -15,18 +15,19 @@ interface SummaryModalProps {
 
 const PRO_MODEL_IDS = [
   "anthropic/claude-sonnet-4",
-  "anthropic/claude-3.5-sonnet",
+  "anthropic/claude-sonnet-4.5",
+  "anthropic/claude-haiku-4.5",
+  "openai/gpt-5.3-codex",
   "openai/gpt-4.1",
   "google/gemini-2.5-pro-preview",
   "deepseek/deepseek-r1",
 ];
 
 const ULTRA_MODEL_IDS = [
-  "anthropic/claude-opus-4-6",
-  "anthropic/claude-sonnet-4",
-  "openai/gpt-4.1",
-  "google/gemini-2.5-pro-preview",
-  "deepseek/deepseek-r1",
+  "anthropic/claude-opus-4.6",
+  "anthropic/claude-sonnet-4.6",
+  "openai/gpt-5.4",
+  ...PRO_MODEL_IDS,
 ];
 
 export function SummaryModal({

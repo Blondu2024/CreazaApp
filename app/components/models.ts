@@ -23,7 +23,7 @@ export const models: AIModel[] = [
   { value: "openai/gpt-4o-mini", label: "GPT-4o Mini", price: "$0.15/$0.60", category: "openai" },
 
   // Anthropic
-  { value: "anthropic/claude-opus-4-6", label: "Claude Opus 4.6", price: "$5/$25", category: "anthropic" },
+  { value: "anthropic/claude-opus-4.6", label: "Claude Opus 4.6", price: "$5/$25", category: "anthropic" },
   { value: "anthropic/claude-sonnet-4.6", label: "Claude Sonnet 4.6", price: "$3/$15", category: "anthropic" },
   { value: "anthropic/claude-sonnet-4.5", label: "Claude Sonnet 4.5", price: "$3/$15", category: "anthropic" },
   { value: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4", price: "$3/$15", category: "anthropic" },

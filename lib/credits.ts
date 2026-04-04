@@ -18,21 +18,27 @@ export const PLANS: Record<string, PlanDefinition> = {
   free:    { id: "free",    name: "Gratuit", priceRON: 0,   creditsPerMonth: 50,  model: "anthropic/claude-sonnet-4",  canChooseModel: false, contextBudget: 200_000 },
   starter: { id: "starter", name: "Starter", priceRON: 69,  creditsPerMonth: 300, model: "anthropic/claude-haiku-4.5", canChooseModel: false, contextBudget: 200_000 },
   pro:     { id: "pro",     name: "Pro",     priceRON: 149, creditsPerMonth: 400, model: "anthropic/claude-sonnet-4",  canChooseModel: true,  contextBudget: 200_000 },
-  ultra:   { id: "ultra",   name: "Ultra",   priceRON: 299, creditsPerMonth: 500, model: "anthropic/claude-opus-4-6",  canChooseModel: true,  contextBudget: 1_000_000 },
+  ultra:   { id: "ultra",   name: "Ultra",   priceRON: 299, creditsPerMonth: 500, model: "anthropic/claude-opus-4.6",  canChooseModel: true,  contextBudget: 1_000_000 },
 };
 
 // Models available per plan — Pro gets mid-tier, Ultra gets premium
 export const PRO_MODELS = [
   "anthropic/claude-sonnet-4",
+  "anthropic/claude-sonnet-4.5",
   "anthropic/claude-haiku-4.5",
   "openai/gpt-5.3-codex",
+  "openai/gpt-4.1",
+  "google/gemini-2.5-pro-preview",
+  "deepseek/deepseek-r1",
 ];
 
 export const ULTRA_MODELS = [
-  "anthropic/claude-opus-4-6",
+  // Premium (Ultra-exclusive)
+  "anthropic/claude-opus-4.6",
   "anthropic/claude-sonnet-4.6",
   "openai/gpt-5.4",
-  "anthropic/claude-sonnet-4.5",
+  // Includes all Pro models
+  ...PRO_MODELS,
 ];
 
 export interface TopupPackage {
@@ -60,12 +66,12 @@ interface ModelPricing {
 
 export const MODEL_COSTS: Record<string, ModelPricing> = {
   // Anthropic
-  "anthropic/claude-opus-4-6":    { inputPer1M: 5,    outputPer1M: 25 },
+  "anthropic/claude-opus-4.6":    { inputPer1M: 5,    outputPer1M: 25 },
   "anthropic/claude-sonnet-4.6":  { inputPer1M: 3,    outputPer1M: 15 },
   "anthropic/claude-sonnet-4.5":  { inputPer1M: 3,    outputPer1M: 15 },
   "anthropic/claude-sonnet-4":    { inputPer1M: 3,    outputPer1M: 15 },
   "anthropic/claude-haiku-4.5":   { inputPer1M: 1,    outputPer1M: 5 },
-  "anthropic/claude-3.5-sonnet":  { inputPer1M: 3,    outputPer1M: 15 },
+  "anthropic/claude-3.5-sonnet":  { inputPer1M: 6,    outputPer1M: 30 },
   // OpenAI
   "openai/gpt-5.4":              { inputPer1M: 2.50, outputPer1M: 15 },
   "openai/gpt-5.3-codex":        { inputPer1M: 1.75, outputPer1M: 14 },
@@ -121,7 +127,8 @@ export function calculateCreditCost(model: string, inputTokens: number, outputTo
 
 export function estimateCreditCost(model: string, estimatedOutput = 8000): number {
   if (isModelFree(model)) return 0;
-  const cost = calculateCreditCost(model, 4000, estimatedOutput);
+  // System prompt (~20K) + average context (~10K) + user message (~1K) = ~31K input
+  const cost = calculateCreditCost(model, 31000, estimatedOutput);
   return Math.round(cost * 10) / 10; // 1 decimal
 }
 

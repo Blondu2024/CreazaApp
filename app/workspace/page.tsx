@@ -362,8 +362,25 @@ export default function WorkspacePage() {
   // Track all chat messages locally (restored + new)
   const [allChatMessages, setAllChatMessages] = useState<{ role: string; content: string }[]>([]);
 
+  const [chatError, setChatError] = useState<string | null>(null);
+
   const { messages, sendMessage, stop, status, setMessages, error } = useChat({
     id: "workspace-chat",
+    onError: useCallback((err: Error) => {
+      console.error("[chat] useChat error:", err);
+      const msg = err.message || "";
+      if (msg.includes("insufficient_credits") || msg.includes("402")) {
+        setChatError("Credite insuficiente. Cumpără credite sau așteaptă resetarea lunară.");
+      } else if (msg.includes("429") || msg.includes("rate")) {
+        setChatError("Prea multe cereri. Așteaptă câteva secunde și încearcă din nou.");
+      } else if (msg.includes("model") || msg.includes("404")) {
+        setChatError("Modelul AI selectat nu este disponibil momentan. Încearcă alt model.");
+      } else {
+        setChatError("A apărut o eroare. Reîncarcă pagina sau încearcă din nou.");
+      }
+      // Auto-clear error after 10 seconds
+      setTimeout(() => setChatError(null), 10000);
+    }, []),
     onFinish: useCallback(async ({ message }: { message: UIMessage }) => {
       if (message.role === "assistant") {
         const text = getTextFromMessage(message);
@@ -525,6 +542,13 @@ export default function WorkspacePage() {
     }
   }, [projectName, selectedModel, setMessages]);
 
+  // Set default model based on user plan
+  useEffect(() => {
+    if (!profile?.plan || currentProjectRef.current) return; // Don't override if project already loaded
+    const plan = PLANS[profile.plan];
+    if (plan) setSelectedModel(plan.model);
+  }, [profile?.plan]);
+
   // Load projects list when user is available
   useEffect(() => {
     if (!user) return;
@@ -549,6 +573,7 @@ export default function WorkspacePage() {
   previewErrorsRef.current = previewErrors;
 
   const sendWithContext = useCallback(async (text: string) => {
+    setChatError(null); // Clear previous error
     const proj = currentProjectRef.current;
     if (proj) saveChatMessage(proj.id, "user", text);
 
@@ -1113,7 +1138,7 @@ export default function WorkspacePage() {
                 status={status}
                 lastCreditCost={lastCreditCost}
                 error={error}
-
+                chatError={chatError}
                 bottomRef={bottomRef}
               />
             )}
@@ -1272,7 +1297,7 @@ export default function WorkspacePage() {
                 status={status}
                 lastCreditCost={lastCreditCost}
                 error={error}
-
+                chatError={chatError}
                 bottomRef={bottomRef}
               />
             )}
