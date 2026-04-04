@@ -6,11 +6,12 @@ import {
 } from "lucide-react";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
+import { CTAButton } from "./components/CTAButton";
 
 const features = [
   { icon: Bot, title: "Agent AI avansat", description: "Descrii ce vrei in romana. Agentul analizeaza, scrie cod, si repara erorile automat.", color: "#a855f7" },
   { icon: Eye, title: "Preview instant", description: "Vezi rezultatul live in browser. Fiecare modificare apare imediat.", color: "#10b981" },
-  { icon: Layers, title: "AI puternic", description: "Claude Sonnet 4, Opus 4.6, GPT-4.1, Gemini 2.5 Pro — platforma alege cel mai bun AI pentru tine.", color: "#6366f1" },
+  { icon: Layers, title: "AI puternic", description: "Claude Opus 4.6, Sonnet 4.6, GPT-5.4, GPT-5.3 Codex — platforma alege cel mai bun AI pentru tine.", color: "#6366f1" },
   { icon: Code, title: "Editor profesional", description: "CodeMirror cu evidentierea sintaxei. Editezi manual sau lasi AI-ul sa scrie.", color: "#f59e0b" },
   { icon: Terminal, title: "Terminal integrat", description: "Loguri, erori, si status in timp real. Agentul le vede si le repara.", color: "#ef4444" },
   { icon: Download, title: "Download ZIP", description: "Descarci proiectul complet si il folosesti oriunde.", color: "#3b82f6" },
@@ -35,18 +36,18 @@ const steps = [
 
 const models = [
   { name: "Claude Opus 4.6", badge: "Cel mai puternic", color: "#a855f7" },
-  { name: "Claude Sonnet 4", badge: "Rapid + inteligent", color: "#6366f1" },
-  { name: "GPT-4.1", badge: "Alternativa solida", color: "#10b981" },
-  { name: "Gemini 2.5 Pro", badge: "Context mare", color: "#3b82f6" },
-  { name: "Gemini 2.5 Flash", badge: "Ultra-rapid", color: "#f59e0b" },
-  { name: "DeepSeek R1", badge: "Reasoning", color: "#ef4444" },
+  { name: "Claude Sonnet 4.6", badge: "Rapid + puternic", color: "#6366f1" },
+  { name: "GPT-5.4", badge: "Frontier OpenAI", color: "#10b981" },
+  { name: "GPT-5.3 Codex", badge: "Expert in cod", color: "#3b82f6" },
+  { name: "Claude Sonnet 4.5", badge: "Echilibrat", color: "#f59e0b" },
+  { name: "Claude Sonnet 4", badge: "Rapid + inteligent", color: "#ef4444" },
 ];
 
 const plans = [
-  { name: "Gratuit", price: "0", credits: "50", desc: "Agent AI (Sonnet 4)" },
-  { name: "Starter", price: "69", credits: "300", desc: "Agent AI rapid + Deploy", popular: true },
-  { name: "Pro", price: "149", credits: "400", desc: "Alegi modelul AI" },
-  { name: "Ultra", price: "299", credits: "500", desc: "Modele premium + 1M context" },
+  { name: "Gratuit", price: "0", credits: "50", desc: "Claude Sonnet 4 (fix)" },
+  { name: "Starter", price: "69", credits: "300", desc: "Claude Haiku 4.5 + Deploy", popular: true },
+  { name: "Pro", price: "149", credits: "400", desc: "Sonnet 4 + Codex + Haiku" },
+  { name: "Ultra", price: "299", credits: "500", desc: "Opus 4.6 + GPT-5.4 + 1M" },
 ];
 
 const jsonLd = {
@@ -69,7 +70,7 @@ const jsonLd = {
       "featureList": [
         "Agent AI conversațional",
         "Preview instant live",
-        "14+ modele AI (Claude, GPT-4.1, Gemini, DeepSeek)",
+        "14+ modele AI (Claude Opus 4.6, GPT-5.4, Sonnet 4.6)",
         "8 API-uri AI integrate (TTS, STT, Imagini, Video, Traducere, OCR)",
         "Editor profesional cu CodeMirror",
         "Terminal integrat",
@@ -129,10 +130,7 @@ export default function Home() {
             De la idee la aplicatie in minute.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/workspace" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-8 py-4 rounded-xl text-lg font-semibold btn-primary-glow group">
-              Incepe gratuit
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <CTAButton />
             <Link href="/preturi" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground px-6 py-4 rounded-xl text-sm font-medium transition-colors">
               Vezi preturile →
             </Link>
@@ -388,10 +386,7 @@ export default function Home() {
             <Sparkles className="w-12 h-12 text-[#6366f1] mx-auto mb-6" />
             <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-4">Gata sa construiesti?</h2>
             <p className="text-muted-foreground mb-8">Creeaza prima ta aplicatie in mai putin de 5 minute. Fara card bancar.</p>
-            <Link href="/workspace" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-8 py-4 rounded-xl text-lg font-semibold btn-primary-glow group">
-              Incepe gratuit
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <CTAButton />
           </div>
         </div>
       </section>
