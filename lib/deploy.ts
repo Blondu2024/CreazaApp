@@ -244,6 +244,32 @@ function buildDeploymentPackage(files: { path: string; content: string }[]): { p
 }
 
 /**
+ * Assign custom subdomain (slug.creazaapp.com) to a Vercel project.
+ * Uses Vercel Domains API — only needs to be done once per project.
+ */
+async function assignSubdomain(vercelProjectId: string, subdomain: string): Promise<boolean> {
+  const domain = `${subdomain}.creazaapp.com`;
+  try {
+    // Add domain to the Vercel project
+    const res = await fetch(`${VERCEL_API}/v10/projects/${vercelProjectId}/domains${teamParam()}`, {
+      method: "POST",
+      headers: vercelHeaders(),
+      body: JSON.stringify({ name: domain }),
+    });
+    const data = await res.json();
+    // 409 = domain already added (that's fine)
+    if (res.ok || res.status === 409 || data.error?.code === "domain_already_in_use") {
+      return true;
+    }
+    console.error("[deploy] assign subdomain error:", data);
+    return false;
+  } catch (err) {
+    console.error("[deploy] assign subdomain error:", err);
+    return false;
+  }
+}
+
+/**
  * Deploy to Vercel using the Deployments API v13.
  * Uses file hashing — Vercel only requests files it doesn't already have.
  * Static deployment — no build step = no build minutes cost.
@@ -328,9 +354,13 @@ export async function deployToVercel(
         return { success: false, error: retryData.error?.message || "Eroare la deploy" };
       }
 
+      // Assign custom subdomain
+      await assignSubdomain(retryData.projectId, subdomain);
+      const cleanUrl = `https://${subdomain}.creazaapp.com`;
+
       return {
         success: true,
-        url: `https://${retryData.url}`,
+        url: cleanUrl,
         vercelProjectId: retryData.projectId,
         vercelDeploymentId: retryData.id,
       };
@@ -340,9 +370,13 @@ export async function deployToVercel(
       return { success: false, error: data.error?.message || `Eroare Vercel: ${res.status}` };
     }
 
+    // Assign custom subdomain
+    await assignSubdomain(data.projectId, subdomain);
+    const cleanUrl = `https://${subdomain}.creazaapp.com`;
+
     return {
       success: true,
-      url: `https://${data.url}`,
+      url: cleanUrl,
       vercelProjectId: data.projectId,
       vercelDeploymentId: data.id,
     };
