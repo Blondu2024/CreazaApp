@@ -347,12 +347,24 @@ interface BuildPromptOptions {
   tier?: UserTier;
   summary?: string;
   errors?: string[];
+  deployUrl?: string;
 }
 
-export function buildSystemPromptWithContext({ currentFiles, chatHistory, tier = "free", summary, errors }: BuildPromptOptions): string {
+export function buildSystemPromptWithContext({ currentFiles, chatHistory, tier = "free", summary, errors, deployUrl }: BuildPromptOptions): string {
   const budget = CONTEXT_BUDGETS[tier];
   let prompt = SYSTEM_PROMPT;
   let usedTokens = estimateTokens(prompt);
+
+  // Add deploy info so AI can guide user about their live site
+  if (deployUrl) {
+    const deployBlock = `\n\nSITE PUBLICAT: Acest proiect e LIVE la ${deployUrl}
+- Userul poate trimite link-ul oricui — site-ul e public
+- Dacă userul modifică codul, trebuie să apese "Republică" ca schimbările să apară online
+- Subdomain-ul (${deployUrl.replace("https://", "").replace(".creazaapp.com", "")}.creazaapp.com) e permanent
+- Pe planul Pro/Ultra poate conecta un domeniu propriu (ex: meusite.ro)`;
+    prompt += deployBlock;
+    usedTokens += estimateTokens(deployBlock);
+  }
 
   // Add preview errors — highest priority, agent should fix these
   if (errors && errors.length > 0) {

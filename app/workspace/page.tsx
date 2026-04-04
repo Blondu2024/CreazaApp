@@ -358,6 +358,8 @@ export default function WorkspacePage() {
   refreshCreditsRef.current = refreshCredits;
   const profileRef = useRef(profile);
   profileRef.current = profile;
+  const deployUrlRef = useRef(deployUrl);
+  deployUrlRef.current = deployUrl;
 
   // Track all chat messages locally (restored + new)
   const [allChatMessages, setAllChatMessages] = useState<{ role: string; content: string }[]>([]);
@@ -605,6 +607,7 @@ export default function WorkspacePage() {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: {
         model: modelRef.current, currentFiles, chatHistory, summary, errors,
+        deployUrl: deployUrlRef.current || undefined,
         images: images.length > 0 ? images : undefined,
         documents: documents.length > 0 ? documents : undefined,
       },

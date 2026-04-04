@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     const chatHistory = body.chatHistory || [];
     const summary = body.summary || undefined;
     const errors = body.errors || undefined;
+    const deployUrl = body.deployUrl || undefined;
 
     // Determine model based on user's plan
     let model = DEFAULT_MODEL;
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
 
     // Build context-aware system prompt with token budgeting
     const systemPrompt = (currentFiles.length > 0 || chatHistory.length > 0)
-      ? buildSystemPromptWithContext({ currentFiles, chatHistory, tier, summary, errors })
+      ? buildSystemPromptWithContext({ currentFiles, chatHistory, tier, summary, errors, deployUrl })
       : SYSTEM_PROMPT;
 
     // Inject images/documents into the last user message

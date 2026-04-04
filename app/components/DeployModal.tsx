@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Rocket, Loader2, Check, ExternalLink, X, RefreshCw } from "lucide-react";
 import { getAccessToken } from "@/lib/supabase";
 
@@ -19,6 +19,24 @@ export function DeployModal({ open, onClose, projectId, deployUrl, onSuccess }: 
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [creditsCost, setCreditsCost] = useState(0);
   const [error, setError] = useState("");
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Countdown timer after successful deploy — Vercel needs ~10s to propagate
+  useEffect(() => {
+    if (state === "success" && countdown > 0) {
+      timerRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }
+  }, [state, countdown > 0]);
 
   if (!open) return null;
 
@@ -50,6 +68,8 @@ export function DeployModal({ open, onClose, projectId, deployUrl, onSuccess }: 
 
       setResultUrl(data.url);
       setCreditsCost(data.creditsCost || 0);
+      // Start countdown only for actual deploys (not cached) — Vercel needs ~10s
+      setCountdown(data.cached ? 0 : 10);
       setState("success");
       onSuccess(data.url, data.creditsCost || 0, data.cached || false);
     } catch {
@@ -62,6 +82,8 @@ export function DeployModal({ open, onClose, projectId, deployUrl, onSuccess }: 
     setState("confirm");
     setError("");
     setResultUrl(null);
+    setCountdown(0);
+    if (timerRef.current) clearInterval(timerRef.current);
     onClose();
   };
 
@@ -174,7 +196,12 @@ export function DeployModal({ open, onClose, projectId, deployUrl, onSuccess }: 
                 : "Nicio modificare — gratuit"}
             </p>
 
-            {resultUrl && (
+            {resultUrl && countdown > 0 ? (
+              <div className="w-full h-10 bg-muted border border-border rounded-lg text-sm font-medium text-muted-foreground flex items-center justify-center gap-2 mb-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Site-ul se pregătește... {countdown}s
+              </div>
+            ) : resultUrl ? (
               <a
                 href={resultUrl}
                 target="_blank"
@@ -184,7 +211,7 @@ export function DeployModal({ open, onClose, projectId, deployUrl, onSuccess }: 
                 <ExternalLink className="w-4 h-4" />
                 Deschide în browser
               </a>
-            )}
+            ) : null}
             <button
               onClick={handleClose}
               className="w-full h-10 bg-background border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors"
