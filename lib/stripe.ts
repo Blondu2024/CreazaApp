@@ -7,16 +7,16 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 // ============================================
 
 export const SUBSCRIPTION_PRICES: Record<string, { priceId: string; plan: string; credits: number }> = {
-  starter: { priceId: "price_1TIGH3HYGAlAOMyT0t1GgNAR", plan: "starter", credits: 300 },
-  pro:     { priceId: "price_1TIGH4HYGAlAOMyT1xn8FQRF", plan: "pro",     credits: 400 },
-  ultra:   { priceId: "price_1TIGH5HYGAlAOMyTdEZhW04N", plan: "ultra",   credits: 500 },
+  starter: { priceId: "price_1TINs0HYGAlAOMyTQkN2EJSk", plan: "starter", credits: 300 },
+  pro:     { priceId: "price_1TINs1HYGAlAOMyTHjUPt7Qd", plan: "pro",     credits: 400 },
+  ultra:   { priceId: "price_1TINs1HYGAlAOMyTqhKGLKGw", plan: "ultra",   credits: 500 },
 };
 
 export const TOPUP_PRICES: Record<string, { priceId: string; credits: number }> = {
-  mini:  { priceId: "price_1TIGH5HYGAlAOMyTYEnU3HPK", credits: 30 },
-  mediu: { priceId: "price_1TIGH6HYGAlAOMyTSNEMHFXp", credits: 70 },
-  mare:  { priceId: "price_1TIGH6HYGAlAOMyTo02YIqye", credits: 200 },
-  xl:    { priceId: "price_1TIGH7HYGAlAOMyTjdBIAkFV", credits: 450 },
+  mini:  { priceId: "price_1TINs2HYGAlAOMyTUbQjEHtP", credits: 30 },
+  mediu: { priceId: "price_1TINs2HYGAlAOMyTKvMHmsVY", credits: 70 },
+  mare:  { priceId: "price_1TINs3HYGAlAOMyTqbHh5xaC", credits: 200 },
+  xl:    { priceId: "price_1TINs4HYGAlAOMyT6LNiTEZe", credits: 450 },
 };
 
 // Reverse lookup: price ID → plan/topup info
