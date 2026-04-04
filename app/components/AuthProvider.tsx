@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const p = await fetchProfile(typedUser.id);
         if (p) setProfile(p);
         // Send welcome email on first OAuth sign-in
-        if (event === "SIGNED_IN" && typedUser.app_metadata?.provider !== "email") {
+        if (event === "SIGNED_IN") {
           const created = new Date(typedUser.created_at);
           const isNew = Date.now() - created.getTime() < 300_000; // within 5 minutes
           if (isNew) {

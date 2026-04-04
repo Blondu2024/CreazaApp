@@ -21,21 +21,18 @@ export const PLANS: Record<string, PlanDefinition> = {
   ultra:   { id: "ultra",   name: "Ultra",   priceRON: 299, creditsPerMonth: 500, model: "anthropic/claude-opus-4-6",  canChooseModel: true,  contextBudget: 1_000_000 },
 };
 
-// Models available for Pro/Ultra selection — only powerful models
+// Models available per plan — Pro gets mid-tier, Ultra gets premium
 export const PRO_MODELS = [
   "anthropic/claude-sonnet-4",
-  "anthropic/claude-3.5-sonnet",
-  "openai/gpt-4.1",
-  "google/gemini-2.5-pro-preview",
-  "deepseek/deepseek-r1",
+  "anthropic/claude-haiku-4.5",
+  "openai/gpt-5.3-codex",
 ];
 
 export const ULTRA_MODELS = [
   "anthropic/claude-opus-4-6",
-  "anthropic/claude-sonnet-4",
-  "openai/gpt-4.1",
-  "google/gemini-2.5-pro-preview",
-  "deepseek/deepseek-r1",
+  "anthropic/claude-sonnet-4.6",
+  "openai/gpt-5.4",
+  "anthropic/claude-sonnet-4.5",
 ];
 
 export interface TopupPackage {
@@ -64,10 +61,14 @@ interface ModelPricing {
 export const MODEL_COSTS: Record<string, ModelPricing> = {
   // Anthropic
   "anthropic/claude-opus-4-6":    { inputPer1M: 5,    outputPer1M: 25 },
+  "anthropic/claude-sonnet-4.6":  { inputPer1M: 3,    outputPer1M: 15 },
+  "anthropic/claude-sonnet-4.5":  { inputPer1M: 3,    outputPer1M: 15 },
   "anthropic/claude-sonnet-4":    { inputPer1M: 3,    outputPer1M: 15 },
   "anthropic/claude-haiku-4.5":   { inputPer1M: 1,    outputPer1M: 5 },
   "anthropic/claude-3.5-sonnet":  { inputPer1M: 3,    outputPer1M: 15 },
   // OpenAI
+  "openai/gpt-5.4":              { inputPer1M: 2.50, outputPer1M: 15 },
+  "openai/gpt-5.3-codex":        { inputPer1M: 1.75, outputPer1M: 14 },
   "openai/gpt-4.1":              { inputPer1M: 2,    outputPer1M: 8 },
   "openai/gpt-4.1-mini":         { inputPer1M: 0.40, outputPer1M: 1.60 },
   "openai/gpt-4o":               { inputPer1M: 2.50, outputPer1M: 10 },

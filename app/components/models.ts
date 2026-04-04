@@ -15,6 +15,8 @@ export const models: AIModel[] = [
   { value: "nousresearch/hermes-3-llama-3.1-405b:free", label: "Hermes 3 405B", price: "GRATUIT", category: "free" },
 
   // OpenAI
+  { value: "openai/gpt-5.4", label: "GPT-5.4", price: "$2.50/$15", category: "openai" },
+  { value: "openai/gpt-5.3-codex", label: "GPT-5.3 Codex", price: "$1.75/$14", category: "openai" },
   { value: "openai/gpt-4.1", label: "GPT-4.1", price: "$2.50/$10", category: "openai" },
   { value: "openai/gpt-4.1-mini", label: "GPT-4.1 Mini", price: "$0.40/$1.60", category: "openai" },
   { value: "openai/gpt-4o", label: "GPT-4o", price: "$2.50/$10", category: "openai" },
@@ -22,6 +24,8 @@ export const models: AIModel[] = [
 
   // Anthropic
   { value: "anthropic/claude-opus-4-6", label: "Claude Opus 4.6", price: "$5/$25", category: "anthropic" },
+  { value: "anthropic/claude-sonnet-4.6", label: "Claude Sonnet 4.6", price: "$3/$15", category: "anthropic" },
+  { value: "anthropic/claude-sonnet-4.5", label: "Claude Sonnet 4.5", price: "$3/$15", category: "anthropic" },
   { value: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4", price: "$3/$15", category: "anthropic" },
   { value: "anthropic/claude-haiku-4.5", label: "Claude Haiku 4.5", price: "$0.80/$4", category: "anthropic" },
   { value: "anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet", price: "$3/$15", category: "anthropic" },

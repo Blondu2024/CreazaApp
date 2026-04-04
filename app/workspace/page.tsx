@@ -14,6 +14,7 @@ import { models } from "../components/models";
 import { estimateTokens } from "@/lib/ai";
 import { isModelFree, PLANS } from "@/lib/credits";
 import { SummaryModal } from "../components/workspace/SummaryModal";
+import { DeployModal } from "../components/DeployModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, PanelLeftClose, PanelLeftOpen, Code, Eye,
@@ -245,6 +246,7 @@ export default function WorkspacePage() {
   const [deploying, setDeploying] = useState(false);
   const [deployUrl, setDeployUrl] = useState<string | null>(null);
   const [, setDeployError] = useState<string | null>(null);
+  const [showDeployModal, setShowDeployModal] = useState(false);
 
   // Custom domain state
   const [showDomainModal, setShowDomainModal] = useState(false);
@@ -689,54 +691,24 @@ export default function WorkspacePage() {
     setActiveTab("preview");
   }, [files, addLog]);
 
-  // Deploy handler
-  const handleDeployClick = useCallback(async () => {
-    if (!currentProjectRef.current || files.length === 0 || deploying) return;
-    setDeploying(true);
-    setDeployError(null);
-    toast("Se publică proiectul...", "info");
-    addLog("[DEPLOY] Se publică proiectul...");
+  // Deploy handler — opens modal for confirmation
+  const handleDeployClick = useCallback(() => {
+    if (!currentProjectRef.current || files.length === 0) return;
+    setShowDeployModal(true);
+  }, [files]);
 
-    try {
-      const token = await getAccessToken();
-      const res = await fetch("/api/deploy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ projectId: currentProjectRef.current.id }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setDeployError(data.error || "Eroare la deploy");
-        toast(data.error || "Eroare la publicare", "error");
-        addLog(`[ERR] Deploy eșuat: ${data.error}`);
-        return;
+  const handleDeploySuccess = useCallback((url: string, creditsCost: number, cached: boolean) => {
+    setDeployUrl(url);
+    if (cached) {
+      addLog("[DEPLOY] Nicio modificare — site-ul e deja la zi!");
+    } else {
+      addLog(`[DEPLOY] Publicat! ${url}`);
+      if (creditsCost > 0) {
+        addLog(`[DEPLOY] Cost: ${creditsCost} credite`);
+        refreshCreditsRef.current?.();
       }
-
-      setDeployUrl(data.url);
-      if (data.cached) {
-        toast("Site-ul e deja la zi! Nicio modificare detectată.", "success");
-        addLog("[DEPLOY] Nicio modificare — site-ul e deja la zi!");
-      } else {
-        toast(`Publicat cu succes! ${data.url}`, "success");
-        addLog(`[DEPLOY] Publicat! ${data.url}`);
-        if (data.creditsCost > 0) {
-          addLog(`[DEPLOY] Cost: ${data.creditsCost} credite`);
-          refreshCreditsRef.current?.();
-        }
-      }
-    } catch {
-      setDeployError("Eroare de conexiune");
-      toast("Eroare de conexiune la serverele de deploy", "error");
-      addLog("[ERR] Deploy eșuat — verifică conexiunea");
-    } finally {
-      setDeploying(false);
     }
-  }, [files, deploying, addLog, toast]);
+  }, [addLog]);
 
   // Load deploy status + custom domain when project opens
   useEffect(() => {
@@ -1000,11 +972,11 @@ export default function WorkspacePage() {
           {/* Deploy button */}
           <button
             onClick={handleDeployClick}
-            disabled={!hasCode || deploying}
+            disabled={!hasCode}
             className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-[#10b981] to-[#059669] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
           >
-            {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
-            <span className="hidden lg:inline">{deploying ? "Se publică..." : "Publică"}</span>
+            {deployUrl ? <RefreshCw className="w-3.5 h-3.5" /> : <Rocket className="w-3.5 h-3.5" />}
+            <span className="hidden lg:inline">{deployUrl ? "Republică" : "Publică"}</span>
           </button>
           {/* Deploy URL indicator + Domain button */}
           {deployUrl && !deploying && (
@@ -1251,9 +1223,9 @@ export default function WorkspacePage() {
             <span className="text-[10px] font-medium">Preview</span>
             {previewUrl && <span className="absolute top-1.5 right-[calc(50%-2px)] translate-x-3 w-1.5 h-1.5 rounded-full bg-[#10b981]" />}
           </button>
-          <button onClick={handleDeployClick} disabled={!hasCode || deploying} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", deployUrl ? "text-[#10b981]" : "text-muted-foreground", "disabled:opacity-30")}>
-            {deploying ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
-            <span className="text-[10px] font-medium">{deploying ? "..." : "Publică"}</span>
+          <button onClick={handleDeployClick} disabled={!hasCode} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", deployUrl ? "text-[#10b981]" : "text-muted-foreground", "disabled:opacity-30")}>
+            {deployUrl ? <RefreshCw className="w-5 h-5" /> : <Rocket className="w-5 h-5" />}
+            <span className="text-[10px] font-medium">{deployUrl ? "Republică" : "Publică"}</span>
             {deployUrl && <span className="absolute top-1.5 right-[calc(50%-2px)] translate-x-3 w-1.5 h-1.5 rounded-full bg-[#10b981]" />}
           </button>
         </div>
@@ -1442,6 +1414,17 @@ export default function WorkspacePage() {
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
           onContinue={handleContinueAfterSummary}
+        />
+      )}
+
+      {/* Deploy Modal */}
+      {currentProject && (
+        <DeployModal
+          open={showDeployModal}
+          onClose={() => setShowDeployModal(false)}
+          projectId={currentProject.id}
+          deployUrl={deployUrl}
+          onSuccess={handleDeploySuccess}
         />
       )}
     </div>

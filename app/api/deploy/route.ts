@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Autentificare necesară" }, { status: 401 });
   }
 
-  const { projectId } = await req.json();
+  const { projectId, force } = await req.json();
   if (!projectId) {
     return NextResponse.json({ error: "projectId lipsește" }, { status: 400 });
   }
@@ -40,10 +40,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Proiectul nu are fișiere" }, { status: 400 });
   }
 
-  // Check if content changed — if not, return cached URL instantly (free)
+  // Check if content changed — if not, return cached URL instantly (free) — unless forced
   const contentHash = computeContentHash(files);
   const lastDeploy = await getLastDeployment(projectId);
-  if (lastDeploy && lastDeploy.content_hash === contentHash && lastDeploy.status === "ready") {
+  if (!force && lastDeploy && lastDeploy.content_hash === contentHash && lastDeploy.status === "ready") {
     return NextResponse.json({
       success: true,
       url: lastDeploy.url,
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   const userProfile = await ensureProfile(userId);
 
   // Deploy (pass plan — free users get CreazaApp watermark)
-  const result = await handleDeploy(projectId, userId, project.name, files, userProfile.plan);
+  const result = await handleDeploy(projectId, userId, project.name, files, userProfile.plan, !!force);
 
   if (!result.success) {
     // Cooldown or user-facing errors → 429, actual server errors → 500

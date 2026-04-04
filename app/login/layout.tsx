@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Autentificare",
   description:
-    "Conectează-te la CreazaApp cu Google, GitHub sau email. Creează aplicații web cu AI, în română.",
+    "Conectează-te la CreazaApp cu Google sau GitHub. Creează aplicații web cu AI, în română.",
   alternates: { canonical: "https://creazaapp.com/login" },
   openGraph: {
     title: "Autentificare – CreazaApp",

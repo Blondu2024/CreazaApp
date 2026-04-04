@@ -3,54 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn, signUp, signInWithGoogle, signInWithGitHub, getAccessToken } from "@/lib/supabase";
+import { signInWithGoogle, signInWithGitHub } from "@/lib/supabase";
 import { useAuth } from "../components/AuthProvider";
-import { Sparkles, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   // Redirect if already logged in
   if (!loading && user) {
     router.push("/workspace");
     return null;
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setSubmitting(true);
-
-    if (mode === "register") {
-      const { error } = await signUp(email, password);
-      if (error) {
-        setError(error);
-      } else {
-        setSuccess("Cont creat! Verifică email-ul pentru confirmare.");
-        // Send welcome email (fire and forget)
-        getAccessToken().then(token => {
-          if (token) fetch("/api/email/welcome", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-        });
-      }
-    } else {
-      const { error } = await signIn(email, password);
-      if (error) {
-        setError(error);
-      } else {
-        router.push("/workspace");
-      }
-    }
-    setSubmitting(false);
-  };
 
   const handleGoogle = async () => {
     setError("");
@@ -86,14 +52,14 @@ export default function LoginPage() {
       {/* Card */}
       <div className="w-full max-w-[400px] bg-card border border-border rounded-2xl p-8">
         <h1 className="text-xl font-bold text-foreground text-center mb-1">
-          {mode === "login" ? "Bine ai revenit!" : "Creează cont"}
+          Bine ai venit!
         </h1>
         <p className="text-sm text-muted-foreground text-center mb-6">
-          {mode === "login" ? "Intră în contul tău" : "Începe să construiești cu AI"}
+          Conecteaz&abreve;-te pentru a &icirc;ncepe
         </p>
 
         {/* OAuth buttons */}
-        <div className="space-y-2.5 mb-4">
+        <div className="space-y-2.5">
           <button
             onClick={handleGoogle}
             className="w-full flex items-center justify-center gap-2 h-11 bg-white text-[#1f1f1f] rounded-lg font-medium text-sm hover:bg-gray-100 transition-colors border border-gray-200"
@@ -104,7 +70,7 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Continuă cu Google
+            Continu&abreve; cu Google
           </button>
 
           <button
@@ -114,73 +80,15 @@ export default function LoginPage() {
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
             </svg>
-            Continuă cu GitHub
+            Continu&abreve; cu GitHub
           </button>
         </div>
 
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-muted-foreground">sau cu email</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-
-        {/* Email/Password Form */}
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-              className="w-full h-11 bg-background border border-border rounded-lg pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#6366f1]"
-            />
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 mt-4">
+            <p className="text-xs text-red-400">{error}</p>
           </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Parolă"
-              required
-              minLength={6}
-              className="w-full h-11 bg-background border border-border rounded-lg pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#6366f1]"
-            />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-              <p className="text-xs text-red-400">{error}</p>
-            </div>
-          )}
-          {success && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
-              <p className="text-xs text-emerald-400">{success}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full h-11 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white rounded-lg font-medium text-sm btn-primary-glow disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {mode === "login" ? "Intră în cont" : "Creează cont"}
-          </button>
-        </form>
-
-        <p className="text-xs text-muted-foreground text-center mt-4">
-          {mode === "login" ? (
-            <>Nu ai cont? <button onClick={() => { setMode("register"); setError(""); setSuccess(""); }} className="text-[#6366f1] hover:underline">Creează unul</button></>
-          ) : (
-            <>Ai deja cont? <button onClick={() => { setMode("login"); setError(""); setSuccess(""); }} className="text-[#6366f1] hover:underline">Intră</button></>
-          )}
-        </p>
+        )}
       </div>
 
       <p className="text-[10px] text-muted-foreground/40 mt-4">CreazaApp.com</p>

@@ -407,7 +407,8 @@ export async function handleDeploy(
   userId: string,
   projectName: string,
   files: { path: string; content: string }[],
-  userPlan: string = "free"
+  userPlan: string = "free",
+  force: boolean = false
 ): Promise<{
   success: boolean;
   url?: string;
@@ -426,9 +427,9 @@ export async function handleDeploy(
   // 2. Compute content hash
   const contentHash = computeContentHash(files);
 
-  // 3. Check if last deploy has same hash — SKIP deploy (free!)
+  // 3. Check if last deploy has same hash — SKIP deploy (free!) — unless forced
   const lastDeploy = await getLastDeployment(projectId);
-  if (lastDeploy && lastDeploy.content_hash === contentHash && lastDeploy.status === "ready") {
+  if (!force && lastDeploy && lastDeploy.content_hash === contentHash && lastDeploy.status === "ready") {
     return {
       success: true,
       url: lastDeploy.url || undefined,

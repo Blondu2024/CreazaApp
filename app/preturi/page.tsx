@@ -24,11 +24,11 @@ const plans = [
   {
     id: "free", name: "Gratuit", description: "Explorează platforma",
     price: 0, credits: 50,
-    model: "Auto (performant)", context: "200K", apiTier: "Standard",
+    model: "Claude Sonnet 4", context: "200K", apiTier: "Standard",
     support: "Comunitate", supportTime: "—",
     features: [
       "50 credite/lună",
-      "Agent AI performant",
+      "Claude Sonnet 4 (model fix)",
       "Preview instant + Auto-save",
       "8 API-uri AI standard",
       "Download ZIP",
@@ -41,11 +41,11 @@ const plans = [
   {
     id: "starter", name: "Starter", description: "Proiecte personale",
     price: 69, credits: 300, badge: "Popular",
-    model: "Auto (rapid)", context: "200K", apiTier: "Standard",
+    model: "Claude Haiku 4.5", context: "200K", apiTier: "Standard",
     support: "Email", supportTime: "48h",
     features: [
       "300 credite/lună",
-      "Agent AI rapid",
+      "Claude Haiku 4.5 (rapid, eficient)",
       "Preview instant + Auto-save",
       "8 API-uri AI standard",
       "Top-up credite (nu expiră)",
@@ -60,11 +60,12 @@ const plans = [
   {
     id: "pro", name: "Pro", description: "Creatori serioși",
     price: 149, credits: 400, badge: "Avansat",
-    model: "Alegi modelul AI", context: "200K", apiTier: "Standard + Premium",
+    model: "Claude Sonnet 4", context: "200K", apiTier: "Standard + Premium",
     support: "Prioritar", supportTime: "24h",
     features: [
       "400 credite/lună",
-      "Alegi modelul AI (5 modele)",
+      "Claude Sonnet 4 + Haiku 4.5 + GPT-5.3 Codex",
+      "Alegi din 3 modele AI",
       "API-uri premium (DALL-E 3, DeepL, ElevenLabs)",
       "Generare Video AI",
       "Top-up credite (nu expiră)",
@@ -79,11 +80,13 @@ const plans = [
   {
     id: "ultra", name: "Ultra", description: "Performanță maximă",
     price: 299, credits: 500, badge: "Premium",
-    model: "Modele premium", context: "1M tokeni", apiTier: "Premium",
+    model: "Claude Opus 4.6", context: "1M tokeni", apiTier: "Premium",
     support: "Dedicat", supportTime: "4h",
     features: [
       "500 credite/lună",
-      "Modele AI premium (Claude Opus, GPT-4.1)",
+      "Claude Opus 4.6 (cel mai puternic AI)",
+      "Sonnet 4.6 + GPT-5.4 + Sonnet 4.5",
+      "Alegi din 4 modele premium",
       "Context extins 1M tokeni",
       "API-uri premium (toate)",
       "Generare Video AI",
@@ -148,10 +151,16 @@ const featureCategories: FeatureCategory[] = [
   {
     name: "Modele AI", icon: Cpu,
     rows: [
-      { name: "Selecție model", free: "Auto", starter: "Auto", pro: "Manual", ultra: "Manual" },
+      { name: "Model principal", free: "Sonnet 4", starter: "Haiku 4.5", pro: "Sonnet 4", ultra: "Opus 4.6" },
+      { name: "Selecție model", free: "Fix", starter: "Fix", pro: "Alegi (3)", ultra: "Alegi (4)" },
+      { name: "Claude Opus 4.6", free: false, starter: false, pro: false, ultra: true },
+      { name: "Claude Sonnet 4.6", free: false, starter: false, pro: false, ultra: true },
+      { name: "GPT-5.4", free: false, starter: false, pro: false, ultra: true },
+      { name: "Claude Sonnet 4.5", free: false, starter: false, pro: false, ultra: true },
+      { name: "Claude Sonnet 4", free: true, starter: false, pro: true, ultra: false },
+      { name: "Claude Haiku 4.5", free: false, starter: true, pro: true, ultra: false },
+      { name: "GPT-5.3 Codex", free: false, starter: false, pro: true, ultra: false },
       { name: "Context maxim", free: "200K", starter: "200K", pro: "200K", ultra: "1M tokeni" },
-      { name: "Modele disponibile", free: "1", starter: "1", pro: "5 modele", ultra: "6+ modele" },
-      { name: "Acces modele premium", free: false, starter: false, pro: true, ultra: true },
     ],
   },
   {
@@ -219,7 +228,7 @@ const faqs = [
   { q: "Ce se întâmplă cu creditele nefolosite?", a: "Creditele lunare se adaugă la începutul fiecărei luni. Creditele cumpărate prin top-up NU expiră niciodată — se consumă după creditele lunare." },
   { q: "Ce sunt API-urile AI integrate?", a: "Aplicațiile tale generate au acces direct la API-uri puternice: generare imagini, text-to-speech, traducere, OCR și multe altele. Nu ai nevoie de conturi sau chei externe — totul se consumă din creditele tale CreazaApp." },
   { q: "Cât costă API-urile AI?", a: "Fiecare API are un cost per operație în credite. De exemplu: generare imagine de la 0.14 credite, traducere 1000 caractere de la 0.17 credite, text-to-speech de la 0.14 credite. Planurile Pro și Ultra au acces la provideri premium (ElevenLabs, DALL-E 3, DeepL) la costuri mai mari dar calitate superioară." },
-  { q: "De ce nu pot alege modelul AI?", a: "Pe planurile Gratuit și Starter, platforma alege automat cel mai bun model pentru tine. Pe Pro și Ultra, poți alege modelul la începutul fiecărui proiect." },
+  { q: "De ce nu pot alege modelul AI?", a: "Pe Gratuit primești Claude Sonnet 4, pe Starter primești Claude Haiku 4.5 (rapid și eficient). Pe Pro alegi din 3 modele: Sonnet 4, Haiku 4.5 și GPT-5.3 Codex. Pe Ultra ai cele mai puternice modele: Claude Opus 4.6, Sonnet 4.6, GPT-5.4 și Sonnet 4.5." },
   { q: "Cum funcționează suportul?", a: "Gratuit: acces la documentație și comunitate. Starter: suport email cu răspuns în 48h. Pro: suport prioritar cu răspuns în 24h + chat. Ultra: manager dedicat cu răspuns în 4h." },
   { q: "Cum funcționează hostingul?", a: "După ce proiectul e gata, dai deploy cu un click. Primești un subdomain gratuit (proiect.creazaapp.com). Hostingul sleep mode pornește site-ul la cerere. Hostingul 24/7 ține site-ul mereu activ." },
   { q: "Pot cumpăra top-up fără abonament?", a: "Top-up-urile sunt disponibile doar cu un abonament activ (inclusiv Gratuit). Creditele top-up nu expiră niciodată." },
