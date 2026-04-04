@@ -105,23 +105,48 @@ export async function createDeploymentRecord(
 ): Promise<Deployment | null> {
   if (!supabaseAdmin) return null;
 
-  // Upsert: if subdomain already exists (redeploy), update the existing record
+  // Check if a record already exists for this subdomain (redeploy case)
+  const { data: existing } = await supabaseAdmin
+    .from("deployments")
+    .select("id")
+    .eq("subdomain", subdomain)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    // Redeploy: update existing record
+    const { data, error } = await supabaseAdmin
+      .from("deployments")
+      .update({
+        project_id: projectId,
+        user_id: userId,
+        content_hash: contentHash,
+        credits_charged: credits,
+        status: "building",
+        error_message: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id)
+      .select()
+      .single();
+    if (error) { console.error("[deploy] update error:", error); return null; }
+    return data;
+  }
+
+  // First deploy: insert new record
   const { data, error } = await supabaseAdmin
     .from("deployments")
-    .upsert({
+    .insert({
       project_id: projectId,
       user_id: userId,
       subdomain,
       content_hash: contentHash,
       credits_charged: credits,
       status: "building",
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: "subdomain",
     })
     .select()
     .single();
-  if (error) { console.error("[deploy] upsert error:", error); return null; }
+  if (error) { console.error("[deploy] insert error:", error); return null; }
   return data;
 }
 
