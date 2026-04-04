@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe, lookupPrice, SUBSCRIPTION_PRICES } from "@/lib/stripe";
+import { stripe, lookupPrice, SUBSCRIPTION_PRICES, TOPUP_PRICES } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { PLANS } from "@/lib/credits";
+import { sendSubscriptionEmail, sendTopupEmail, sendCancelEmail, sendPaymentFailedEmail } from "@/lib/resend";
 import type Stripe from "stripe";
+
+async function getUserEmail(userId: string): Promise<string | null> {
+  if (!supabaseAdmin) return null;
+  const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+  return data?.user?.email ?? null;
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -69,6 +76,11 @@ export async function POST(req: NextRequest) {
                 type: "topup",
                 description: `Top-up ${info.key.toUpperCase()} (+${info.credits} credite)`,
               });
+
+              // Send top-up confirmation email
+              const topupEmail = await getUserEmail(userId);
+              const topupPrices: Record<string, string> = { mini: "9 RON", mediu: "19 RON", mare: "49 RON", xl: "99 RON" };
+              if (topupEmail) sendTopupEmail(topupEmail, info.credits, topupPrices[info.key] || "");
             }
           }
         }
@@ -115,7 +127,7 @@ export async function POST(req: NextRequest) {
           })
           .eq("id", userId);
 
-        // Log the plan change
+        // Log the plan change + send email
         if (isActive) {
           await supabaseAdmin.from("credit_transactions").insert({
             user_id: userId,
@@ -123,6 +135,9 @@ export async function POST(req: NextRequest) {
             type: "subscription",
             description: `Abonament ${plan.name} activat (+${plan.creditsPerMonth} credite)`,
           });
+
+          const subEmail = await getUserEmail(userId);
+          if (subEmail) sendSubscriptionEmail(subEmail, plan.name, plan.creditsPerMonth);
         }
         break;
       }
@@ -149,6 +164,9 @@ export async function POST(req: NextRequest) {
           type: "subscription",
           description: "Abonament anulat — plan Gratuit",
         });
+
+        const cancelEmail = await getUserEmail(userId);
+        if (cancelEmail) sendCancelEmail(cancelEmail);
         break;
       }
 
@@ -172,6 +190,9 @@ export async function POST(req: NextRequest) {
             type: "payment_failed",
             description: "Plata a eșuat — verifică metoda de plată",
           });
+
+          const failEmail = await getUserEmail(profile.id);
+          if (failEmail) sendPaymentFailedEmail(failEmail);
         }
         break;
       }

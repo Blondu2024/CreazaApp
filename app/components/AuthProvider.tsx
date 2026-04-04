@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { getUser, onAuthChange, supabase } from "@/lib/supabase";
+import { getUser, onAuthChange, getAccessToken, supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
 export interface UserProfile {
@@ -57,13 +57,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = onAuthChange(async (u) => {
+    const { data: { subscription } } = onAuthChange(async (u, event) => {
       const typedUser = u as User | null;
       setUser(typedUser);
       setLoading(false);
       if (typedUser) {
         const p = await fetchProfile(typedUser.id);
         if (p) setProfile(p);
+        // Send welcome email on first OAuth sign-in
+        if (event === "SIGNED_IN" && typedUser.app_metadata?.provider !== "email") {
+          const created = new Date(typedUser.created_at);
+          const isNew = Date.now() - created.getTime() < 60_000; // within 1 minute
+          if (isNew) {
+            getAccessToken().then(token => {
+              if (token) fetch("/api/email/welcome", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+            });
+          }
+        }
       } else {
         setProfile(null);
       }

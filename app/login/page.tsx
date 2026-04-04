@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn, signUp, signInWithGoogle, signInWithGitHub } from "@/lib/supabase";
+import { signIn, signUp, signInWithGoogle, signInWithGitHub, getAccessToken } from "@/lib/supabase";
 import { useAuth } from "../components/AuthProvider";
 import { Sparkles, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,10 @@ export default function LoginPage() {
         setError(error);
       } else {
         setSuccess("Cont creat! Verifică email-ul pentru confirmare.");
+        // Send welcome email (fire and forget)
+        getAccessToken().then(token => {
+          if (token) fetch("/api/email/welcome", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        });
       }
     } else {
       const { error } = await signIn(email, password);
