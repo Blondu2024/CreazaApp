@@ -12,7 +12,7 @@ import { CodeEditor } from "../components/editor/CodeEditor";
 import { Terminal } from "../components/terminal/Terminal";
 import { models } from "../components/models";
 import { estimateTokens } from "@/lib/ai";
-import { isModelFree, PLANS } from "@/lib/credits";
+import { isModelFree, PLANS, PRO_MODELS, ULTRA_MODELS } from "@/lib/credits";
 import { SummaryModal } from "../components/workspace/SummaryModal";
 import { DeployModal } from "../components/DeployModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -870,10 +870,7 @@ export default function WorkspacePage() {
             onChange={(e) => setSelectedModel(e.target.value)}
             className="hidden md:block h-8 w-[240px] bg-card border border-border text-foreground text-sm rounded-lg px-3 outline-none focus:border-[#6366f1] cursor-pointer"
           >
-            {(profile.plan === "ultra"
-              ? models.filter((m) => ["anthropic/claude-opus-4-6","anthropic/claude-sonnet-4","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
-              : models.filter((m) => ["anthropic/claude-sonnet-4","anthropic/claude-3.5-sonnet","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
-            ).map((m) => (
+            {models.filter((m) => (profile.plan === "ultra" ? ULTRA_MODELS : PRO_MODELS).includes(m.value)).map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}
           </select>
@@ -1077,10 +1074,7 @@ export default function WorkspacePage() {
                   onChange={(e) => setSelectedModel(e.target.value)}
                   className="w-full h-9 bg-card border border-border text-foreground text-sm rounded-lg px-3 outline-none focus:border-[#6366f1]"
                 >
-                  {(profile.plan === "ultra"
-                    ? models.filter((m) => ["anthropic/claude-opus-4-6","anthropic/claude-sonnet-4","openai/gpt-4.1","google/gemini-2.5-pro-preview","deepseek/deepseek-r1"].includes(m.value))
-                    : models.filter((m) => ["anthropic/claude-sonnet-4","anthropic/claude-haiku-4.5","openai/gpt-4.1","google/gemini-2.5-pro-preview","google/gemini-2.5-flash","deepseek/deepseek-r1"].includes(m.value))
-                  ).map((m) => (
+                  {models.filter((m) => (profile.plan === "ultra" ? ULTRA_MODELS : PRO_MODELS).includes(m.value)).map((m) => (
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>
