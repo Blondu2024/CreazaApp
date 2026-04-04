@@ -104,19 +104,24 @@ export async function createDeploymentRecord(
   projectId: string, userId: string, subdomain: string, contentHash: string, credits: number
 ): Promise<Deployment | null> {
   if (!supabaseAdmin) return null;
+
+  // Upsert: if subdomain already exists (redeploy), update the existing record
   const { data, error } = await supabaseAdmin
     .from("deployments")
-    .insert({
+    .upsert({
       project_id: projectId,
       user_id: userId,
       subdomain,
       content_hash: contentHash,
       credits_charged: credits,
       status: "building",
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: "subdomain",
     })
     .select()
     .single();
-  if (error) { console.error("[deploy] insert error:", error); return null; }
+  if (error) { console.error("[deploy] upsert error:", error); return null; }
   return data;
 }
 
