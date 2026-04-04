@@ -3,14 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Check, X, Minus, Sparkles, Zap, ChevronDown, Globe, Rocket, Server,
-  Crown, Shield, Mail, Headphones, Users,
+  Check, X, Minus, Sparkles, Zap, ChevronDown, Globe, Rocket, RefreshCw,
+  Crown, Shield, Mail, Headphones, Users, GitBranch,
   Volume2, Mic, ImagePlus, Eraser, Languages, ScanText, FileText,
   ScanSearch, Video, AlertTriangle, Clock, Star,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
-import { useAuth } from "../components/AuthProvider";
 import { getAccessToken } from "@/lib/supabase";
 
 // Icon aliases (reuse existing icons for categories)
@@ -27,7 +26,16 @@ const plans = [
     price: 0, credits: 50,
     model: "Auto (performant)", context: "200K", apiTier: "Standard",
     support: "Comunitate", supportTime: "—",
-    features: ["50 credite/lună", "Agent AI performant", "API-uri standard", "Preview instant", "Download ZIP"],
+    features: [
+      "50 credite/lună",
+      "Agent AI performant",
+      "Preview instant + Auto-save",
+      "8 API-uri AI standard",
+      "Download ZIP",
+      "Deploy cu un click",
+      "Subdomain gratuit",
+    ],
+    limitations: ["Watermark pe site publicat", "Fără top-up credite", "Fără export GitHub"],
     cta: "Începe gratuit", highlighted: false, accent: "border-border",
   },
   {
@@ -35,7 +43,18 @@ const plans = [
     price: 69, credits: 300, badge: "Popular",
     model: "Auto (rapid)", context: "200K", apiTier: "Standard",
     support: "Email", supportTime: "48h",
-    features: ["300 credite/lună", "Agent AI rapid", "API-uri standard", "Top-up credite", "Suport email"],
+    features: [
+      "300 credite/lună",
+      "Agent AI rapid",
+      "Preview instant + Auto-save",
+      "8 API-uri AI standard",
+      "Top-up credite (nu expiră)",
+      "Deploy fără watermark",
+      "Export GitHub",
+      "Download ZIP",
+      "Suport email (48h)",
+    ],
+    limitations: [],
     cta: "Începe Starter →", highlighted: true, accent: "border-[#6366f1]",
   },
   {
@@ -43,7 +62,18 @@ const plans = [
     price: 149, credits: 400, badge: "Avansat",
     model: "Alegi modelul AI", context: "200K", apiTier: "Standard + Premium",
     support: "Prioritar", supportTime: "24h",
-    features: ["400 credite/lună", "Alegi modelul AI", "API-uri premium", "Deploy + Hosting", "Suport prioritar"],
+    features: [
+      "400 credite/lună",
+      "Alegi modelul AI (5 modele)",
+      "API-uri premium (DALL-E 3, DeepL, ElevenLabs)",
+      "Generare Video AI",
+      "Top-up credite (nu expiră)",
+      "Deploy fără watermark",
+      "Domeniu custom",
+      "Export GitHub",
+      "Suport prioritar (24h)",
+    ],
+    limitations: [],
     cta: "Începe Pro →", highlighted: false, accent: "border-[#a855f7]/40",
   },
   {
@@ -51,7 +81,19 @@ const plans = [
     price: 299, credits: 500, badge: "Premium",
     model: "Modele premium", context: "1M tokeni", apiTier: "Premium",
     support: "Dedicat", supportTime: "4h",
-    features: ["500 credite/lună", "Modele AI premium", "API-uri premium", "Context 1M tokeni", "Suport dedicat"],
+    features: [
+      "500 credite/lună",
+      "Modele AI premium (Claude Opus, GPT-4.1)",
+      "Context extins 1M tokeni",
+      "API-uri premium (toate)",
+      "Generare Video AI",
+      "Top-up credite (nu expiră)",
+      "Deploy fără watermark",
+      "Domeniu custom",
+      "Export GitHub",
+      "Manager suport dedicat (4h)",
+    ],
+    limitations: [],
     cta: "Începe Ultra →", highlighted: false, accent: "border-[#f59e0b]/40",
   },
 ];
@@ -65,10 +107,10 @@ const topups = [
 
 const hostingPrices = [
   { action: "Deploy inițial", credits: 10, desc: "Publici proiectul online", icon: Rocket },
+  { action: "Redeploy", credits: 3, desc: "Actualizezi site-ul publicat", icon: RefreshCw },
   { action: "Subdomain gratuit", credits: 0, desc: "proiect.creazaapp.com", icon: Globe },
-  { action: "Hosting sleep mode", credits: 25, desc: "Se trezește la request (2-3s delay)", perMonth: true, icon: Server },
-  { action: "Hosting 24/7", credits: 60, desc: "Always on, fără delay", perMonth: true, icon: Zap },
   { action: "Domeniu custom", credits: 50, desc: "Conectezi propriul domeniu", icon: Globe },
+  { action: "Export GitHub", credits: 0, desc: "Creează repo + push fișiere (Starter+)", icon: GitBranch },
 ];
 
 // ─── Feature comparison table ────────────────
@@ -95,10 +137,12 @@ const featureCategories: FeatureCategory[] = [
     rows: [
       { name: "Credite lunare", free: "50", starter: "300", pro: "400", ultra: "500" },
       { name: "Top-up credite", free: false, starter: true, pro: true, ultra: true },
+      { name: "Creditele expiră?", free: "Nu", starter: "Nu", pro: "Nu", ultra: "Nu" },
       { name: "Preview instant", free: true, starter: true, pro: true, ultra: true },
-      { name: "Download ZIP", free: true, starter: true, pro: true, ultra: true },
-      { name: "Auto-save", free: true, starter: true, pro: true, ultra: true },
+      { name: "Auto-save (2s)", free: true, starter: true, pro: true, ultra: true },
       { name: "Undo (10 versiuni)", free: true, starter: true, pro: true, ultra: true },
+      { name: "Upload imagini", free: true, starter: true, pro: true, ultra: true },
+      { name: "Upload documente", free: true, starter: true, pro: true, ultra: true },
     ],
   },
   {
@@ -125,12 +169,14 @@ const featureCategories: FeatureCategory[] = [
     ],
   },
   {
-    name: "Hosting & Deploy", icon: Rocket,
+    name: "Hosting & Export", icon: Rocket,
     rows: [
       { name: "Deploy cu un click", free: true, starter: true, pro: true, ultra: true },
       { name: "Subdomain gratuit", free: true, starter: true, pro: true, ultra: true },
-      { name: "Hosting 24/7", free: false, starter: true, pro: true, ultra: true },
+      { name: "Export GitHub", free: false, starter: true, pro: true, ultra: true },
       { name: "Domeniu custom", free: false, starter: false, pro: true, ultra: true },
+      { name: "Fără watermark", free: false, starter: true, pro: true, ultra: true },
+      { name: "Download ZIP", free: true, starter: true, pro: true, ultra: true },
     ],
   },
   {
@@ -219,7 +265,7 @@ export default function PricingPage() {
   const toggleFaq = (i: number) => {
     setOpenFaqs((prev) => {
       const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
+      if (next.has(i)) next.delete(i); else next.add(i);
       return next;
     });
   };
@@ -311,11 +357,17 @@ export default function PricingPage() {
               </div>
 
               {/* Feature list */}
-              <ul className="space-y-2.5 mb-6 flex-1">
+              <ul className="space-y-2 mb-6 flex-1">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <Check className="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" />
                     <span className="text-sm text-foreground">{f}</span>
+                  </li>
+                ))}
+                {plan.limitations.map((l, i) => (
+                  <li key={`lim-${i}`} className="flex items-start gap-2.5">
+                    <X className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-muted-foreground">{l}</span>
                   </li>
                 ))}
               </ul>
@@ -523,9 +575,9 @@ export default function PricingPage() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Rocket className="w-5 h-5 text-[#6366f1]" />
-              <h2 className="text-2xl font-bold text-foreground">Hosting & Deploy</h2>
+              <h2 className="text-2xl font-bold text-foreground">Hosting, Deploy & Export</h2>
             </div>
-            <p className="text-sm text-muted-foreground">Publică proiectul online cu un click. Creditele se consumă din balanța ta.</p>
+            <p className="text-sm text-muted-foreground">Publică online, exportă pe GitHub sau descarcă ZIP. Totul din workspace.</p>
           </div>
 
           <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -545,7 +597,7 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <span className={`text-sm font-bold ${h.credits === 0 ? "text-[#10b981]" : "text-[#f59e0b]"}`}>
-                  {h.credits === 0 ? "GRATUIT" : `${h.credits} cr${h.perMonth ? "/lună" : ""}`}
+                  {h.credits === 0 ? "GRATUIT" : `${h.credits} cr`}
                 </span>
               </div>
             ))}

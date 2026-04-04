@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { User, Zap, CreditCard, Clock, ArrowUpRight, ArrowDownRight, RefreshCw, Sparkles } from "lucide-react";
 import { useAuth } from "@/app/components/AuthProvider";
 import { Navbar } from "@/app/components/Navbar";
 import { getAccessToken } from "@/lib/supabase";
-import { PLANS, TOPUP_PACKAGES } from "@/lib/credits";
+import { PLANS } from "@/lib/credits";
 
 interface Transaction {
   id: string;
@@ -38,19 +38,21 @@ function AccountContent() {
   const [loadingTx, setLoadingTx] = useState(true);
 
   // After Stripe checkout, poll for updated credits (webhook may arrive with delay)
+  const initialCreditsRef = useRef(profile?.totalCredits ?? 0);
   useEffect(() => {
     if (!searchParams.get("success") || !user || !profile) return;
-    const initialCredits = profile.totalCredits;
+    initialCreditsRef.current = profile.totalCredits;
     let attempts = 0;
     const interval = setInterval(async () => {
       attempts++;
       const updated = await refreshCredits();
-      if ((updated && updated.totalCredits !== initialCredits) || attempts >= 10) {
+      if ((updated && updated.totalCredits !== initialCreditsRef.current) || attempts >= 10) {
         clearInterval(interval);
       }
     }, 2000);
     return () => clearInterval(interval);
-  }, [searchParams, user, profile?.plan]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, user, refreshCredits]);
 
   useEffect(() => {
     if (loading) return;

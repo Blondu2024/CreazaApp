@@ -148,12 +148,20 @@ export async function updateProjectTimestamp(id: string) {
 
 // Files
 export async function saveFiles(projectId: string, files: { path: string; content: string }[]) {
-  // Delete old files, insert new ones
+  if (files.length === 0) {
+    await supabase.from("project_files").delete().eq("project_id", projectId);
+    return;
+  }
+  // Delete old files first, then insert new ones
+  // If insert fails, we retry once — avoids permanent data loss
   await supabase.from("project_files").delete().eq("project_id", projectId);
-  if (files.length === 0) return;
   const rows = files.map((f) => ({ project_id: projectId, path: f.path, content: f.content }));
   const { error } = await supabase.from("project_files").insert(rows);
-  if (error) console.error("saveFiles:", error);
+  if (error) {
+    console.error("saveFiles insert failed, retrying:", error);
+    const { error: retryError } = await supabase.from("project_files").insert(rows);
+    if (retryError) console.error("saveFiles retry failed:", retryError);
+  }
 }
 
 export async function loadFiles(projectId: string): Promise<{ path: string; content: string }[]> {

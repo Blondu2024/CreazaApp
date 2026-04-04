@@ -6,7 +6,6 @@ import Link from "next/link";
 import { signIn, signUp, signInWithGoogle, signInWithGitHub, getAccessToken } from "@/lib/supabase";
 import { useAuth } from "../components/AuthProvider";
 import { Sparkles, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const router = useRouter();

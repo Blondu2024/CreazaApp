@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Folder, Plus, Trash2, Undo2, Clock, Code, Sparkles, AlertTriangle } from "lucide-react";
@@ -18,7 +18,14 @@ export default function ProjectsPage() {
   const [showDeleted, setShowDeleted] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Project | null>(null);
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
   const { toast } = useToast();
+
+  // Refresh "now" every 60s for time display
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -27,18 +34,15 @@ export default function ProjectsPage() {
       listDeletedProjects(user.id),
     ]);
     setProjects(active);
-    setDeletedProjects(deleted.filter(p => {
-      // Only show if deleted less than 48h ago
-      const deletedAt = new Date(p.deleted_at || 0).getTime();
-      return Date.now() - deletedAt < 48 * 60 * 60 * 1000;
-    }));
+    setDeletedProjects(deleted);
+    setNow(Date.now());
     setLoadingProjects(false);
   }, [user]);
 
   useEffect(() => {
     if (loading) return;
     if (!user) { router.push("/login"); return; }
-    refresh();
+    startTransition(() => { refresh(); });
   }, [user, loading, router, refresh]);
 
   const handleDelete = async () => {
@@ -61,7 +65,7 @@ export default function ProjectsPage() {
   };
 
   const timeAgo = (date: string) => {
-    const diff = Date.now() - new Date(date).getTime();
+    const diff = now - new Date(date).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `${mins}m`;
     const hours = Math.floor(mins / 60);
@@ -71,9 +75,16 @@ export default function ProjectsPage() {
   };
 
   const hoursLeft = (deletedAt: string) => {
-    const diff = 48 * 60 * 60 * 1000 - (Date.now() - new Date(deletedAt).getTime());
+    const diff = 48 * 60 * 60 * 1000 - (now - new Date(deletedAt).getTime());
     return Math.max(0, Math.ceil(diff / (60 * 60 * 1000)));
   };
+
+  // Filter deleted projects that are still within 48h window
+  const visibleDeletedProjects = useMemo(() =>
+    deletedProjects.filter(p => {
+      const deletedAt = new Date(p.deleted_at || 0).getTime();
+      return now - deletedAt < 48 * 60 * 60 * 1000;
+    }), [deletedProjects, now]);
 
   if (loading || loadingProjects) {
     return (
@@ -98,13 +109,13 @@ export default function ProjectsPage() {
             <p className="text-sm text-muted-foreground mt-1">{projects.length} proiecte active</p>
           </div>
           <div className="flex items-center gap-3">
-            {deletedProjects.length > 0 && (
+            {visibleDeletedProjects.length > 0 && (
               <button
                 onClick={() => setShowDeleted(!showDeleted)}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg hover:bg-card transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                Șterse ({deletedProjects.length})
+                Șterse ({visibleDeletedProjects.length})
               </button>
             )}
             <Link
@@ -118,7 +129,7 @@ export default function ProjectsPage() {
         </div>
 
         {/* Deleted projects banner */}
-        {showDeleted && deletedProjects.length > 0 && (
+        {showDeleted && visibleDeletedProjects.length > 0 && (
           <div className="mb-8 p-4 rounded-xl border border-destructive/30 bg-destructive/5">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-destructive" />
@@ -126,7 +137,7 @@ export default function ProjectsPage() {
               <span className="text-xs text-muted-foreground">Se șterg permanent după 48h</span>
             </div>
             <div className="space-y-2">
-              {deletedProjects.map(p => (
+              {visibleDeletedProjects.map(p => (
                 <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-card border border-border">
                   <div>
                     <p className="text-sm text-foreground">{p.name}</p>

@@ -8,7 +8,6 @@ import {
   type EdenCapability,
   type EdenProvider,
   type ProviderTier,
-  getCapability,
   providerCostToCredits,
 } from "./config";
 

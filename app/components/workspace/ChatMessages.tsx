@@ -89,13 +89,12 @@ interface ChatMessagesProps {
   status: string;
   lastCreditCost: number | null;
   error: Error | undefined;
-  onSwitchFreeModel: () => void;
   bottomRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function ChatMessages({
   allChatMessages, streamingMessages, isLoading, status,
-  lastCreditCost, error, onSwitchFreeModel, bottomRef,
+  lastCreditCost, error, bottomRef,
 }: ChatMessagesProps) {
   return (
     <div className="p-3 space-y-3">

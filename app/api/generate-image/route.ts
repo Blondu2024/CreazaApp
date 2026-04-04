@@ -1,8 +1,11 @@
-import { openrouter } from "@/lib/ai";
-import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { verifyAuth } from "@/lib/verify-auth";
+import { checkCredits, deductCredits } from "@/lib/credits";
 
 export const maxDuration = 30;
+
+// Cost: ~0.5 credits per image generation via OpenRouter
+const IMAGE_CREDIT_COST = 0.5;
 
 export async function GET(req: Request) {
   // Require auth
@@ -18,6 +21,15 @@ export async function GET(req: Request) {
 
   if (!prompt) {
     return new Response("Missing prompt parameter", { status: 400 });
+  }
+
+  // Credit pre-check
+  const { allowed, balance } = await checkCredits(userId, IMAGE_CREDIT_COST);
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: "insufficient_credits", message: "Credite insuficiente.", balance }),
+      { status: 402, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -41,6 +53,14 @@ export async function GET(req: Request) {
       console.error("[generate-image] No image in response:", JSON.stringify(data).slice(0, 500));
       return new Response("Image generation failed", { status: 502 });
     }
+
+    // Deduct credits only on success
+    await deductCredits(userId, IMAGE_CREDIT_COST, {
+      model: "black-forest-labs/flux.2-klein-4b",
+      inputTokens: 0,
+      outputTokens: 0,
+      description: "Generare imagine",
+    });
 
     // Extract base64 from data URL (data:image/png;base64,...)
     const base64Match = imageData.match(/^data:image\/(\w+);base64,(.+)$/);

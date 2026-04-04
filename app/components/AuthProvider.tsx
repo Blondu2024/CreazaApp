@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Send welcome email on first OAuth sign-in
         if (event === "SIGNED_IN" && typedUser.app_metadata?.provider !== "email") {
           const created = new Date(typedUser.created_at);
-          const isNew = Date.now() - created.getTime() < 60_000; // within 1 minute
+          const isNew = Date.now() - created.getTime() < 300_000; // within 5 minutes
           if (isNew) {
             getAccessToken().then(token => {
               if (token) fetch("/api/email/welcome", { method: "POST", headers: { Authorization: `Bearer ${token}` } });

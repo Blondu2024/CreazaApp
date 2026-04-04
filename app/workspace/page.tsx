@@ -9,17 +9,17 @@ import { signOut, getAccessToken, getGitHubToken } from "@/lib/supabase";
 import type { UIMessage } from "ai";
 import { CodeEditor } from "../components/editor/CodeEditor";
 import { Terminal } from "../components/terminal/Terminal";
-import { models, MODEL_CATEGORIES } from "../components/models";
+import { models } from "../components/models";
 import { estimateTokens } from "@/lib/ai";
 import { isModelFree, PLANS } from "@/lib/credits";
 import { SummaryModal } from "../components/workspace/SummaryModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, PanelLeftClose, PanelLeftOpen, Code, Eye,
-  Terminal as TerminalIcon, Play, RefreshCw, ExternalLink,
+  Terminal as TerminalIcon, RefreshCw, ExternalLink,
   Monitor, Smartphone, Coffee, CheckSquare, ShoppingBag,
   User, FolderTree, Plus, X, Loader2, Globe, Download,
-  Rocket, Copy, Check, Undo2, Trash2, Zap, GitFork,
+  Rocket, Check, Undo2, Zap,
 } from "lucide-react";
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -80,104 +80,6 @@ function parseDeleteCommands(content: string): string[] {
     deletes.push(match[1]);
   }
   return deletes;
-}
-
-const LANG_LABELS: Record<string, string> = {
-  html: "HTML", css: "CSS", js: "JavaScript", jsx: "React JSX", tsx: "React TSX",
-  typescript: "TypeScript", json: "JSON", python: "Python",
-};
-
-function stripCodeBlocks(text: string): string {
-  // Remove completed code blocks
-  let cleaned = text.replace(/```\S*\n([\s\S]*?)```/g, "");
-  // Remove unclosed code block at the end (streaming — cod care se scrie)
-  cleaned = cleaned.replace(/```[\s\S]*$/, "");
-  return cleaned.replace(/\n{3,}/g, "\n\n").trim();
-}
-
-function isWritingCode(text: string): boolean {
-  // Detect if streaming text is currently inside an unclosed code block
-  const opens = (text.match(/```/g) || []).length;
-  return opens % 2 !== 0;
-}
-
-function ChatMarkdown({ text }: { text: string }) {
-  const lines = text.split("\n");
-  const elements: React.ReactNode[] = [];
-  let key = 0;
-  let inList = false;
-  let listItems: React.ReactNode[] = [];
-  let listType: "ul" | "ol" = "ul";
-
-  const flushList = () => {
-    if (listItems.length > 0) {
-      if (listType === "ol") {
-        elements.push(<ol key={key++} className="list-decimal pl-6 my-2 space-y-1">{listItems}</ol>);
-      } else {
-        elements.push(<ul key={key++} className="list-disc pl-6 my-2 space-y-1">{listItems}</ul>);
-      }
-      listItems = [];
-      inList = false;
-    }
-  };
-
-  const renderInline = (str: string): React.ReactNode[] => {
-    const parts: React.ReactNode[] = [];
-    // Bold, italic, inline code, links
-    const rx = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`([^`]+)`)|(\[([^\]]+)\]\(([^)]+)\))/g;
-    let last = 0;
-    let m;
-    let k = 0;
-    while ((m = rx.exec(str)) !== null) {
-      if (m.index > last) parts.push(<span key={k++}>{str.slice(last, m.index)}</span>);
-      if (m[2]) parts.push(<strong key={k++} className="text-white font-bold">{m[2]}</strong>);
-      else if (m[4]) parts.push(<em key={k++} className="text-[#a78bfa] italic">{m[4]}</em>);
-      else if (m[6]) parts.push(<code key={k++} className="bg-[#6366f1]/15 text-[#a78bfa] px-1.5 py-0.5 rounded text-[0.85em] font-mono">{m[6]}</code>);
-      else if (m[8]) parts.push(<a key={k++} href={m[9]} target="_blank" rel="noopener noreferrer" className="text-[#818cf8] underline underline-offset-2 hover:text-[#a78bfa]">{m[8]}</a>);
-      last = m.index + m[0].length;
-    }
-    if (last < str.length) parts.push(<span key={k++}>{str.slice(last)}</span>);
-    return parts;
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // Headings
-    if (trimmed.startsWith("### ")) { flushList(); elements.push(<h3 key={key++} className="text-[1.15em] font-bold text-foreground mt-3 mb-1">{renderInline(trimmed.slice(4))}</h3>); continue; }
-    if (trimmed.startsWith("## ")) { flushList(); elements.push(<h2 key={key++} className="text-[1.35em] font-bold text-white mt-4 mb-2">{renderInline(trimmed.slice(3))}</h2>); continue; }
-    if (trimmed.startsWith("# ")) { flushList(); elements.push(<h1 key={key++} className="text-[1.6em] font-extrabold text-white mt-4 mb-2">{renderInline(trimmed.slice(2))}</h1>); continue; }
-
-    // Horizontal rule
-    if (/^[-*_]{3,}$/.test(trimmed)) { flushList(); elements.push(<hr key={key++} className="border-[#6366f1]/20 my-3" />); continue; }
-
-    // Blockquote
-    if (trimmed.startsWith("> ")) { flushList(); elements.push(<blockquote key={key++} className="border-l-3 border-[#6366f1] pl-3 text-muted-foreground italic my-2">{renderInline(trimmed.slice(2))}</blockquote>); continue; }
-
-    // Unordered list
-    if (/^[-*+]\s/.test(trimmed)) {
-      if (!inList) { flushList(); inList = true; listType = "ul"; }
-      listItems.push(<li key={key++}>{renderInline(trimmed.replace(/^[-*+]\s/, ""))}</li>);
-      continue;
-    }
-
-    // Ordered list
-    if (/^\d+\.\s/.test(trimmed)) {
-      if (!inList) { flushList(); inList = true; listType = "ol"; }
-      listItems.push(<li key={key++}>{renderInline(trimmed.replace(/^\d+\.\s/, ""))}</li>);
-      continue;
-    }
-
-    // Empty line
-    if (!trimmed) { flushList(); continue; }
-
-    // Regular paragraph
-    flushList();
-    elements.push(<p key={key++} className="mb-2 last:mb-0">{renderInline(trimmed)}</p>);
-  }
-  flushList();
-
-  return <>{elements}</>;
 }
 
 function stripModuleSyntax(code: string): string {
@@ -250,15 +152,6 @@ function buildPreviewHtml(files: { path: string; content: string }[]): string {
 </html>`;
 }
 
-function CopyBtn({ text }: { text: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 2000); }} className="absolute top-2 right-2 p-1 rounded bg-white/5 hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-      {ok ? <Check className="w-3.5 h-3.5 text-[#10b981]" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
-    </button>
-  );
-}
-
 function openPreviewInNewTab(html: string) {
   const blob = new Blob([html], { type: "text/html" });
   const url = URL.createObjectURL(blob);
@@ -313,7 +206,7 @@ export default function WorkspacePage() {
   // Deploy state
   const [deploying, setDeploying] = useState(false);
   const [deployUrl, setDeployUrl] = useState<string | null>(null);
-  const [deployError, setDeployError] = useState<string | null>(null);
+  const [, setDeployError] = useState<string | null>(null);
 
   // Custom domain state
   const [showDomainModal, setShowDomainModal] = useState(false);
@@ -400,8 +293,6 @@ export default function WorkspacePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showProjects, setShowProjects] = useState(false);
   const [projectName, setProjectName] = useState("");
-  const [restoredMessages, setRestoredMessages] = useState<{ role: string; content: string }[]>([]);
-
   // Placeholder — defined after useChat
   const openProjectRef = useRef<((id: string) => Promise<void>) | undefined>(undefined);
 
@@ -423,8 +314,6 @@ export default function WorkspacePage() {
   currentProjectRef.current = currentProject;
   const filesRef = useRef(files);
   filesRef.current = files;
-  const restoredRef = useRef(restoredMessages);
-  restoredRef.current = restoredMessages;
   const modelRef = useRef(selectedModel);
   modelRef.current = selectedModel;
   const userRef = useRef(user);
@@ -606,14 +495,21 @@ export default function WorkspacePage() {
 
   const allChatRef = useRef(allChatMessages);
   allChatRef.current = allChatMessages;
+  const attachmentsRef = useRef(attachments);
+  attachmentsRef.current = attachments;
+  const previewErrorsRef = useRef(previewErrors);
+  previewErrorsRef.current = previewErrors;
 
   const sendWithContext = useCallback(async (text: string) => {
     const proj = currentProjectRef.current;
     if (proj) saveChatMessage(proj.id, "user", text);
 
+    const currentAttachments = attachmentsRef.current;
+    const currentErrors = previewErrorsRef.current;
+
     // Build display text with attachment indicators
-    const displayText = attachments.length > 0
-      ? `${text}\n[${attachments.map(a => a.type === "image" ? `📷 ${a.name}` : `📄 ${a.name}`).join(", ")}]`
+    const displayText = currentAttachments.length > 0
+      ? `${text}\n[${currentAttachments.map(a => a.type === "image" ? `📷 ${a.name}` : `📄 ${a.name}`).join(", ")}]`
       : text;
 
     // Add user message to local display
@@ -623,11 +519,11 @@ export default function WorkspacePage() {
     const currentFiles = filesRef.current.map(f => ({ path: f.path, content: f.content }));
     const chatHistory = allChatRef.current.map(m => ({ role: m.role, content: m.content }));
     const summary = currentProjectRef.current?.context_summary || undefined;
-    const errors = previewErrors.length > 0 ? previewErrors : undefined;
+    const errors = currentErrors.length > 0 ? currentErrors : undefined;
 
     // Build multimodal attachments for the API
-    const images = attachments.filter(a => a.type === "image").map(a => a.base64);
-    const documents = attachments.filter(a => a.type === "document").map(a => ({ name: a.name, content: a.base64 }));
+    const images = currentAttachments.filter(a => a.type === "image").map(a => a.base64);
+    const documents = currentAttachments.filter(a => a.type === "document").map(a => ({ name: a.name, content: a.base64 }));
 
     // Get auth token for server-side verification
     const token = await getAccessToken();
@@ -640,7 +536,7 @@ export default function WorkspacePage() {
         documents: documents.length > 0 ? documents : undefined,
       },
     });
-    if (previewErrors.length > 0) setPreviewErrors([]);
+    if (currentErrors.length > 0) setPreviewErrors([]);
     setAttachments([]); // Clear attachments after sending
   }, [sendMessage]);
 
@@ -903,8 +799,6 @@ export default function WorkspacePage() {
   const activeContent = files.find((f) => f.path === activeFile)?.content || "";
   const hasCode = files.length > 0;
   const isEmpty = messages.length === 0 && allChatMessages.length === 0;
-  const currentModelLabel = models.find((m) => m.value === selectedModel)?.label || selectedModel;
-
   // Token usage tracking — budget from user's plan
   const userPlan = PLANS[profile?.plan || "free"] || PLANS.free;
   const contextTokens = allChatMessages.reduce((sum, m) => sum + estimateTokens(m.content), 0)
@@ -1195,7 +1089,7 @@ export default function WorkspacePage() {
                 status={status}
                 lastCreditCost={lastCreditCost}
                 error={error}
-                onSwitchFreeModel={() => {}}
+
                 bottomRef={bottomRef}
               />
             )}
@@ -1350,7 +1244,7 @@ export default function WorkspacePage() {
                 status={status}
                 lastCreditCost={lastCreditCost}
                 error={error}
-                onSwitchFreeModel={() => {}}
+
                 bottomRef={bottomRef}
               />
             )}

@@ -30,9 +30,10 @@ export async function GET(req: Request) {
 
     const ids = expired.map(p => p.id);
 
-    // Delete related data first (files, chat messages), then projects
+    // Delete related data first (files, chat messages, deployments), then projects
     await supabaseAdmin.from("project_files").delete().in("project_id", ids);
     await supabaseAdmin.from("chat_messages").delete().in("project_id", ids);
+    await supabaseAdmin.from("deployments").delete().in("project_id", ids);
     const { error: deleteError } = await supabaseAdmin.from("projects").delete().in("id", ids);
 
     if (deleteError) throw deleteError;
