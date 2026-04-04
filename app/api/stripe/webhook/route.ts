@@ -47,11 +47,27 @@ export async function POST(req: NextRequest) {
           if (priceId) {
             const info = lookupPrice(priceId);
             if (info?.type === "topup") {
-              // Add top-up credits
-              await supabaseAdmin.rpc("add_topup_credits", {
-                p_user_id: userId,
-                p_credits: info.credits,
-                p_description: `Top-up ${info.key.toUpperCase()} (${info.credits} credite)`,
+              // Fetch current top-up balance
+              const { data: profile } = await supabaseAdmin
+                .from("user_profiles")
+                .select("credits_topup")
+                .eq("id", userId)
+                .single();
+
+              const currentTopup = Number(profile?.credits_topup ?? 0);
+              const newTopup = currentTopup + info.credits;
+
+              // Add top-up credits (accumulate, don't replace)
+              await supabaseAdmin
+                .from("user_profiles")
+                .update({ credits_topup: newTopup })
+                .eq("id", userId);
+
+              await supabaseAdmin.from("credit_transactions").insert({
+                user_id: userId,
+                amount: info.credits,
+                type: "topup",
+                description: `Top-up ${info.key.toUpperCase()} (+${info.credits} credite)`,
               });
             }
           }
@@ -77,11 +93,23 @@ export async function POST(req: NextRequest) {
 
         const isActive = subscription.status === "active" || subscription.status === "trialing";
 
+        // Fetch current monthly balance to accumulate credits
+        const { data: currentProfile } = await supabaseAdmin
+          .from("user_profiles")
+          .select("credits_monthly")
+          .eq("id", userId)
+          .single();
+
+        const currentMonthly = Number(currentProfile?.credits_monthly ?? 0);
+        const newMonthly = isActive
+          ? currentMonthly + plan.creditsPerMonth
+          : PLANS.free.creditsPerMonth;
+
         await supabaseAdmin
           .from("user_profiles")
           .update({
             plan: isActive ? info.plan : "free",
-            credits_monthly: isActive ? plan.creditsPerMonth : PLANS.free.creditsPerMonth,
+            credits_monthly: newMonthly,
             stripe_subscription_id: subscription.id,
             stripe_customer_id: subscription.customer as string,
           })
@@ -93,7 +121,7 @@ export async function POST(req: NextRequest) {
             user_id: userId,
             amount: plan.creditsPerMonth,
             type: "subscription",
-            description: `Abonament ${plan.name} activat (${plan.creditsPerMonth} credite/lună)`,
+            description: `Abonament ${plan.name} activat (+${plan.creditsPerMonth} credite)`,
           });
         }
         break;
