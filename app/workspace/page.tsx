@@ -299,6 +299,11 @@ export default function WorkspacePage() {
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [previewKey, setPreviewKey] = useState(0);
   const [previewErrors, setPreviewErrors] = useState<string[]>([]);
+
+  // Deploy state
+  const [deploying, setDeploying] = useState(false);
+  const [deployUrl, setDeployUrl] = useState<string | null>(null);
+  const [deployError, setDeployError] = useState<string | null>(null);
   const [fileHistory, setFileHistory] = useState<{ path: string; content: string }[][]>([]); // Undo stack
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -707,6 +712,64 @@ export default function WorkspacePage() {
     setActiveTab("preview");
   }, [files, addLog]);
 
+  // Deploy handler
+  const handleDeployClick = useCallback(async () => {
+    if (!currentProjectRef.current || files.length === 0 || deploying) return;
+    setDeploying(true);
+    setDeployError(null);
+    addLog("[DEPLOY] Se publică proiectul...");
+
+    try {
+      const token = await getAccessToken();
+      const res = await fetch("/api/deploy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ projectId: currentProjectRef.current.id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setDeployError(data.error || "Eroare la deploy");
+        addLog(`[ERR] Deploy eșuat: ${data.error}`);
+        return;
+      }
+
+      setDeployUrl(data.url);
+      if (data.cached) {
+        addLog("[DEPLOY] Nicio modificare — site-ul e deja la zi!");
+      } else {
+        addLog(`[DEPLOY] Publicat! ${data.url}`);
+        if (data.creditsCost > 0) {
+          addLog(`[DEPLOY] Cost: ${data.creditsCost} credite`);
+          refreshCreditsRef.current?.();
+        }
+      }
+    } catch {
+      setDeployError("Eroare de conexiune");
+      addLog("[ERR] Deploy eșuat — verifică conexiunea");
+    } finally {
+      setDeploying(false);
+    }
+  }, [files, deploying, addLog]);
+
+  // Load deploy status when project opens
+  useEffect(() => {
+    if (!currentProject || !user) return;
+    (async () => {
+      const token = await getAccessToken();
+      const res = await fetch(`/api/deploy?projectId=${currentProject.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      if (data.deployment?.url) setDeployUrl(data.deployment.url);
+      else setDeployUrl(null);
+    })();
+  }, [currentProject, user]);
+
   const activeContent = files.find((f) => f.path === activeFile)?.content || "";
   const hasCode = files.length > 0;
   const isEmpty = messages.length === 0 && allChatMessages.length === 0;
@@ -803,6 +866,22 @@ export default function WorkspacePage() {
           <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card rounded-lg disabled:opacity-30">
             <Download className="w-4 h-4" />
           </button>
+          {/* Deploy button */}
+          <button
+            onClick={handleDeployClick}
+            disabled={!hasCode || deploying}
+            className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-[#10b981] to-[#059669] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
+            <span className="hidden lg:inline">{deploying ? "Se publică..." : "Publică"}</span>
+          </button>
+          {/* Deploy URL indicator */}
+          {deployUrl && !deploying && (
+            <a href={deployUrl} target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-1 px-2 py-1.5 text-[10px] text-[#10b981] hover:text-[#34d399] transition-colors" title={deployUrl}>
+              <Globe className="w-3 h-3" />
+              <span className="max-w-[100px] truncate">Live</span>
+            </a>
+          )}
           <button onClick={handleRun} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-[#6366f1] to-[#a855f7] text-white px-3 py-1.5 rounded-lg text-xs font-medium btn-primary-glow disabled:opacity-40">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -975,6 +1054,11 @@ export default function WorkspacePage() {
             <Eye className="w-5 h-5" />
             <span className="text-[10px] font-medium">Preview</span>
             {previewUrl && <span className="absolute top-1.5 right-[calc(50%-2px)] translate-x-3 w-1.5 h-1.5 rounded-full bg-[#10b981]" />}
+          </button>
+          <button onClick={handleDeployClick} disabled={!hasCode || deploying} className={cn("flex-1 flex flex-col items-center gap-0.5 py-2.5 relative", deployUrl ? "text-[#10b981]" : "text-muted-foreground", "disabled:opacity-30")}>
+            {deploying ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
+            <span className="text-[10px] font-medium">{deploying ? "..." : "Publică"}</span>
+            {deployUrl && <span className="absolute top-1.5 right-[calc(50%-2px)] translate-x-3 w-1.5 h-1.5 rounded-full bg-[#10b981]" />}
           </button>
         </div>
       </div>
