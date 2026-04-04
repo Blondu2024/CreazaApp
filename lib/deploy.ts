@@ -169,6 +169,10 @@ async function updateDeploymentStatus(
 export async function checkCooldown(projectId: string): Promise<{ allowed: boolean; waitMs: number }> {
   const last = await getLastDeployment(projectId);
   if (!last) return { allowed: true, waitMs: 0 };
+  // Failed deploys don't count — let user retry immediately
+  if (last.status === "error" || last.status === "building") {
+    return { allowed: true, waitMs: 0 };
+  }
   const elapsed = Date.now() - new Date(last.created_at).getTime();
   if (elapsed < COOLDOWN_MS) {
     return { allowed: false, waitMs: COOLDOWN_MS - elapsed };
