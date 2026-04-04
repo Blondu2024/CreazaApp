@@ -347,6 +347,7 @@ export async function deployToVercel(
     });
 
     const data = await res.json();
+    console.log("[deploy] Vercel API response:", res.status, JSON.stringify(data).slice(0, 500));
 
     if (res.status === 400 && data.error?.code === "missing_files") {
       // Vercel needs some files uploaded — send only the missing ones
