@@ -940,62 +940,62 @@ export default function WorkspacePage() {
           {/* Deploy URL indicator + Domain button */}
           {deployUrl && !deploying && (
             <>
-              <a href={deployUrl} target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-1 px-2 py-1.5 text-[10px] text-[#10b981] hover:text-[#34d399] transition-colors" title={deployUrl}>
-                <Globe className="w-3 h-3" />
-                <span className="max-w-[100px] truncate">Live</span>
+              <a href={deployUrl} target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#10b981] hover:text-[#34d399] bg-[#10b981]/10 rounded-lg transition-colors" title={deployUrl}>
+                <Globe className="w-3.5 h-3.5" />
+                <span className="max-w-[120px] truncate">Live</span>
               </a>
               <div className="relative hidden md:block">
                 <button
                   onClick={() => setShowDomainModal(!showDomainModal)}
-                  className={cn("flex items-center gap-1 px-2 py-1.5 text-[10px] rounded-lg border transition-colors", domainInfo?.verified ? "text-[#10b981] border-[#10b981]/30" : "text-muted-foreground border-border hover:border-[#6366f1]")}
+                  className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors", domainInfo?.verified ? "text-[#10b981] bg-[#10b981]/10 border-[#10b981]/30" : "text-foreground bg-card border-border hover:border-[#6366f1]")}
                 >
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                   <span>{domainInfo?.domain || "Domeniu"}</span>
                 </button>
                 {showDomainModal && (
-                  <div className="absolute right-0 top-full mt-1 w-[320px] bg-card border border-border rounded-lg shadow-xl z-50 p-3">
-                    <h3 className="text-xs font-semibold text-foreground mb-2">Domeniu custom</h3>
+                  <div className="absolute right-0 top-full mt-1 w-[340px] bg-card border border-border rounded-lg shadow-xl z-50 p-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-3">Domeniu custom</h3>
                     {domainInfo ? (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                          <span className={cn("w-2 h-2 rounded-full", domainInfo.verified ? "bg-[#10b981]" : "bg-amber-500 animate-pulse")} />
-                          <span className="text-xs text-foreground font-medium">{domainInfo.domain}</span>
-                          <span className={cn("text-[10px]", domainInfo.verified ? "text-[#10b981]" : "text-amber-500")}>
+                          <span className={cn("w-2.5 h-2.5 rounded-full", domainInfo.verified ? "bg-[#10b981]" : "bg-amber-500 animate-pulse")} />
+                          <span className="text-sm text-foreground font-medium">{domainInfo.domain}</span>
+                          <span className={cn("text-xs", domainInfo.verified ? "text-[#10b981]" : "text-amber-500")}>
                             {domainInfo.verified ? "Conectat" : "DNS neconfigurat"}
                           </span>
                         </div>
                         {!domainInfo.verified && domainInfo.dnsRecords && (
-                          <div className="bg-background rounded p-2 space-y-1">
-                            <p className="text-[10px] text-muted-foreground mb-1">Adaugă în DNS-ul domeniului tău:</p>
+                          <div className="bg-background rounded-lg p-3 space-y-2">
+                            <p className="text-xs text-muted-foreground mb-2">Adaugă în DNS-ul domeniului tău:</p>
                             {domainInfo.dnsRecords.map((r, i) => (
-                              <div key={i} className="flex gap-2 text-[10px] font-mono">
-                                <span className="text-[#6366f1] font-semibold">{r.type}</span>
+                              <div key={i} className="flex gap-3 text-xs font-mono">
+                                <span className="text-[#6366f1] font-bold">{r.type}</span>
                                 <span className="text-foreground">{r.name}</span>
                                 <span className="text-muted-foreground">→</span>
                                 <span className="text-foreground">{r.value}</span>
                               </div>
                             ))}
-                            <button onClick={handleCheckDomain} className="mt-2 text-[10px] text-[#6366f1] hover:underline">Verifică acum</button>
+                            <button onClick={handleCheckDomain} className="mt-2 text-xs text-[#6366f1] hover:underline font-medium">Verifică acum</button>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <p className="text-[10px] text-muted-foreground">Conectează propriul domeniu (50 credite)</p>
-                        <div className="flex gap-1">
+                      <div className="space-y-3">
+                        <p className="text-xs text-muted-foreground">Conectează propriul domeniu (50 credite)</p>
+                        <div className="flex gap-2">
                           <input
                             value={domainInput}
                             onChange={(e) => setDomainInput(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleConnectDomain()}
                             placeholder="mysite.ro"
-                            className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-[#6366f1]"
+                            className="flex-1 bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-[#6366f1]"
                           />
                           <button
                             onClick={handleConnectDomain}
                             disabled={!domainInput.trim() || domainLoading}
-                            className="bg-[#6366f1] text-white px-2 py-1 rounded text-xs disabled:opacity-40"
+                            className="bg-[#6366f1] text-white px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
                           >
-                            {domainLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Conectează"}
+                            {domainLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Conectează"}
                           </button>
                         </div>
                       </div>
