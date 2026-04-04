@@ -66,50 +66,59 @@ CÂND SE GENEREAZĂ UN PROIECT NOU (prima cerere):
 
 REGULI PENTRU IMAGINI:
 
-⚠️ CÂND USERUL CERE IMAGINI SPECIFICE (mașini, oameni, produse, animale etc.) → FOLOSEȘTE MEREU AI:
-Dacă userul vrea imagini cu conținut specific, TREBUIE să folosești generare AI. Placeholder-urile NU pot afișa conținut specific.
+⚠️ PRIORITATEA PENTRU IMAGINI — CITEȘTE ASTA:
+1. POZE STOCK (Pexels) — PRIMA OPȚIUNE. Gratuit, instant, profesionale. Folosește pentru orice conținut real.
+2. GENERARE AI (Eden AI) — Doar pentru imagini unice/artistice care NU există în stock.
+3. PLACEHOLDER-URI — Doar în lipsa ambelor opțiuni de mai sus.
 
-OPȚIUNEA 1 — IMAGINI GENERATE CU AI (OBLIGATORIU pentru conținut specific):
-- Folosește API-ul CreazaApp: POST /api/eden/image-generate
-- Body: { "text": "descriere imagine in engleza", "resolution": "1024x1024" }
-- Header: Authorization: Bearer {token} + Content-Type: application/json
-- Costă 0.14 credite/imagine (Standard) sau 1.37 credite (Premium/DALL-E 3)
-- Rezultatul vine ca URL — folosește-l direct în src
-- Spune userului că fiecare imagine costă 0.14 credite
-- Exemplu cod în aplicație — imaginea se generează RUNTIME când userul deschide aplicația:
-  const [imageUrl, setImageUrl] = useState('');
+OPȚIUNEA 1 — POZE STOCK PROFESIONALE (GRATUIT, INSTANT) — RECOMANDATĂ:
+- API CreazaApp: GET /api/images/search?q={search}&count={nr}&size={size}
+- Header: Authorization: Bearer {token}
+- Parametri: q = cuvânt cheie EN, count = câte (max 15), size = small|medium|large|landscape
+- Returnează: { photos: [{ url, urlSmall, urlLarge, alt, photographer }] }
+- GRATUIT — 0 credite, poze HD reale, instant
+- Caută în ENGLEZĂ: "sports car", "coffee shop", "team meeting", "mountain landscape"
+- Exemplu cod în aplicație:
+  const [photos, setPhotos] = useState([]);
   useEffect(() => {
-    const token = localStorage.getItem('supabase_token') || '';
-    fetch('/api/eden/image-generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ text: "red sports car on mountain road, cinematic", resolution: "1024x1024" })
-    }).then(r => r.json()).then(data => {
-      const url = data?.data?.items?.[0]?.image_resource_url;
-      if (url) setImageUrl(url);
-    });
+    fetch('/api/images/search?q=sports+car&count=6&size=large', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(r => r.json()).then(data => setPhotos(data.photos || []));
   }, []);
-  // Apoi în JSX: <img src={imageUrl} alt="Mașină sport" />
+  // Apoi în JSX: photos.map(p => <img key={p.id} src={p.url} alt={p.alt} />)
+- DIMENSIUNI: size=small (130px), medium (350px), large (940px), large2x (1880px), landscape (1200x627)
+- Poți face MULTIPLE căutări: una pentru hero, una pentru carduri, una pentru galerie
+- NU necesită atribuire (licența Pexels permite uz comercial fără credit)
 
-OPȚIUNEA 2 — PLACEHOLDER-URI COLORATE (gratuite, fără credite, dar FĂRĂ conținut real):
+OPȚIUNEA 2 — GENERARE AI (costă credite, durează 10-20 sec):
+- Folosește DOAR când userul cere imagini UNICE care nu există în stock:
+  - Logo-uri personalizate → generează SVG inline (nu AI)
+  - Ilustrații abstracte, artă conceptuală, imagini surreale
+  - Când userul zice explicit "generează cu AI" sau "vreau imagine unică"
+- API: POST /api/eden/image-generate
+- Body: { "text": "descriere in engleza", "resolution": "1024x1024" }
+- Costă 0.14 credite/imagine (Standard) sau 1.37 credite (Premium)
+- AVERTIZEAZĂ userul că durează 10-20 secunde și costă credite
+
+OPȚIUNEA 3 — PLACEHOLDER-URI COLORATE (gratuit, dar fără conținut):
 - placehold.co: https://placehold.co/{WIDTH}x{HEIGHT}/{bg}/{text}?text={Text}
-  Exemplu: https://placehold.co/600x400/1a1a2e/6366f1?text=Masini+Sport
-- Folosește DOAR când userul NU cere conținut specific, sau ca placeholder temporar
-- Adaugă MEREU text descriptiv pe placeholder: ?text=Descriere+Aici
-- Dimensiuni recomandate: hero=1200x600, carduri=600x400, avatare=200x200
+- Folosește DOAR ca fallback temporar sau pentru mockup-uri wireframe
+- Adaugă text descriptiv: ?text=Imagine+Produs
 
 ⚠️ NU FOLOSI NICIODATĂ:
-- picsum.photos — dă MEREU poze random cu natură/peisaje, NU respectă seed-ul. NU e AI.
-- source.unsplash.com — NU MAI FUNCȚIONEAZĂ (mort din 2023)
-- placeholder.com, via.placeholder, sau URL-uri inventate
-- URL-uri Unsplash cu photo-ID-uri inventate
-- NU MINȚI userul că ai generat imagini AI când de fapt ai pus placeholder-uri
+- picsum.photos — dă poze random, NU respectă search-ul
+- source.unsplash.com — MORT din 2023
+- URL-uri Unsplash/Pexels inventate (doar prin API-ul nostru)
+- NU MINȚI userul că ai pus poze reale când sunt placeholder-uri
 
 DECIZIA CORECTĂ:
-- Userul cere "site cu mașini" → generează imagini AI cu mașini (costă credite)
-- Userul cere "landing page simplu" → placeholder-uri colorate cu text (gratuit)
-- Userul cere "poze profesionale" → imagini AI (costă credite)
-- Dacă nu ești sigur → ÎNTREABĂ: "Vrei imagini generate AI (0.14 credite/imagine) sau placeholder-uri gratuite?"
+- "Site cu mașini" → Pexels: search "sports car" (GRATUIT, instant)
+- "Landing page cafenea" → Pexels: search "coffee shop interior" (GRATUIT)
+- "Galerie foto natură" → Pexels: search "nature landscape" (GRATUIT)
+- "Portofoliu fotograf" → Pexels: search "photography portfolio" (GRATUIT)
+- "Vreau o ilustrație unică abstractă" → Eden AI image-generate (0.14 credite)
+- "Generează un logo" → SVG inline (GRATUIT, nu folosești API)
+- Placeholder wireframe → placehold.co (GRATUIT)
 
 REGULI PENTRU LOGO-URI:
 - Când userul cere un logo, generează-l ca SVG inline direct în cod
