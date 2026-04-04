@@ -169,11 +169,16 @@ function teamParam() {
   return VERCEL_TEAM_ID ? `?teamId=${VERCEL_TEAM_ID}` : "";
 }
 
+// CreazaApp watermark — injected in deployed HTML for free plan
+const CREAZAAPP_WATERMARK = `<a href="https://creazaapp.com" target="_blank" rel="noopener" id="creazaapp-badge" style="position:fixed;bottom:12px;right:12px;z-index:9999;display:flex;align-items:center;gap:6px;background:rgba(15,15,30,0.85);backdrop-filter:blur(8px);padding:6px 12px;border-radius:8px;border:1px solid rgba(99,102,241,0.3);text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif;transition:opacity 0.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='0.7'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5h4.74l-3.84 2.79 1.47 4.52L12 12.02l-3.87 2.79 1.47-4.52L5.76 7.5h4.74L12 3z"/></svg><span style="color:#a5b4fc;font-size:11px;font-weight:500">Creat cu CreazaApp.com</span></a>`;
+
 /**
  * Build the static HTML package for deployment.
  * Generates a single-page app with all files inlined.
+ * Injects CreazaApp watermark for free plan users.
  */
-function buildDeploymentPackage(files: { path: string; content: string }[]): { path: string; content: string }[] {
+function buildDeploymentPackage(files: { path: string; content: string }[], userPlan: string = "free"): { path: string; content: string }[] {
+  const showWatermark = userPlan === "free";
   const htmlFile = files.find(f => f.path.endsWith(".html"));
   const cssFiles = files.filter(f => f.path.endsWith(".css"));
   const jsFiles = files.filter(f => f.path.endsWith(".js") || f.path.endsWith(".jsx") || f.path.endsWith(".tsx"));
@@ -202,6 +207,10 @@ function buildDeploymentPackage(files: { path: string; content: string }[]): { p
       } else {
         html = html.replace("</body>", `<script>${js.content}<\/script>\n</body>`);
       }
+    }
+    // Inject watermark for free plan
+    if (showWatermark) {
+      html = html.replace("</body>", `${CREAZAAPP_WATERMARK}\n</body>`);
     }
     return [{ path: "index.html", content: html }];
   }
@@ -232,6 +241,7 @@ function buildDeploymentPackage(files: { path: string; content: string }[]): { p
 </head>
 <body>
   <div id="root"></div>
+  ${showWatermark ? CREAZAAPP_WATERMARK : ""}
   <script type="text/babel">
     ${cleanCode}
     const rootEl = document.getElementById('root');
@@ -279,14 +289,15 @@ async function assignSubdomain(vercelProjectId: string, subdomain: string): Prom
 export async function deployToVercel(
   projectFiles: { path: string; content: string }[],
   subdomain: string,
-  existingVercelProjectId?: string | null
+  existingVercelProjectId?: string | null,
+  userPlan: string = "free"
 ): Promise<{ success: boolean; url?: string; vercelProjectId?: string; vercelDeploymentId?: string; error?: string }> {
   if (!VERCEL_TOKEN) {
     return { success: false, error: "VERCEL_TOKEN nu este configurat" };
   }
 
-  // Build the deployment package (inline everything into HTML)
-  const deployFiles = buildDeploymentPackage(projectFiles);
+  // Build the deployment package (inline everything into HTML + watermark for free)
+  const deployFiles = buildDeploymentPackage(projectFiles, userPlan);
 
   // Prepare file list with SHA1 hashes
   const fileList: VercelFile[] = deployFiles.map(f => ({
@@ -395,7 +406,8 @@ export async function handleDeploy(
   projectId: string,
   userId: string,
   projectName: string,
-  files: { path: string; content: string }[]
+  files: { path: string; content: string }[],
+  userPlan: string = "free"
 ): Promise<{
   success: boolean;
   url?: string;
@@ -439,11 +451,12 @@ export async function handleDeploy(
     return { success: false, error: "Eroare la salvarea deployment-ului" };
   }
 
-  // 7. Deploy to Vercel
+  // 7. Deploy to Vercel (pass userPlan for watermark logic)
   const result = await deployToVercel(
     files,
     subdomain,
-    lastDeploy?.vercel_project_id
+    lastDeploy?.vercel_project_id,
+    userPlan
   );
 
   if (!result.success) {

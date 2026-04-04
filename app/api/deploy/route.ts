@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/verify-auth";
-import { checkCredits, deductCredits } from "@/lib/credits";
+import { checkCredits, deductCredits, ensureProfile } from "@/lib/credits";
 import { handleDeploy, getLastDeployment, computeContentHash, getDeployCost } from "@/lib/deploy";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -65,8 +65,11 @@ export async function POST(req: NextRequest) {
     }, { status: 402 });
   }
 
-  // Deploy
-  const result = await handleDeploy(projectId, userId, project.name, files);
+  // Get user plan for watermark logic
+  const userProfile = await ensureProfile(userId);
+
+  // Deploy (pass plan — free users get CreazaApp watermark)
+  const result = await handleDeploy(projectId, userId, project.name, files, userProfile.plan);
 
   if (!result.success) {
     return NextResponse.json({ error: result.error }, { status: 500 });
