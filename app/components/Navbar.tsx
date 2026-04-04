@@ -40,6 +40,7 @@ export function Navbar() {
             <span className="gradient-text">Creaza</span>
             <span className="text-foreground">App</span>
           </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#a855f7] animate-pulse">Beta</span>
         </Link>
 
         {/* Desktop nav */}
