@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { useAuth } from "../components/AuthProvider";
+import { Onboarding } from "../components/Onboarding";
 import { signOut, getAccessToken, getGitHubToken } from "@/lib/supabase";
 import type { UIMessage } from "ai";
 import { CodeEditor } from "../components/editor/CodeEditor";
@@ -35,11 +36,26 @@ import { ChatInput } from "../components/workspace/ChatInput";
 import { useToast } from "../components/Toast";
 
 import {
-  createProject, listProjects, deleteProject, updateProjectTimestamp,
+  createProject, listProjects, deleteProject, updateProjectTimestamp, renameProject,
   saveFiles, loadFiles, saveChatMessage, loadChatHistory, clearChatHistory,
   saveContextSummary, buildContextSummary,
   type Project,
 } from "@/lib/supabase";
+
+// Extract a short, meaningful project name from user's first message
+function extractProjectName(message: string): string {
+  let name = message.trim();
+  // Strip common Romanian prefixes
+  name = name.replace(/^(fa-mi|fă-mi|creează-mi|creeaza-mi|creează|creeaza|vreau|as vrea|aș vrea|am nevoie de|construiește|construieste|generează|genereaza|fă|fa|make me|create|build)\s+/i, "");
+  // Strip "un/o/un fel de/ceva"
+  name = name.replace(/^(un\s+fel\s+de|un|o|ceva|niste|niște)\s+/i, "");
+  // Take first meaningful chunk (up to 40 chars, break at sentence/comma)
+  name = name.split(/[.,!?\n]/)[0].trim();
+  if (name.length > 40) name = name.slice(0, 40).replace(/\s\S*$/, "");
+  // Capitalize first letter
+  if (name) name = name.charAt(0).toUpperCase() + name.slice(1);
+  return name || "Proiect nou";
+}
 
 const suggestions = [
   { icon: Coffee, text: "Landing page pentru o cafenea", color: "#f59e0b" },
@@ -393,6 +409,18 @@ export default function WorkspacePage() {
         if (proj) {
           saveChatMessage(proj.id, "assistant", text);
 
+          // Auto-rename "Proiect nou" after first AI response with code
+          if (proj.name === "Proiect nou" && parsed.length > 0) {
+            const firstUserMsg = allChatRef.current.find(m => m.role === "user");
+            if (firstUserMsg) {
+              const betterName = extractProjectName(firstUserMsg.content);
+              if (betterName !== "Proiect nou") {
+                renameProject(proj.id, betterName);
+                setCurrentProject({ ...proj, name: betterName });
+              }
+            }
+          }
+
           // Auto-update context summary
           const allMsgs = [...(allChatRef.current || []), { role: "assistant" as const, content: text }];
           const allFiles = [...filesRef.current];
@@ -544,9 +572,10 @@ export default function WorkspacePage() {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // Auto-create project on first message
+    // Auto-create project on first message with smart name
     if (!currentProjectRef.current) {
-      const proj = await createProject(input.trim().slice(0, 50), modelRef.current, userRef.current?.id);
+      const smartName = extractProjectName(input);
+      const proj = await createProject(smartName, modelRef.current, userRef.current?.id);
       if (proj) {
         setCurrentProject(proj);
         localStorage.setItem("creazaapp_last_project", proj.id);
@@ -557,8 +586,18 @@ export default function WorkspacePage() {
     setInput("");
   }, [input, isLoading, sendWithContext]);
 
-  const handleSuggestion = useCallback((text: string) => {
+  const handleSuggestion = useCallback(async (text: string) => {
     if (isLoading) return;
+    // Auto-create project from suggestion
+    if (!currentProjectRef.current) {
+      const smartName = extractProjectName(text);
+      const proj = await createProject(smartName, modelRef.current, userRef.current?.id);
+      if (proj) {
+        setCurrentProject(proj);
+        localStorage.setItem("creazaapp_last_project", proj.id);
+        setProjects(await listProjects(userRef.current?.id));
+      }
+    }
     sendWithContext(text);
   }, [isLoading, sendWithContext]);
 
@@ -826,6 +865,7 @@ export default function WorkspacePage() {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden" data-workspace>
+      <Onboarding />
       {/* Header */}
       <header className="h-12 flex-shrink-0 glass-header border-b border-border flex items-center justify-between px-3 gap-2">
         <Link href="/" className="flex items-center gap-2 shrink-0">

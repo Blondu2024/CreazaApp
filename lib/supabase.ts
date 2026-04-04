@@ -146,6 +146,10 @@ export async function updateProjectTimestamp(id: string) {
   await supabase.from("projects").update({ updated_at: new Date().toISOString() }).eq("id", id);
 }
 
+export async function renameProject(id: string, name: string) {
+  await supabase.from("projects").update({ name, updated_at: new Date().toISOString() }).eq("id", id);
+}
+
 // Files
 export async function saveFiles(projectId: string, files: { path: string; content: string }[]) {
   if (files.length === 0) {
