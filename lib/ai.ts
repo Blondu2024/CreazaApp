@@ -234,6 +234,118 @@ REGULI API-URI:
 - Pe planul Gratuit/Starter, providerul e ales automat (standard)
 - Pe planul Pro/Ultra, userul poate alege intre standard si premium
 
+BAZA DE DATE CREAZAAPP (GRATUIT, PERSISTENT):
+Aplicațiile generate pot salva și citi date persistent. Datele sunt organizate în COLECȚII (ca MongoDB/Firebase).
+GRATUIT — 0 credite. Datele persistă între sesiuni și sunt disponibile pe site-ul publicat.
+
+ENDPOINT: /api/db
+- Parametrii se trimit ca query params (GET/DELETE) sau JSON body (POST/PUT)
+- projectId = ID-ul proiectului (disponibil în cod ca PROJECT_ID — variabilă globală)
+- collection = numele colecției (ex: "products", "users", "tasks")
+
+OPERAȚII DISPONIBILE:
+
+1. CITIRE (GET):
+   fetch('/api/db?projectId=' + PROJECT_ID + '&collection=tasks')
+   → { docs: [{id, title, done, _created, _updated}, ...], count: 5 }
+
+   Cu filtru: fetch('/api/db?projectId=' + PROJECT_ID + '&collection=tasks&filter.done=false')
+   Cu sortare: fetch('/api/db?projectId=' + PROJECT_ID + '&collection=tasks&sort=created_at&order=desc')
+   Un document: fetch('/api/db?projectId=' + PROJECT_ID + '&collection=tasks&id=UUID_HERE')
+   → { doc: {id, title, done, _created, _updated} }
+
+2. CREARE (POST):
+   fetch('/api/db', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({ projectId: PROJECT_ID, collection: 'tasks', data: { title: 'Task nou', done: false } })
+   })
+   → { doc: {id, title, done, _created} }
+
+3. ACTUALIZARE (PUT):
+   fetch('/api/db', {
+     method: 'PUT',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({ projectId: PROJECT_ID, collection: 'tasks', id: 'UUID_HERE', data: { title: 'Task modificat', done: true } })
+   })
+   → { doc: {id, title, done, _updated} }
+
+4. ȘTERGERE (DELETE):
+   fetch('/api/db?projectId=' + PROJECT_ID + '&collection=tasks&id=UUID_HERE', { method: 'DELETE' })
+   → { deleted: true }
+
+REGULI BAZA DE DATE:
+- FOLOSEȘTE MEREU variabila PROJECT_ID (e disponibilă global) — NU hardcoda ID-uri
+- Colecțiile se creează AUTOMAT la primul insert — nu trebuie create manual
+- Datele sunt izolate per proiect — un proiect nu vede datele altui proiect
+- Maxim 5000 documente per colecție, maxim 100KB per document
+- Câmpurile _created și _updated sunt adăugate automat
+- FOLOSEȘTE string concatenation pentru URL-uri: '/api/db?projectId=' + PROJECT_ID + '&collection=tasks'
+  NU folosi template literals pentru URL-urile API (backtick) — folosește concatenare cu +
+
+EXEMPLU COMPLET — Todo App cu bază de date:
+  const { useState, useEffect } = React;
+  const API = '/api/db';
+
+  function App() {
+    const [tasks, setTasks] = useState([]);
+    const [input, setInput] = useState('');
+
+    const loadTasks = () => {
+      fetch(API + '?projectId=' + PROJECT_ID + '&collection=tasks&sort=created_at&order=desc')
+        .then(r => r.json()).then(d => setTasks(d.docs || []));
+    };
+    useEffect(loadTasks, []);
+
+    const addTask = () => {
+      if (!input.trim()) return;
+      fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: PROJECT_ID, collection: 'tasks', data: { title: input, done: false } })
+      }).then(() => { setInput(''); loadTasks(); });
+    };
+
+    const toggleTask = (task) => {
+      fetch(API, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: PROJECT_ID, collection: 'tasks', id: task.id, data: { ...task, done: !task.done } })
+      }).then(loadTasks);
+    };
+
+    const deleteTask = (id) => {
+      fetch(API + '?projectId=' + PROJECT_ID + '&collection=tasks&id=' + id, { method: 'DELETE' })
+        .then(loadTasks);
+    };
+
+    return (
+      <div className="min-h-screen bg-gray-900 text-white p-8">
+        <h1 className="text-2xl font-bold mb-4">Todo App</h1>
+        <div className="flex gap-2 mb-4">
+          <input value={input} onChange={e => setInput(e.target.value)} placeholder="Task nou..."
+            className="bg-gray-800 px-4 py-2 rounded flex-1" onKeyDown={e => e.key === 'Enter' && addTask()} />
+          <button onClick={addTask} className="bg-indigo-600 px-4 py-2 rounded">Adaugă</button>
+        </div>
+        {tasks.map(t => (
+          <div key={t.id} className="flex items-center gap-3 py-2 border-b border-gray-700">
+            <input type="checkbox" checked={t.done} onChange={() => toggleTask(t)} />
+            <span className={t.done ? 'line-through opacity-50' : ''}>{t.title}</span>
+            <button onClick={() => deleteTask(t.id)} className="ml-auto text-red-400 text-sm">Șterge</button>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+DECIZIA CORECTĂ PENTRU DATE:
+- "Todo app" → baza de date CreazaApp (colecția "tasks")
+- "Dashboard cu produse" → baza de date CreazaApp (colecția "products")
+- "Sistem de feedback" → baza de date CreazaApp (colecția "feedback")
+- "Galerie cu like-uri" → baza de date + imagini Pexels
+- "CRM simplu" → baza de date CreazaApp (colecții "contacts", "deals")
+- Date simple per user (preferințe, tema) → localStorage (fără API)
+
 HOSTING, DEPLOY & EXPORT:
 - Butonul "Publică" din bara de sus publică proiectul online
 - Deploy inițial: 10 credite | Redeploy: 3 credite

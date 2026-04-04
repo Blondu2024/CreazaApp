@@ -33,6 +33,7 @@ export async function GET(req: Request) {
     // Delete related data first (files, chat messages, deployments), then projects
     await supabaseAdmin.from("project_files").delete().in("project_id", ids);
     await supabaseAdmin.from("chat_messages").delete().in("project_id", ids);
+    await supabaseAdmin.from("project_data").delete().in("project_id", ids);
     await supabaseAdmin.from("deployments").delete().in("project_id", ids);
     const { error: deleteError } = await supabaseAdmin.from("projects").delete().in("id", ids);
 

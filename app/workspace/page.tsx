@@ -130,11 +130,16 @@ function stripModuleSyntax(code: string): string {
     .replace(/module\.exports\s*=\s*/g, "");
 }
 
-function buildPreviewHtml(files: { path: string; content: string }[]): string {
+function buildPreviewHtml(files: { path: string; content: string }[], projectId?: string): string {
+  const pidScript = projectId ? `<script>var PROJECT_ID="${projectId}";</script>` : "";
   const htmlFile = files.find((f) => f.path.endsWith(".html"));
   if (htmlFile) {
     // Inline external JS/CSS references — srcdoc can't load separate files
     let html = htmlFile.content;
+    // Inject PROJECT_ID for database API
+    if (pidScript) {
+      html = html.replace("<head>", `<head>\n  ${pidScript}`);
+    }
     for (const f of files) {
       if (f.path === htmlFile.path) continue;
       if (f.path.endsWith(".css")) {
@@ -163,6 +168,7 @@ function buildPreviewHtml(files: { path: string; content: string }[]): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Preview</title>
+  ${pidScript}
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
@@ -431,7 +437,7 @@ export default function WorkspacePage() {
             if (idx >= 0) allFiles[idx] = newFile;
             else allFiles.push(newFile);
           }
-          const html = buildPreviewHtml(allFiles);
+          const html = buildPreviewHtml(allFiles, currentProjectRef.current?.id);
           if (html) {
             setPreviewHtml(html);
             setPreviewUrl("preview.creazaapp.local");
@@ -514,7 +520,7 @@ export default function WorkspacePage() {
     if (savedFiles.length > 0) {
       setFiles(savedFiles);
       setActiveFile(savedFiles[0].path);
-      const html = buildPreviewHtml(savedFiles);
+      const html = buildPreviewHtml(savedFiles, currentProjectRef.current?.id);
       if (html) { setPreviewHtml(html); setPreviewUrl("preview.creazaapp.local"); }
     } else {
       setFiles([]); setActiveFile(""); setPreviewHtml(null); setPreviewUrl(null);
@@ -696,7 +702,7 @@ export default function WorkspacePage() {
     setFileHistory((prev) => prev.slice(0, -1));
     setFiles(previous);
     if (previous.length > 0) setActiveFile(previous[0].path);
-    const html = buildPreviewHtml(previous);
+    const html = buildPreviewHtml(previous, currentProjectRef.current?.id);
     if (html) { setPreviewHtml(html); setPreviewUrl("preview.creazaapp.local"); }
     addLog("[UNDO] Revenit la versiunea anterioară");
   }, [fileHistory, addLog]);
@@ -707,7 +713,7 @@ export default function WorkspacePage() {
     if (files.length === 0) return;
     setIsTerminalOpen(true);
     addLog("[preview] Se construiește preview-ul...");
-    const html = buildPreviewHtml(files);
+    const html = buildPreviewHtml(files, currentProjectRef.current?.id);
     if (!html) {
       addLog("[ERR] Nu s-a găsit fișier HTML sau JSX pentru preview");
       return;

@@ -218,7 +218,8 @@ function rewriteApiUrls(code: string): string {
   return code
     .replace(/fetch\(\s*(['"`])\/api\//g, `fetch($1${APP_BASE_URL}/api/`)
     .replace(/(['"`])\/api\/images\/search/g, `$1${APP_BASE_URL}/api/images/search`)
-    .replace(/(['"`])\/api\/eden\//g, `$1${APP_BASE_URL}/api/eden/`);
+    .replace(/(['"`])\/api\/eden\//g, `$1${APP_BASE_URL}/api/eden/`)
+    .replace(/(['"`])\/api\/db/g, `$1${APP_BASE_URL}/api/db`);
 }
 
 /**
@@ -226,15 +227,21 @@ function rewriteApiUrls(code: string): string {
  * Generates a single-page app with all files inlined.
  * Injects CreazaApp watermark for free plan users.
  */
-function buildDeploymentPackage(files: { path: string; content: string }[], userPlan: string = "free"): { path: string; content: string }[] {
+function buildDeploymentPackage(files: { path: string; content: string }[], userPlan: string = "free", projectId: string = ""): { path: string; content: string }[] {
   const showWatermark = userPlan === "free";
   const htmlFile = files.find(f => f.path.endsWith(".html"));
   const cssFiles = files.filter(f => f.path.endsWith(".css"));
   const jsFiles = files.filter(f => f.path.endsWith(".js") || f.path.endsWith(".jsx") || f.path.endsWith(".tsx"));
 
+  const projectIdScript = projectId ? `<script>var PROJECT_ID="${projectId}";<\/script>` : "";
+
   if (htmlFile) {
     // User has HTML — inline CSS/JS into it
     let html = htmlFile.content;
+    // Inject PROJECT_ID global variable
+    if (projectIdScript) {
+      html = html.replace("<head>", `<head>\n  ${projectIdScript}`);
+    }
     for (const css of cssFiles) {
       const linkRegex = new RegExp(
         `<link[^>]*href=["']${css.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'][^>]*/?>`, "gi"
@@ -284,6 +291,7 @@ function buildDeploymentPackage(files: { path: string; content: string }[], user
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>CreazaApp</title>
+  ${projectIdScript}
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
@@ -342,14 +350,15 @@ export async function deployToVercel(
   projectFiles: { path: string; content: string }[],
   subdomain: string,
   existingVercelProjectId?: string | null,
-  userPlan: string = "free"
+  userPlan: string = "free",
+  projectId: string = ""
 ): Promise<{ success: boolean; url?: string; vercelProjectId?: string; vercelDeploymentId?: string; error?: string }> {
   if (!VERCEL_TOKEN) {
     return { success: false, error: "VERCEL_TOKEN nu este configurat" };
   }
 
   // Build the deployment package (inline everything into HTML + watermark for free)
-  const deployFiles = buildDeploymentPackage(projectFiles, userPlan);
+  const deployFiles = buildDeploymentPackage(projectFiles, userPlan, projectId);
 
   // Prepare file list with SHA1 hashes
   const fileList: VercelFile[] = deployFiles.map(f => ({
@@ -505,12 +514,13 @@ export async function handleDeploy(
     return { success: false, error: "Eroare la salvarea deployment-ului" };
   }
 
-  // 7. Deploy to Vercel (pass userPlan for watermark logic)
+  // 7. Deploy to Vercel (pass userPlan for watermark logic, projectId for database)
   const result = await deployToVercel(
     files,
     subdomain,
     lastDeploy?.vercel_project_id,
-    userPlan
+    userPlan,
+    projectId
   );
 
   if (!result.success) {
