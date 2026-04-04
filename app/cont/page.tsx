@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { User, Zap, CreditCard, Clock, ArrowUpRight, ArrowDownRight, RefreshCw, Sparkles } from "lucide-react";
 import { useAuth } from "@/app/components/AuthProvider";
@@ -23,10 +23,34 @@ interface Transaction {
 }
 
 export default function AccountPage() {
-  const { user, loading, profile } = useAuth();
+  return (
+    <Suspense>
+      <AccountContent />
+    </Suspense>
+  );
+}
+
+function AccountContent() {
+  const { user, loading, profile, refreshCredits } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadingTx, setLoadingTx] = useState(true);
+
+  // After Stripe checkout, poll for updated credits (webhook may arrive with delay)
+  useEffect(() => {
+    if (!searchParams.get("success") || !user || !profile) return;
+    const initialCredits = profile.totalCredits;
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      const updated = await refreshCredits();
+      if ((updated && updated.totalCredits !== initialCredits) || attempts >= 10) {
+        clearInterval(interval);
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [searchParams, user, profile?.plan]);
 
   useEffect(() => {
     if (loading) return;
