@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "./supabase-admin";
 import crypto from "crypto";
+import { detectLibraries, generateCdnTags } from "./cdn-libraries";
 
 // ============================================
 // Constants
@@ -235,12 +236,17 @@ function buildDeploymentPackage(files: { path: string; content: string }[], user
 
   const projectIdScript = projectId ? `<script>var PROJECT_ID="${projectId}";<\/script>` : "";
 
+  // Auto-detect CDN libraries used in code
+  const cdnLibs = detectLibraries(files);
+  const cdn = generateCdnTags(cdnLibs);
+
   if (htmlFile) {
     // User has HTML — inline CSS/JS into it
     let html = htmlFile.content;
-    // Inject PROJECT_ID global variable
-    if (projectIdScript) {
-      html = html.replace("<head>", `<head>\n  ${projectIdScript}`);
+    // Inject PROJECT_ID + CDN libraries
+    if (projectIdScript || cdn.styles || cdn.scripts) {
+      html = html.replace("<head>", `<head>\n  ${projectIdScript}\n  ${cdn.styles}`);
+      html = html.replace("</head>", `  ${cdn.scripts}\n</head>`);
     }
     for (const css of cssFiles) {
       const linkRegex = new RegExp(
@@ -292,10 +298,12 @@ function buildDeploymentPackage(files: { path: string; content: string }[], user
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>CreazaApp</title>
   ${projectIdScript}
+  ${cdn.styles}
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
   <script src="https://cdn.tailwindcss.com"><\/script>
+  ${cdn.scripts}
   ${cssContent ? `<style>${cssContent}</style>` : ""}
 </head>
 <body>

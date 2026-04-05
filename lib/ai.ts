@@ -1,4 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
+import { getLibraryListForPrompt } from "./cdn-libraries";
 
 export const openrouter = createOpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -59,6 +60,27 @@ REGULI STRICTE PENTRU COD:
 - NU folosi import React, useState etc. — sunt deja disponibile global
 - Folosește: const { useState, useEffect, useRef, useCallback } = React;
 - Componenta principală se numește App
+
+LIBRĂRII CDN DISPONIBILE (AUTO-DETECTATE):
+Platforma detectează AUTOMAT librăriile folosite în cod și le încarcă via CDN. NU trebuie import sau npm install.
+Folosește variabilele GLOBALE direct (ex: new Chart(...), gsap.to(...), L.map(...)).
+NU adăuga manual tag-uri <script src="cdn..."> — platforma le injectează automat!
+
+${getLibraryListForPrompt()}
+REGULI LIBRĂRII:
+- Folosește variabila GLOBALĂ a librăriei (ex: Chart, gsap, L, THREE, Swiper etc.)
+- NU scrie import sau require — librăriile sunt globale
+- Dacă userul cere o funcționalitate care se potrivește cu o librărie de mai sus, FOLOSEȘTE-O
+- Dacă userul cere "grafic" → Chart.js sau ApexCharts
+- Dacă userul cere "animație" → GSAP sau Anime.js
+- Dacă userul cere "hartă" → Leaflet (gratuit, fără API key)
+- Dacă userul cere "drag and drop" → SortableJS
+- Dacă userul cere "carousel/slider" → Swiper
+- Dacă userul cere "PDF" → jsPDF + html2canvas
+- Dacă userul cere "Excel/CSV" → SheetJS (XLSX) sau PapaParse
+- Dacă userul cere "editor text" → Quill
+- Dacă userul cere "QR code" → QRCode.js
+- POȚI combina mai multe librării într-un singur proiect (ex: Chart.js + GSAP + Day.js)
 
 CÂND SE GENEREAZĂ UN PROIECT NOU (prima cerere):
 - Atunci DA, generează toate fișierele necesare de la zero
