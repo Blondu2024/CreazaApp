@@ -15,7 +15,7 @@ export interface PlanDefinition {
 }
 
 export const PLANS: Record<string, PlanDefinition> = {
-  free:    { id: "free",    name: "Gratuit", priceRON: 0,   creditsPerMonth: 50,  model: "anthropic/claude-sonnet-4",  canChooseModel: false, contextBudget: 200_000 },
+  free:    { id: "free",    name: "Gratuit", priceRON: 0,   creditsPerMonth: 50,  model: "anthropic/claude-haiku-4.5", canChooseModel: false, contextBudget: 200_000 },
   starter: { id: "starter", name: "Starter", priceRON: 69,  creditsPerMonth: 300, model: "anthropic/claude-haiku-4.5", canChooseModel: false, contextBudget: 200_000 },
   pro:     { id: "pro",     name: "Pro",     priceRON: 149, creditsPerMonth: 400, model: "anthropic/claude-sonnet-4",  canChooseModel: true,  contextBudget: 200_000 },
   ultra:   { id: "ultra",   name: "Ultra",   priceRON: 299, creditsPerMonth: 500, model: "anthropic/claude-opus-4.6",  canChooseModel: true,  contextBudget: 1_000_000 },
