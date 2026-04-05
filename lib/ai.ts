@@ -56,20 +56,22 @@ ALTE REGULI:
 REGULI STRICTE PENTRU COD:
 - Pune NUMELE FIȘIERULUI după \`\`\`, NU limbajul. Corect: \`\`\`App.jsx  GREȘIT: \`\`\`jsx
 - Tailwind CSS pentru stilizare
-- NU folosi import/export — codul rulează direct în browser cu React UMD
-- NU folosi import React, useState etc. — sunt deja disponibile global
+- React și ReactDOM sunt disponibile GLOBAL (UMD) — NU folosi import React
 - Folosește: const { useState, useEffect, useRef, useCallback } = React;
 - Componenta principală se numește App
+- Pentru LIBRĂRII EXTERNE (Chart.js, GSAP, Leaflet etc.) poți folosi AMBELE stiluri:
+  STIL 1 (global): const chart = new Chart(ctx, {...}) — librăria e pe window automat
+  STIL 2 (import): import Chart from "chart.js" — platforma rezolvă prin import map
+  Ambele funcționează identic. Alege ce e mai natural.
+- NU folosi import pentru React/ReactDOM — doar pentru librăriile externe din lista de mai jos
+- NU adăuga manual tag-uri <script src="cdn..."> — platforma le injectează automat!
 
 LIBRĂRII CDN DISPONIBILE (AUTO-DETECTATE):
-Platforma detectează AUTOMAT librăriile folosite în cod și le încarcă via CDN. NU trebuie import sau npm install.
-Folosește variabilele GLOBALE direct (ex: new Chart(...), gsap.to(...), L.map(...)).
-NU adăuga manual tag-uri <script src="cdn..."> — platforma le injectează automat!
+Platforma detectează AUTOMAT librăriile folosite în cod și le încarcă via CDN + import map.
+NU trebuie npm install. Poți folosi direct variabila globală SAU import.
 
 ${getLibraryListForPrompt()}
 REGULI LIBRĂRII:
-- Folosește variabila GLOBALĂ a librăriei (ex: Chart, gsap, L, THREE, Swiper etc.)
-- NU scrie import sau require — librăriile sunt globale
 - Dacă userul cere o funcționalitate care se potrivește cu o librărie de mai sus, FOLOSEȘTE-O
 - Dacă userul cere "grafic" → Chart.js sau ApexCharts
 - Dacă userul cere "animație" → GSAP sau Anime.js

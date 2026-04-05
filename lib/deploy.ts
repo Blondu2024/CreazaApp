@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "./supabase-admin";
 import crypto from "crypto";
-import { detectLibraries, generateCdnTags } from "./cdn-libraries";
+import { detectLibraries, generateCdnTags, CDN_LIBRARIES } from "./cdn-libraries";
 
 // ============================================
 // Constants
@@ -243,9 +243,9 @@ function buildDeploymentPackage(files: { path: string; content: string }[], user
   if (htmlFile) {
     // User has HTML — inline CSS/JS into it
     let html = htmlFile.content;
-    // Inject PROJECT_ID + CDN libraries
-    if (projectIdScript || cdn.styles || cdn.scripts) {
-      html = html.replace("<head>", `<head>\n  ${projectIdScript}\n  ${cdn.styles}`);
+    // Inject PROJECT_ID + CDN libraries + import map
+    if (projectIdScript || cdn.styles || cdn.scripts || cdn.importMap) {
+      html = html.replace("<head>", `<head>\n  ${projectIdScript}\n  ${cdn.importMap}\n  ${cdn.styles}`);
       html = html.replace("</head>", `  ${cdn.scripts}\n</head>`);
     }
     for (const css of cssFiles) {
@@ -284,8 +284,15 @@ function buildDeploymentPackage(files: { path: string; content: string }[], user
   const jsxFile = jsFiles[0];
   if (!jsxFile) return files.map(f => ({ path: f.path, content: f.content }));
 
+  // Package names that have import map entries — keep their imports intact
+  const esmPackages = new Set(
+    CDN_LIBRARIES.flatMap(lib => lib.esm ? Object.keys(lib.esm) : [])
+  );
+
   const cleanCode = jsxFile.content
-    .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, "")
+    .replace(/^import\s+.*?from\s+['"](.*?)['"];?\s*$/gm, (match, pkg) => {
+      return esmPackages.has(pkg) ? match : "";
+    })
     .replace(/^import\s+['"].*?['"];?\s*$/gm, "")
     .replace(/^export\s+default\s+/gm, "")
     .replace(/^export\s+/gm, "")
@@ -298,6 +305,7 @@ function buildDeploymentPackage(files: { path: string; content: string }[], user
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>CreazaApp</title>
   ${projectIdScript}
+  ${cdn.importMap}
   ${cdn.styles}
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>

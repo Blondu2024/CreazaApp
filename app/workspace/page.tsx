@@ -13,7 +13,7 @@ import { Terminal } from "../components/terminal/Terminal";
 import { models } from "../components/models";
 import { estimateTokens } from "@/lib/ai";
 import { isModelFree, PLANS, PRO_MODELS, ULTRA_MODELS } from "@/lib/credits";
-import { detectLibraries, generateCdnTags } from "@/lib/cdn-libraries";
+import { detectLibraries, generateCdnTags, CDN_LIBRARIES } from "@/lib/cdn-libraries";
 import { SummaryModal } from "../components/workspace/SummaryModal";
 import { DeployModal } from "../components/DeployModal";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -122,9 +122,17 @@ function parseDeleteCommands(content: string): string[] {
   return deletes;
 }
 
+// Package names that have import map entries — keep their imports intact
+const ESM_PACKAGES = new Set(
+  CDN_LIBRARIES.flatMap(lib => lib.esm ? Object.keys(lib.esm) : [])
+);
+
 function stripModuleSyntax(code: string): string {
   return code
-    .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, "")
+    .replace(/^import\s+.*?from\s+['"](.*?)['"];?\s*$/gm, (match, pkg) => {
+      // Keep imports for CDN libraries (resolved by import map)
+      return ESM_PACKAGES.has(pkg) ? match : "";
+    })
     .replace(/^import\s+['"].*?['"];?\s*$/gm, "")
     .replace(/^export\s+default\s+/gm, "")
     .replace(/^export\s+/gm, "")
@@ -141,9 +149,9 @@ function buildPreviewHtml(files: { path: string; content: string }[], projectId?
   if (htmlFile) {
     // Inline external JS/CSS references — srcdoc can't load separate files
     let html = htmlFile.content;
-    // Inject PROJECT_ID + CDN libraries
-    if (pidScript || cdn.styles || cdn.scripts) {
-      html = html.replace("<head>", `<head>\n  ${pidScript}\n  ${cdn.styles}`);
+    // Inject PROJECT_ID + CDN libraries + import map
+    if (pidScript || cdn.styles || cdn.scripts || cdn.importMap) {
+      html = html.replace("<head>", `<head>\n  ${pidScript}\n  ${cdn.importMap}\n  ${cdn.styles}`);
       html = html.replace("</head>", `  ${cdn.scripts}\n</head>`);
     }
     for (const f of files) {
@@ -175,6 +183,7 @@ function buildPreviewHtml(files: { path: string; content: string }[], projectId?
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Preview</title>
   ${pidScript}
+  ${cdn.importMap}
   ${cdn.styles}
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>

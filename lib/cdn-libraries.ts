@@ -12,6 +12,8 @@ export interface CdnLibrary {
   scripts: string[];
   /** Optional CDN CSS URL(s) */
   styles?: string[];
+  /** ESM import map: package name → esm.sh URL */
+  esm?: Record<string, string>;
   /** Short description for AI prompt */
   description: string;
   /** Category for organization */
@@ -25,6 +27,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["Chart"],
     detect: /\bnew\s+Chart\b|\bChart\.\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"],
+    esm: { "chart.js": "https://esm.sh/chart.js@4", "chart.js/auto": "https://esm.sh/chart.js@4/auto" },
     description: "Grafice interactive (bar, line, pie, radar, doughnut etc.)",
     category: "charts",
   },
@@ -34,6 +37,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bnew\s+ApexCharts\b|\bApexCharts\.\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/apexcharts@3/dist/apexcharts.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/apexcharts@3/dist/apexcharts.css"],
+    esm: { "apexcharts": "https://esm.sh/apexcharts@3" },
     description: "Grafice moderne interactive cu animatii (area, heatmap, treemap etc.)",
     category: "charts",
   },
@@ -42,6 +46,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["d3"],
     detect: /\bd3\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"],
+    esm: { "d3": "https://esm.sh/d3@7" },
     description: "Vizualizari de date complexe si custom (SVG-based)",
     category: "charts",
   },
@@ -52,6 +57,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["THREE"],
     detect: /\bTHREE\.\w+|\bnew\s+THREE\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/three@0.170/build/three.min.js"],
+    esm: { "three": "https://esm.sh/three@0.170" },
     description: "Grafice 3D, scene WebGL, modele 3D, animatii 3D",
     category: "3d",
   },
@@ -62,6 +68,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["gsap"],
     detect: /\bgsap\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"],
+    esm: { "gsap": "https://esm.sh/gsap@3" },
     description: "Animatii profesionale (timeline, scroll, morphing, stagger)",
     category: "animation",
   },
@@ -73,6 +80,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
       "https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js",
       "https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js",
     ],
+    esm: { "gsap": "https://esm.sh/gsap@3", "gsap/ScrollTrigger": "https://esm.sh/gsap@3/ScrollTrigger" },
     description: "Animatii declansate de scroll (parallax, pin, scrub)",
     category: "animation",
   },
@@ -81,6 +89,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["anime"],
     detect: /\banime\s*\(|\banime\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/animejs@3/lib/anime.min.js"],
+    esm: { "animejs": "https://esm.sh/animejs@3" },
     description: "Animatii fluide pentru CSS, SVG, DOM si JS objects",
     category: "animation",
   },
@@ -89,6 +98,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["lottie"],
     detect: /\blottie\.\w+|\blottie\.loadAnimation/,
     scripts: ["https://cdn.jsdelivr.net/npm/lottie-web@5/build/player/lottie.min.js"],
+    esm: { "lottie-web": "https://esm.sh/lottie-web@5" },
     description: "Animatii After Effects exportate ca JSON (Lottie files)",
     category: "animation",
   },
@@ -98,6 +108,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bAOS\.init\b|\bdata-aos\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/aos@2/dist/aos.js"],
     styles: ["https://cdn.jsdelivr.net/npm/aos@2/dist/aos.css"],
+    esm: { "aos": "https://esm.sh/aos@2" },
     description: "Animatii simple la scroll (fade, slide, zoom) cu atribute data-aos",
     category: "animation",
   },
@@ -106,6 +117,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["Typed"],
     detect: /\bnew\s+Typed\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/typed.js@2/dist/typed.umd.js"],
+    esm: { "typed.js": "https://esm.sh/typed.js@2" },
     description: "Efect de typewriter/typing animat",
     category: "animation",
   },
@@ -114,6 +126,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["confetti"],
     detect: /\bconfetti\s*\(/,
     scripts: ["https://cdn.jsdelivr.net/npm/canvas-confetti@1/dist/confetti.browser.min.js"],
+    esm: { "canvas-confetti": "https://esm.sh/canvas-confetti@1" },
     description: "Efecte de confetti/celebrare",
     category: "animation",
   },
@@ -122,6 +135,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["countUp", "CountUp"],
     detect: /\bnew\s+countUp\.CountUp\b|\bnew\s+CountUp\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/countup.js@2/dist/countUp.umd.min.js"],
+    esm: { "countup.js": "https://esm.sh/countup.js@2" },
     description: "Animatie numar care creste (counter animation)",
     category: "animation",
   },
@@ -133,6 +147,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bL\.map\b|\bL\.marker\b|\bL\.tileLayer\b|\bL\.polygon\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/leaflet@1/dist/leaflet.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/leaflet@1/dist/leaflet.min.css"],
+    esm: { "leaflet": "https://esm.sh/leaflet@1" },
     description: "Harti interactive open-source (alternative la Google Maps, gratuit)",
     category: "maps",
   },
@@ -142,6 +157,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bmapboxgl\.\w+|\bnew\s+mapboxgl\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/mapbox-gl@3/dist/mapbox-gl.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/mapbox-gl@3/dist/mapbox-gl.min.css"],
+    esm: { "mapbox-gl": "https://esm.sh/mapbox-gl@3" },
     description: "Harti 3D profesionale cu stilizare custom (necesita API key)",
     category: "maps",
   },
@@ -153,6 +169,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bnew\s+Swiper\b|\bSwiper\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"],
+    esm: { "swiper": "https://esm.sh/swiper@11" },
     description: "Carousel/slider modern cu touch, responsive, efecte 3D",
     category: "ui",
   },
@@ -161,6 +178,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["Sortable"],
     detect: /\bnew\s+Sortable\b|\bSortable\.create\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/sortablejs@1/Sortable.min.js"],
+    esm: { "sortablejs": "https://esm.sh/sortablejs@1" },
     description: "Drag & drop pentru liste, grid-uri, kanban boards",
     category: "ui",
   },
@@ -173,6 +191,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
       "https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy-bundle.umd.min.js",
     ],
     styles: ["https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy.css"],
+    esm: { "tippy.js": "https://esm.sh/tippy.js@6", "@popperjs/core": "https://esm.sh/@popperjs/core@2" },
     description: "Tooltip-uri elegante si popover-uri",
     category: "ui",
   },
@@ -182,6 +201,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bGLightbox\s*\(|\bnew\s+GLightbox\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/glightbox@3/dist/js/glightbox.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/glightbox@3/dist/css/glightbox.min.css"],
+    esm: { "glightbox": "https://esm.sh/glightbox@3" },
     description: "Lightbox pentru galerii foto/video (fullscreen, zoom, slide)",
     category: "ui",
   },
@@ -190,6 +210,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["Masonry"],
     detect: /\bnew\s+Masonry\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/masonry-layout@4/dist/masonry.pkgd.min.js"],
+    esm: { "masonry-layout": "https://esm.sh/masonry-layout@4" },
     description: "Layout grid tip Pinterest (cascading grid)",
     category: "ui",
   },
@@ -199,6 +220,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bnew\s+Notyf\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css"],
+    esm: { "notyf": "https://esm.sh/notyf@3" },
     description: "Notificari toast minimale si elegante",
     category: "ui",
   },
@@ -207,6 +229,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["Alpine"],
     detect: /\bx-data\b|\bx-show\b|\bx-on\b|\bAlpine\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"],
+    esm: { "alpinejs": "https://esm.sh/alpinejs@3" },
     description: "Interactivitate declarativa direct in HTML (ca un mini Vue)",
     category: "ui",
   },
@@ -217,6 +240,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["dayjs"],
     detect: /\bdayjs\s*\(|\bdayjs\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"],
+    esm: { "dayjs": "https://esm.sh/dayjs@1" },
     description: "Lucru cu date si ore (format, parse, diff, relative time)",
     category: "utils",
   },
@@ -225,6 +249,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["_"],
     detect: /\b_\.(debounce|throttle|cloneDeep|groupBy|sortBy|uniq|merge|chunk|flatten|pick|omit)\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/lodash@4/lodash.min.js"],
+    esm: { "lodash": "https://esm.sh/lodash-es@4" },
     description: "Utilitare JS (debounce, throttle, deep clone, groupBy etc.)",
     category: "utils",
   },
@@ -233,6 +258,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["axios"],
     detect: /\baxios\.\w+|\baxios\s*\(/,
     scripts: ["https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"],
+    esm: { "axios": "https://esm.sh/axios@1" },
     description: "Client HTTP avansat (interceptors, cancel, progress)",
     category: "utils",
   },
@@ -241,6 +267,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["marked"],
     detect: /\bmarked\.\w+|\bmarked\s*\(/,
     scripts: ["https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"],
+    esm: { "marked": "https://esm.sh/marked@15" },
     description: "Converteste Markdown in HTML",
     category: "utils",
   },
@@ -249,6 +276,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["DOMPurify"],
     detect: /\bDOMPurify\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"],
+    esm: { "dompurify": "https://esm.sh/dompurify@3" },
     description: "Sanitizeaza HTML (previne XSS) — foloseste cu marked/innerHTML",
     category: "utils",
   },
@@ -257,6 +285,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["QRCode"],
     detect: /\bnew\s+QRCode\b|\bQRCode\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/qrcodejs@1/qrcode.min.js"],
+    esm: { "qrcodejs": "https://esm.sh/qrcodejs@1" },
     description: "Genereaza coduri QR in browser",
     category: "utils",
   },
@@ -265,6 +294,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["html2canvas"],
     detect: /\bhtml2canvas\s*\(/,
     scripts: ["https://cdn.jsdelivr.net/npm/html2canvas@1/dist/html2canvas.min.js"],
+    esm: { "html2canvas": "https://esm.sh/html2canvas@1" },
     description: "Screenshot DOM element ca imagine (export PNG/JPG)",
     category: "utils",
   },
@@ -273,6 +303,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["jspdf", "jsPDF"],
     detect: /\bnew\s+jspdf\.jsPDF\b|\bnew\s+jsPDF\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/jspdf@2/dist/jspdf.umd.min.js"],
+    esm: { "jspdf": "https://esm.sh/jspdf@2" },
     description: "Genereaza fisiere PDF in browser",
     category: "utils",
   },
@@ -281,6 +312,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["saveAs"],
     detect: /\bsaveAs\s*\(/,
     scripts: ["https://cdn.jsdelivr.net/npm/file-saver@2/dist/FileSaver.min.js"],
+    esm: { "file-saver": "https://esm.sh/file-saver@2" },
     description: "Salveaza fisiere din browser (download programatic)",
     category: "utils",
   },
@@ -289,6 +321,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["Papa"],
     detect: /\bPapa\.parse\b|\bPapa\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js"],
+    esm: { "papaparse": "https://esm.sh/papaparse@5" },
     description: "Parseaza si genereaza fisiere CSV",
     category: "data",
   },
@@ -297,6 +330,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["XLSX"],
     detect: /\bXLSX\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/xlsx@0/dist/xlsx.full.min.js"],
+    esm: { "xlsx": "https://esm.sh/xlsx@0" },
     description: "Citeste si genereaza fisiere Excel (xlsx, xls, csv)",
     category: "data",
   },
@@ -307,6 +341,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["Howl", "Howler"],
     detect: /\bnew\s+Howl\b|\bHowler\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/howler@2/dist/howler.min.js"],
+    esm: { "howler": "https://esm.sh/howler@2" },
     description: "Player audio avansat (sprite, fade, spatial audio)",
     category: "media",
   },
@@ -316,6 +351,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bnew\s+Plyr\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/plyr@3/dist/plyr.css"],
+    esm: { "plyr": "https://esm.sh/plyr@3" },
     description: "Player video/audio modern si customizabil",
     category: "media",
   },
@@ -325,6 +361,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bnew\s+Cropper\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.css"],
+    esm: { "cropperjs": "https://esm.sh/cropperjs@1" },
     description: "Crop/resize imagini in browser (avatar upload, image editor)",
     category: "media",
   },
@@ -335,6 +372,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["mermaid"],
     detect: /\bmermaid\.\w+|\bclass="mermaid"/,
     scripts: ["https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"],
+    esm: { "mermaid": "https://esm.sh/mermaid@11" },
     description: "Diagrame din text (flowchart, sequence, gantt, ER)",
     category: "charts",
   },
@@ -346,6 +384,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bkatex\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/katex@0/dist/katex.min.js"],
     styles: ["https://cdn.jsdelivr.net/npm/katex@0/dist/katex.min.css"],
+    esm: { "katex": "https://esm.sh/katex@0" },
     description: "Randare formule matematice (LaTeX) in browser",
     category: "utils",
   },
@@ -357,6 +396,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     detect: /\bnew\s+Quill\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"],
     styles: ["https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css"],
+    esm: { "quill": "https://esm.sh/quill@2" },
     description: "Editor de text rich (WYSIWYG) — bold, italic, liste, imagini",
     category: "ui",
   },
@@ -367,6 +407,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["Fuse"],
     detect: /\bnew\s+Fuse\b/,
     scripts: ["https://cdn.jsdelivr.net/npm/fuse.js@7/dist/fuse.min.js"],
+    esm: { "fuse.js": "https://esm.sh/fuse.js@7" },
     description: "Cautare fuzzy client-side (search bar cu toleranta la typo-uri)",
     category: "utils",
   },
@@ -377,6 +418,7 @@ export const CDN_LIBRARIES: CdnLibrary[] = [
     globals: ["interact"],
     detect: /\binteract\s*\(|\binteract\.\w+/,
     scripts: ["https://cdn.jsdelivr.net/npm/interactjs@1/dist/interact.min.js"],
+    esm: { "interactjs": "https://esm.sh/interactjs@1" },
     description: "Drag, resize, rotate elements — mai avansat ca SortableJS",
     category: "ui",
   },
@@ -426,16 +468,22 @@ export function detectLibraries(files: { path: string; content: string }[]): Cdn
 
 /**
  * Generate HTML tags for detected libraries.
- * Returns { styles: string, scripts: string } to inject in <head> and before </body>.
+ * Returns { styles: string, scripts: string, importMap: string } to inject in HTML.
  */
-export function generateCdnTags(libraries: CdnLibrary[]): { styles: string; scripts: string } {
+export function generateCdnTags(libraries: CdnLibrary[]): { styles: string; scripts: string; importMap: string } {
   // Deduplicate URLs across libraries
   const styleUrls = new Set<string>();
   const scriptUrls = new Set<string>();
+  const esmImports: Record<string, string> = {};
 
   for (const lib of libraries) {
     lib.styles?.forEach(url => styleUrls.add(url));
     lib.scripts.forEach(url => scriptUrls.add(url));
+    if (lib.esm) {
+      for (const [pkg, url] of Object.entries(lib.esm)) {
+        esmImports[pkg] = url;
+      }
+    }
   }
 
   const styles = Array.from(styleUrls)
@@ -446,7 +494,12 @@ export function generateCdnTags(libraries: CdnLibrary[]): { styles: string; scri
     .map(url => `<script src="${url}"><\/script>`)
     .join("\n  ");
 
-  return { styles, scripts };
+  // Generate import map so `import X from "lib"` works in browser
+  const importMap = Object.keys(esmImports).length > 0
+    ? `<script type="importmap">\n  ${JSON.stringify({ imports: esmImports }, null, 2).replace(/\n/g, "\n  ")}\n  <\/script>`
+    : "";
+
+  return { styles, scripts, importMap };
 }
 
 /**
