@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./components/AuthProvider";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { ToastProvider } from "./components/Toast";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -83,6 +84,7 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <ThemeProvider><ToastProvider><AuthProvider><TooltipProvider>{children}</TooltipProvider></AuthProvider></ToastProvider></ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
