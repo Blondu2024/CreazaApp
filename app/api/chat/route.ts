@@ -1,6 +1,6 @@
 import { streamText, convertToModelMessages, tool, stepCountIs, type TextPart, type ImagePart } from "ai";
 import { z } from "zod";
-import { openrouter, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext, estimateTokens } from "@/lib/ai";
+import { getModelProvider, DEFAULT_MODEL, SYSTEM_PROMPT, buildSystemPromptWithContext, estimateTokens } from "@/lib/ai";
 import { PLANS, PRO_MODELS, ULTRA_MODELS, getModelCostOrMinimum, estimateCreditCost, checkCredits, deductCredits, getUserCredits, ensureProfile } from "@/lib/credits";
 import { rateLimit, rateLimitResponse, getClientIP } from "@/lib/rate-limit";
 import { verifyAuth } from "@/lib/verify-auth";
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
 
       try {
         const result = streamText({
-          model: openrouter.chat(tryModel),
+          model: getModelProvider(tryModel),
           system: systemPrompt,
           messages: modelMessages,
           stopWhen: stepCountIs(3),

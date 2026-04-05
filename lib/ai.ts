@@ -1,10 +1,33 @@
 import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { getLibraryListForPrompt } from "./cdn-libraries";
 
 export const openrouter = createOpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: "https://openrouter.ai/api/v1",
 });
+
+export const anthropic = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// Map OpenRouter model IDs to Anthropic native IDs
+// OpenRouter uses dots (4.5), Anthropic uses hyphens (4-5)
+function toAnthropicModelId(openrouterModel: string): string {
+  const stripped = openrouterModel.replace("anthropic/", "");
+  const mapped = stripped.replace(/\./g, "-"); // 4.5 → 4-5, 4.6 → 4-6
+  // "claude-sonnet-4" needs "-0" suffix for Anthropic API
+  if (mapped === "claude-sonnet-4") return "claude-sonnet-4-0";
+  return mapped;
+}
+
+// Route model to correct provider — Claude goes direct, rest via OpenRouter
+export function getModelProvider(model: string) {
+  if (model.startsWith("anthropic/") && process.env.ANTHROPIC_API_KEY) {
+    return anthropic(toAnthropicModelId(model));
+  }
+  return openrouter.chat(model);
+}
 
 export const DEFAULT_MODEL = "qwen/qwen3.6-plus-preview:free";
 
