@@ -291,26 +291,30 @@ export async function saveVersion(
   files: { path: string; content: string }[],
   label?: string
 ): Promise<void> {
-  // Get next version number
-  const { data: last } = await supabase
-    .from("project_versions")
-    .select("version_number")
-    .eq("project_id", projectId)
-    .order("version_number", { ascending: false })
-    .limit(1)
-    .single();
+  try {
+    // Get next version number
+    const { data: last } = await supabase
+      .from("project_versions")
+      .select("version_number")
+      .eq("project_id", projectId)
+      .order("version_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  const nextVersion = (last?.version_number || 0) + 1;
+    const nextVersion = (last?.version_number || 0) + 1;
 
-  const { error } = await supabase
-    .from("project_versions")
-    .insert({
-      project_id: projectId,
-      version_number: nextVersion,
-      files: JSON.stringify(files),
-      label: label?.slice(0, 100) || `Versiunea ${nextVersion}`,
-    });
-  if (error) console.error("saveVersion:", error);
+    const { error } = await supabase
+      .from("project_versions")
+      .insert({
+        project_id: projectId,
+        version_number: nextVersion,
+        files,
+        label: label?.slice(0, 100) || `Versiunea ${nextVersion}`,
+      });
+    if (error) console.error("saveVersion:", error);
+  } catch (err) {
+    console.error("saveVersion failed:", err);
+  }
 }
 
 export async function listVersions(projectId: string): Promise<ProjectVersion[]> {

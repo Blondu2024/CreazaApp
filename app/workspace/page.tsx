@@ -506,10 +506,10 @@ export default function WorkspacePage() {
           const summary = buildContextSummary(proj.name, allFiles, allMsgs);
           saveContextSummary(proj.id, summary);
 
-          // Auto-save version after AI generates code
+          // Auto-save version after AI generates code (fire-and-forget, never blocks)
           const lastUserMsg = allChatRef.current.filter(m => m.role === "user").pop();
           const versionLabel = lastUserMsg?.content?.slice(0, 100) || undefined;
-          saveVersion(proj.id, allFiles, versionLabel);
+          saveVersion(proj.id, allFiles, versionLabel).catch(() => {});
         }
       }
 
