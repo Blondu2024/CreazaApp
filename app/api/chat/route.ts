@@ -133,6 +133,7 @@ export async function POST(req: Request) {
           model: getModelProvider(tryModel),
           system: systemPrompt,
           messages: modelMessages,
+          maxTokens: 16384,
           stopWhen: stepCountIs(3),
           tools: {
         searchImages: tool({
