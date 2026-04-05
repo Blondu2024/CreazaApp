@@ -158,8 +158,7 @@ export function ChatMessages({
       {lastCreditCost !== null && (
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/20">
           <Zap className="w-3 h-3 text-[#f59e0b]" />
-          <span className="text-xs text-[#f59e0b]">{lastCreditCost} credite consumate</span>
-          <Link href="/preturi" className="text-xs text-[#6366f1] underline ml-auto">Cumpara credite</Link>
+          <span className="text-xs text-[#f59e0b]">-{lastCreditCost} credite</span>
         </div>
       )}
       {chatError && (
