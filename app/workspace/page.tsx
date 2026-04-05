@@ -22,7 +22,7 @@ import {
   Terminal as TerminalIcon, RefreshCw, ExternalLink,
   Monitor, Smartphone, Coffee, CheckSquare, ShoppingBag,
   User, FolderTree, Plus, X, Loader2, Globe, Download,
-  Rocket, Check, Undo2, Zap,
+  Rocket, Check, Undo2, Zap, Share2, History, Copy, Link2,
 } from "lucide-react";
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -41,7 +41,8 @@ import {
   createProject, listProjects, deleteProject, updateProjectTimestamp, renameProject,
   saveFiles, loadFiles, saveChatMessage, loadChatHistory, clearChatHistory,
   saveContextSummary, buildContextSummary,
-  type Project,
+  saveVersion, listVersions, loadVersionFiles,
+  type Project, type ProjectVersion,
 } from "@/lib/supabase";
 
 // Extract a short, meaningful project name from user's first message
@@ -284,6 +285,17 @@ export default function WorkspacePage() {
   const [gitHubLoading, setGitHubLoading] = useState(false);
   const [gitHubResult, setGitHubResult] = useState<{ url: string; name: string } | null>(null);
 
+  // Share state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  // Version history state
+  const [showVersions, setShowVersions] = useState(false);
+  const [versions, setVersions] = useState<ProjectVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+
   const [fileHistory, setFileHistory] = useState<{ path: string; content: string }[][]>([]); // Undo stack
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -493,6 +505,11 @@ export default function WorkspacePage() {
           }
           const summary = buildContextSummary(proj.name, allFiles, allMsgs);
           saveContextSummary(proj.id, summary);
+
+          // Auto-save version after AI generates code
+          const lastUserMsg = allChatRef.current.filter(m => m.role === "user").pop();
+          const versionLabel = lastUserMsg?.content?.slice(0, 100) || undefined;
+          saveVersion(proj.id, allFiles, versionLabel);
         }
       }
 
@@ -547,6 +564,7 @@ export default function WorkspacePage() {
     setAllChatMessages(chatHistory.map((m) => ({ role: m.role, content: m.content })));
     setMessages([]);
     setShowProjects(false);
+    setShareToken(null); setShowShareModal(false); setShowVersions(false);
     setProjects(await listProjects(userRef.current?.id));
   }, [setMessages]);
 
@@ -723,6 +741,79 @@ export default function WorkspacePage() {
     if (html) { setPreviewHtml(html); setPreviewUrl("preview.creazaapp.local"); }
     addLog("[UNDO] Revenit la versiunea anterioară");
   }, [fileHistory, addLog]);
+
+  // Share handlers
+  const handleCreateShare = useCallback(async () => {
+    if (!currentProjectRef.current || shareLoading) return;
+    setShareLoading(true);
+    try {
+      const token = await getAccessToken();
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ projectId: currentProjectRef.current.id }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        setShareToken(data.token);
+        addLog(`[SHARE] Link creat: ${window.location.origin}/share/${data.token}`);
+      } else {
+        toast(data.error || "Eroare la crearea link-ului", "error");
+      }
+    } catch {
+      toast("Eroare de conexiune", "error");
+    }
+    setShareLoading(false);
+  }, [shareLoading, addLog, toast]);
+
+  const handleDeactivateShare = useCallback(async () => {
+    if (!currentProjectRef.current) return;
+    try {
+      const token = await getAccessToken();
+      await fetch("/api/share", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ projectId: currentProjectRef.current.id }),
+      });
+      setShareToken(null);
+      addLog("[SHARE] Link dezactivat");
+    } catch {
+      toast("Eroare", "error");
+    }
+  }, [addLog, toast]);
+
+  const handleCopyShareLink = useCallback(() => {
+    if (!shareToken) return;
+    navigator.clipboard.writeText(`${window.location.origin}/share/${shareToken}`);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  }, [shareToken]);
+
+  // Version handlers
+  const handleLoadVersions = useCallback(async () => {
+    if (!currentProjectRef.current) return;
+    setVersionsLoading(true);
+    const v = await listVersions(currentProjectRef.current.id);
+    setVersions(v);
+    setVersionsLoading(false);
+    setShowVersions(true);
+  }, []);
+
+  const handleRestoreVersion = useCallback(async (versionId: string) => {
+    const versionFiles = await loadVersionFiles(versionId);
+    if (versionFiles.length === 0) return;
+    // Save current state to undo stack
+    if (filesRef.current.length > 0) {
+      setFileHistory((prev) => [...prev.slice(-9), filesRef.current]);
+    }
+    setFiles(versionFiles);
+    setActiveFile(versionFiles[0].path);
+    const html = buildPreviewHtml(versionFiles, currentProjectRef.current?.id);
+    if (html) { setPreviewHtml(html); setPreviewUrl("preview.creazaapp.local"); }
+    setShowVersions(false);
+    addLog("[VERSIUNE] Restaurat versiunea anterioară");
+    toast("Versiune restaurată", "success");
+  }, [addLog, toast]);
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
@@ -968,6 +1059,87 @@ export default function WorkspacePage() {
           <button onClick={() => files.length > 0 && downloadZip(files)} disabled={!hasCode} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card rounded-lg disabled:opacity-30">
             <Download className="w-4 h-4" />
           </button>
+          {/* Share button */}
+          <div className="relative hidden md:block">
+            <button onClick={() => { setShowShareModal(!showShareModal); if (!shareToken && !showShareModal) handleCreateShare(); }} disabled={!currentProject} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card rounded-lg disabled:opacity-30">
+              <Share2 className="w-4 h-4" />
+            </button>
+            {showShareModal && (
+              <div className="absolute right-0 top-full mt-1 w-[340px] bg-card border border-border rounded-lg shadow-xl z-50 p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Partajeaza proiectul</h3>
+                {shareLoading ? (
+                  <div className="flex items-center gap-2 py-3">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#6366f1]" />
+                    <span className="text-xs text-muted-foreground">Se creeaza link-ul...</span>
+                  </div>
+                ) : shareToken ? (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        readOnly
+                        value={`${typeof window !== "undefined" ? window.location.origin : ""}/share/${shareToken}`}
+                        className="flex-1 bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-foreground outline-none select-all"
+                      />
+                      <button onClick={handleCopyShareLink} className="flex items-center gap-1 bg-[#6366f1] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90">
+                        {shareCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Oricine cu link-ul poate vedea aplicatia (read-only).</p>
+                    <div className="flex items-center justify-between">
+                      <button onClick={handleDeactivateShare} className="text-xs text-red-400 hover:text-red-300">Dezactiveaza link</button>
+                      <button onClick={() => setShowShareModal(false)} className="text-xs text-muted-foreground hover:text-foreground">Inchide</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-2">
+                    <button onClick={handleCreateShare} className="w-full flex items-center justify-center gap-2 bg-[#6366f1] text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90">
+                      <Link2 className="w-4 h-4" />
+                      Creeaza link de partajare
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {/* Version history button */}
+          <div className="relative hidden md:block">
+            <button onClick={handleLoadVersions} disabled={!currentProject} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card rounded-lg disabled:opacity-30">
+              <History className="w-4 h-4" />
+            </button>
+            {showVersions && (
+              <div className="absolute right-0 top-full mt-1 w-[320px] bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+                <div className="flex items-center justify-between p-3 border-b border-border">
+                  <h3 className="text-sm font-semibold text-foreground">Istoric versiuni</h3>
+                  <button onClick={() => setShowVersions(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                </div>
+                <ScrollArea className="max-h-[300px]">
+                  {versionsLoading ? (
+                    <div className="flex items-center gap-2 p-4">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#6366f1]" />
+                      <span className="text-xs text-muted-foreground">Se incarca...</span>
+                    </div>
+                  ) : versions.length === 0 ? (
+                    <p className="text-xs text-muted-foreground p-4 text-center">Nicio versiune inca. Versiunile se salveaza automat cand AI-ul genereaza cod.</p>
+                  ) : (
+                    versions.map((v) => (
+                      <div key={v.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-accent transition-colors border-b border-border last:border-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-[#6366f1]">v{v.version_number}</span>
+                            <span className="text-[10px] text-muted-foreground">{new Date(v.created_at).toLocaleString("ro-RO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground truncate mt-0.5">{v.label}</p>
+                        </div>
+                        <button onClick={() => handleRestoreVersion(v.id)} className="shrink-0 ml-2 text-xs text-[#6366f1] hover:text-[#a855f7] font-medium px-2 py-1 rounded hover:bg-[#6366f1]/10">
+                          Restaureaza
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </ScrollArea>
+              </div>
+            )}
+          </div>
           {/* GitHub export button */}
           <div className="relative hidden md:block">
             <button onClick={() => { setShowGitHubModal(!showGitHubModal); setGitHubResult(null); setGitHubRepoName(currentProject?.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || ""); }} disabled={!hasCode} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-card rounded-lg disabled:opacity-30">

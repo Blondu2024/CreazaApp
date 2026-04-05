@@ -239,6 +239,102 @@ ${lastAction}
 TOTAL: ${files.length} fișiere, ${recentMessages.length} mesaje`;
 }
 
+// ==================== Share Links ====================
+
+export async function createShareLink(projectId: string, userId: string): Promise<string | null> {
+  // Check if active share already exists
+  const existing = await getShareByProject(projectId);
+  if (existing) return existing;
+
+  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  const { error } = await supabase
+    .from("project_shares")
+    .insert({ project_id: projectId, share_token: token, created_by: userId });
+  if (error) { console.error("createShareLink:", error); return null; }
+  return token;
+}
+
+export async function getShareByProject(projectId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("project_shares")
+    .select("share_token")
+    .eq("project_id", projectId)
+    .eq("active", true)
+    .single();
+  if (error || !data) return null;
+  return data.share_token;
+}
+
+export async function deactivateShare(projectId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("project_shares")
+    .update({ active: false })
+    .eq("project_id", projectId)
+    .eq("active", true);
+  if (error) { console.error("deactivateShare:", error); return false; }
+  return true;
+}
+
+// ==================== Versions ====================
+
+export interface ProjectVersion {
+  id: string;
+  project_id: string;
+  version_number: number;
+  files: { path: string; content: string }[];
+  label: string | null;
+  created_at: string;
+}
+
+export async function saveVersion(
+  projectId: string,
+  files: { path: string; content: string }[],
+  label?: string
+): Promise<void> {
+  // Get next version number
+  const { data: last } = await supabase
+    .from("project_versions")
+    .select("version_number")
+    .eq("project_id", projectId)
+    .order("version_number", { ascending: false })
+    .limit(1)
+    .single();
+
+  const nextVersion = (last?.version_number || 0) + 1;
+
+  const { error } = await supabase
+    .from("project_versions")
+    .insert({
+      project_id: projectId,
+      version_number: nextVersion,
+      files: JSON.stringify(files),
+      label: label?.slice(0, 100) || `Versiunea ${nextVersion}`,
+    });
+  if (error) console.error("saveVersion:", error);
+}
+
+export async function listVersions(projectId: string): Promise<ProjectVersion[]> {
+  const { data, error } = await supabase
+    .from("project_versions")
+    .select("id, project_id, version_number, label, created_at")
+    .eq("project_id", projectId)
+    .order("version_number", { ascending: false });
+  if (error) { console.error("listVersions:", error); return []; }
+  return (data || []) as ProjectVersion[];
+}
+
+export async function loadVersionFiles(versionId: string): Promise<{ path: string; content: string }[]> {
+  const { data, error } = await supabase
+    .from("project_versions")
+    .select("files")
+    .eq("id", versionId)
+    .single();
+  if (error || !data) { console.error("loadVersionFiles:", error); return []; }
+  // files is stored as JSONB — parse if string
+  const files = typeof data.files === "string" ? JSON.parse(data.files) : data.files;
+  return files || [];
+}
+
 export async function loadContextSummary(projectId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("projects")
