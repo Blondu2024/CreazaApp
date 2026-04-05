@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { verifyAuth } from "@/lib/verify-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   const userId = await verifyAuth(req);
   if (!userId) {
     return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
   }
+
+  // Rate limit: 5 portal sessions per minute per user
+  const rl = rateLimit(`stripe:portal:${userId}`, 5, 60_000);
+  if (!rl.allowed) return rateLimitResponse(rl.resetIn);
 
   if (!supabaseAdmin) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

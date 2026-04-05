@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, SUBSCRIPTION_PRICES, TOPUP_PRICES } from "@/lib/stripe";
 import { verifyAuth } from "@/lib/verify-auth";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   const userId = await verifyAuth(req);
   if (!userId) {
     return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
   }
+
+  // Rate limit: 5 checkout sessions per minute per user
+  const rl = rateLimit(`stripe:checkout:${userId}`, 5, 60_000);
+  if (!rl.allowed) return rateLimitResponse(rl.resetIn);
 
   const { type, id } = await req.json();
 
