@@ -64,19 +64,21 @@ function buildPreviewHtml(files: { path: string; content: string }[], projectId?
   ${cdn.styles}
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+  <script src="https://unpkg.com/sucrase@3.35.0/dist/sucrase.min.js"><\/script>
   <script src="https://cdn.tailwindcss.com"><\/script>
   ${cdn.scripts}
   ${cssFile ? `<style>${cssFile.content}</style>` : ""}
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" data-type="module">
-    ${cleanCode}
-    const rootEl = document.getElementById('root');
-    if (typeof App !== 'undefined') {
-      ReactDOM.createRoot(rootEl).render(React.createElement(App));
-    }
+  <script>
+    try {
+      var _code = ${JSON.stringify(cleanCode)};
+      var _compiled = sucrase.transform(_code, { transforms: ['jsx', 'typescript'], jsxPragma: 'React.createElement', jsxFragmentPragma: 'React.Fragment' }).code;
+      var _script = document.createElement('script');
+      _script.textContent = _compiled + "\\nvar rootEl = document.getElementById('root');\\nif (typeof App !== 'undefined') { ReactDOM.createRoot(rootEl).render(React.createElement(App)); }";
+      document.body.appendChild(_script);
+    } catch(e) { console.error('Compile error:', e); }
   <\/script>
 </body>
 </html>`;
