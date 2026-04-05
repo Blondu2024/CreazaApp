@@ -15,10 +15,8 @@ export const anthropic = createAnthropic({
 // OpenRouter uses dots (4.5), Anthropic uses hyphens (4-5)
 function toAnthropicModelId(openrouterModel: string): string {
   const stripped = openrouterModel.replace("anthropic/", "");
-  const mapped = stripped.replace(/\./g, "-"); // 4.5 → 4-5, 4.6 → 4-6
-  // "claude-sonnet-4" needs "-0" suffix for Anthropic API
-  if (mapped === "claude-sonnet-4") return "claude-sonnet-4-0";
-  return mapped;
+  // Map OpenRouter dots to Anthropic hyphens: 4.5 → 4-5, 4.6 → 4-6, 3.5 → 3-5
+  return stripped.replace(/\./g, "-");
 }
 
 // Route model to correct provider — Claude goes direct, rest via OpenRouter
