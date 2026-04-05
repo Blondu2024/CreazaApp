@@ -109,17 +109,32 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log("[chat] Model:", model, `(plan: ${tier})`);
-    console.log("[chat] User:", userId || "anonymous");
-    console.log("[chat] Messages:", modelMessages.length);
-    console.log("[chat] System prompt:", Math.ceil(systemPrompt.length / 4), "tokens");
+    // Fallback chain — if primary model fails, try alternatives
+    const FALLBACK_MODELS: Record<string, string[]> = {
+      "anthropic/claude-sonnet-4": ["anthropic/claude-sonnet-4.5", "anthropic/claude-haiku-4.5"],
+      "anthropic/claude-sonnet-4.5": ["anthropic/claude-sonnet-4.6", "anthropic/claude-haiku-4.5"],
+      "anthropic/claude-opus-4.6": ["anthropic/claude-sonnet-4.6", "anthropic/claude-sonnet-4.5"],
+      "openai/gpt-5.4": ["openai/gpt-5.3-codex", "openai/gpt-4.1"],
+      "openai/gpt-5.3-codex": ["openai/gpt-4.1", "anthropic/claude-haiku-4.5"],
+    };
 
-    const result = streamText({
-      model: openrouter.chat(model),
-      system: systemPrompt,
-      messages: modelMessages,
-      stopWhen: stepCountIs(3),
-      tools: {
+    const modelsToTry = [model, ...(FALLBACK_MODELS[model] || ["anthropic/claude-haiku-4.5"])];
+    let lastError: unknown = null;
+    let activeModel = model;
+
+    for (const tryModel of modelsToTry) {
+      activeModel = tryModel;
+      console.log("[chat] Trying model:", tryModel, tryModel !== model ? "(fallback)" : "", `(plan: ${tier})`);
+      console.log("[chat] User:", userId || "anonymous");
+      console.log("[chat] Messages:", modelMessages.length);
+
+      try {
+        const result = streamText({
+          model: openrouter.chat(tryModel),
+          system: systemPrompt,
+          messages: modelMessages,
+          stopWhen: stepCountIs(3),
+          tools: {
         searchImages: tool({
           description: "Search for professional stock photos. Returns direct image URLs to embed in code. Use for any real content: people, places, objects, scenes, backgrounds.",
           inputSchema: z.object({
@@ -153,44 +168,56 @@ export async function POST(req: Request) {
           },
         }),
       },
-      onFinish: async ({ usage }) => {
-        if (!userId) return;
+          onFinish: async ({ usage }) => {
+            if (!userId) return;
 
-        const inputTokens = usage.inputTokens || estimateTokens(systemPrompt);
-        const outputTokens = usage.outputTokens || 5000;
+            const inputTokens = usage.inputTokens || estimateTokens(systemPrompt);
+            const outputTokens = usage.outputTokens || 5000;
 
-        const cost = getModelCostOrMinimum(model, inputTokens, outputTokens);
-        if (cost > 0) {
-          const modelLabel = model.split("/").pop() || model;
-          let deductResult = await deductCredits(userId, cost, {
-            model,
-            inputTokens,
-            outputTokens,
-            description: `${modelLabel}: ${inputTokens} in / ${outputTokens} out`,
-          });
-
-          // If full deduction failed, deduct whatever the user has left
-          // (response was already streamed — don't let it be free)
-          if (!deductResult.success) {
-            const remaining = deductResult.monthly + deductResult.topup;
-            if (remaining > 0) {
-              deductResult = await deductCredits(userId, remaining, {
-                model,
+            const cost = getModelCostOrMinimum(activeModel, inputTokens, outputTokens);
+            if (cost > 0) {
+              const modelLabel = activeModel.split("/").pop() || activeModel;
+              let deductResult = await deductCredits(userId, cost, {
+                model: activeModel,
                 inputTokens,
                 outputTokens,
-                description: `${modelLabel}: ${inputTokens} in / ${outputTokens} out (partial)`,
+                description: `${modelLabel}: ${inputTokens} in / ${outputTokens} out`,
               });
-            }
-            console.warn("[credits]", modelLabel, `cost=${cost.toFixed(2)} cr OVER BUDGET, deducted=${remaining.toFixed(2)} cr`);
-          } else {
-            console.log("[credits]", modelLabel, `cost=${cost.toFixed(2)} cr OK`,
-              `remaining=${deductResult.monthly}+${deductResult.topup}`);
-          }
-        }
-      },
-    });
 
-    return result.toUIMessageStreamResponse();
+              if (!deductResult.success) {
+                const remaining = deductResult.monthly + deductResult.topup;
+                if (remaining > 0) {
+                  deductResult = await deductCredits(userId, remaining, {
+                    model: activeModel,
+                    inputTokens,
+                    outputTokens,
+                    description: `${modelLabel}: ${inputTokens} in / ${outputTokens} out (partial)`,
+                  });
+                }
+                console.warn("[credits]", modelLabel, `cost=${cost.toFixed(2)} cr OVER BUDGET, deducted=${remaining.toFixed(2)} cr`);
+              } else {
+                console.log("[credits]", modelLabel, `cost=${cost.toFixed(2)} cr OK`,
+                  `remaining=${deductResult.monthly}+${deductResult.topup}`);
+              }
+            }
+          },
+        });
+
+        // If we get here, streaming started successfully — return it
+        return result.toUIMessageStreamResponse();
+      } catch (err) {
+        lastError = err;
+        console.warn(`[chat] Model ${tryModel} failed:`, err instanceof Error ? err.message : err);
+        continue; // Try next fallback
+      }
+    }
+
+    // All models failed
+    console.error("[chat] All models failed, last error:", lastError);
+    return new Response(
+      JSON.stringify({ error: lastError instanceof Error ? lastError.message : "Toate modelele AI sunt indisponibile momentan. Încearcă din nou." }),
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
     console.error("[chat] Error:", error);
     return new Response(
