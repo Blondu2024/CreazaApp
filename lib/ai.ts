@@ -24,8 +24,11 @@ function toAnthropicModelId(openrouterModel: string): string {
 // Route model to correct provider — Claude goes direct, rest via OpenRouter
 export function getModelProvider(model: string) {
   if (model.startsWith("anthropic/") && process.env.ANTHROPIC_API_KEY) {
-    return anthropic(toAnthropicModelId(model));
+    const nativeId = toAnthropicModelId(model);
+    console.log(`[provider] ${model} → Anthropic direct (${nativeId})`);
+    return anthropic(nativeId);
   }
+  console.log(`[provider] ${model} → OpenRouter${model.startsWith("anthropic/") ? " (ANTHROPIC_API_KEY not set!)" : ""}`);
   return openrouter.chat(model);
 }
 
